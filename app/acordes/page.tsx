@@ -48,6 +48,7 @@ export default function AcordesPage() {
         <ChordLab
           qualityIds={CHORD_QUALITIES.map((q) => q.id)}
           dictation
+          inversiones
         />
       </section>
 

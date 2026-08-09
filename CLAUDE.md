@@ -38,8 +38,7 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `prose` | Contexto, cómo venía la mano, qué se habló | Texto. `*así*` resalta en amarillo |
 | `correction` | Algo que el profe corrigió | Tarjeta con "lo que hacía" / "lo que va" + la analogía destacada |
 | `quote` | Una frase del profe que quedó picando | Cita grande |
-| `chord-lab` | Un set de acordes | Teclado interactivo con selector, sonido y modo dictado |
-| `inversions` | Inversiones de un acorde | Selector de inversión, cifrado con barra y "girarlas todas" |
+| `chord-lab` | Un set de acordes | Teclado con fundamental, receta e inversión, sonido y dictado |
 | `exercise` | El ejercicio de posiciones que se desplaza | Reproductor con variantes, metrónomo, teclado animado y micrófono |
 | `hands` | Un reparto de notas entre las dos manos | Teclado con las dos manos en colores + intercambio automático |
 | `nomenclature` | Cifrado inglés | Tablita de ejemplos + quiz |
@@ -69,6 +68,11 @@ Si en una clase aparece un acorde nuevo:
 El teclado, el dictado, las inversiones, el quiz, el identificador de acordes y
 la página `/acordes` lo levantan solos. No hay que tocar nada más — incluidas
 las inversiones, que se calculan de la cantidad de notas del `stack`.
+
+**Armar un acorde y girarlo son la misma operación**, así que son un solo
+bloque (`chord-lab` con `inversiones: true`) y no dos. Se intentó tenerlos
+separados y eran dos componentes casi idénticos. Lo que sí conviene separar es
+el *texto*: primero la receta, después "y además se puede girar".
 
 ## El ejercicio de posiciones
 

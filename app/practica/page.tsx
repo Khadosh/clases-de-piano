@@ -6,7 +6,6 @@ import ExerciseRunner from "@/components/ExerciseRunner";
 import HandsSwap from "@/components/HandsSwap";
 import NomenclatureQuiz from "@/components/NomenclatureQuiz";
 import ChordLab from "@/components/ChordLab";
-import InversionLab from "@/components/InversionLab";
 import TecladoLibre from "@/components/TecladoLibre";
 import { CHORD_QUALITIES } from "@/lib/music";
 
@@ -108,29 +107,21 @@ export default function PracticaPage() {
           <div>
             <div className="mb-3 flex flex-wrap items-baseline gap-3">
               <h3 className="font-display text-2xl font-bold">
-                Dictado de acordes
+                Acordes e inversiones
               </h3>
               <span className="rounded-full bg-uva/15 px-3 py-1 text-xs text-uva">
-                el juego del profe
+                con el dictado del profe
               </span>
             </div>
             <p className="mb-4 max-w-2xl text-humo">
-              Sale un cifrado, ponés las manos, después mirás. Sin pensar de
+              Fundamental, receta e inversión, todo en el mismo teclado. Para
+              practicar en serio: <strong className="text-tiza">dictado</strong>{" "}
+              — sale un cifrado, ponés las manos, después mirás. Sin pensar de
               más: la idea es que la fórmula salga del dedo, no de la cabeza.
+              Cuando eso ya sale, prendé las inversiones y empiezan a aparecer
+              cifrados con barra.
             </p>
-            <ChordLab qualityIds={TODOS} dictation />
-          </div>
-
-          <div>
-            <h3 className="font-display mb-2 text-2xl font-bold">
-              Inversiones
-            </h3>
-            <p className="mb-4 max-w-2xl text-humo">
-              El mismo acorde con otra nota abajo. Vale la pena hacerlas
-              girando: elegís uno, lo pasás por sus tres o cuatro posiciones y
-              escuchás cómo cambia sin cambiar de acorde.
-            </p>
-            <InversionLab qualityIds={TODOS} />
+            <ChordLab qualityIds={TODOS} dictation inversiones />
           </div>
 
           <div>

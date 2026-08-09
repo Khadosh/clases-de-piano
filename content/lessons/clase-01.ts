@@ -56,10 +56,25 @@ const lesson: Lesson = {
         "Toda la teoría de la clase entra en una idea: un acorde es una *receta de distancias*, y la fundamental es sólo desde dónde empezás a contar.",
     },
     {
+      kind: "prose",
+      title: "Primero: la receta",
+      text: "No hay que memorizar doce acordes mayores: hay que memorizar *una receta*. Se cuenta en semitonos (teclas, blancas y negras juntas) desde un dedo al siguiente. Cambiar de fundamental es la misma receta empezando en otra tecla.",
+    },
+    {
+      kind: "quote",
+      text: "Sus2 y sus4 son el mismo acorde con el dedo del medio corrido un lugar: para abajo o para arriba.",
+      by: "Quique",
+    },
+    {
+      kind: "prose",
+      title: "Después: girarlo",
+      text: "Un acorde tampoco está obligado a tener su fundamental abajo. Si agarrás la nota más grave y la subís una octava, seguís teniendo *el mismo acorde* —las mismas notas, la misma receta— pero cambia cuál queda en el bajo, y con eso cambia el color y, sobre todo, cuánto tenés que mover la mano para llegar al acorde siguiente. Uno de tres notas tiene dos inversiones; uno de cuatro, tres.",
+    },
+    {
       kind: "chord-lab",
-      title: "Los acordes salen de contar",
+      title: "El laboratorio",
       intro:
-        "No hay que memorizar doce acordes mayores: hay que memorizar *una receta*. Se cuenta en semitonos (teclas, blancas y negras juntas) desde un dedo al siguiente. Cambiar de fundamental es la misma receta empezando en otra tecla.",
+        "Elegís la fundamental, la receta y la inversión, y las tres cosas se ven en el teclado a la vez. El *dictado* es el juego del profe: sale un cifrado, ponés las manos y después mirás — y se le puede pedir que incluya inversiones, que es la versión difícil.",
       qualities: [
         "maj",
         "min",
@@ -73,29 +88,7 @@ const lesson: Lesson = {
         "minmaj7",
       ],
       dictation: true,
-    },
-    {
-      kind: "quote",
-      text: "Sus2 y sus4 son el mismo acorde con el dedo del medio corrido un lugar: para abajo o para arriba.",
-      by: "Quique",
-    },
-    {
-      kind: "inversions",
-      title: "Invertir: las mismas notas, otro bajo",
-      intro:
-        "Un acorde no está obligado a tener su fundamental abajo. Si agarrás la nota más grave y la subís una octava, seguís teniendo *el mismo acorde* —las mismas notas, la misma receta— pero cambia cuál queda en el bajo, y con eso cambia el color y, sobre todo, cuánto tenés que mover la mano para llegar al acorde siguiente. Uno de tres notas tiene dos inversiones; uno de cuatro, tres.",
-      qualities: [
-        "maj",
-        "min",
-        "aug",
-        "dim",
-        "sus2",
-        "sus4",
-        "maj7",
-        "dom7",
-        "min7",
-        "minmaj7",
-      ],
+      inversiones: true,
     },
     {
       kind: "nomenclature",

@@ -13,7 +13,6 @@ export type Block =
   | ProseBlock
   | CorrectionBlock
   | ChordLabBlock
-  | InversionsBlock
   | ExerciseBlock
   | HandsBlock
   | NomenclatureBlock
@@ -59,15 +58,12 @@ export interface ChordLabBlock {
   qualities: string[];
   /** Muestra el botón de dictado (el ejercicio del profe). */
   dictation?: boolean;
-}
-
-/** Las inversiones de un acorde: la misma receta con otra nota en el bajo. */
-export interface InversionsBlock {
-  kind: "inversions";
-  title: string;
-  intro?: string;
-  /** Ids de CHORD_QUALITIES. Conviene mezclar tríadas y séptimas. */
-  qualities: string[];
+  /**
+   * Suma el eje de las inversiones. Girar un acorde es la misma operación que
+   * armarlo —las mismas notas, otra abajo— así que es el mismo bloque con una
+   * fila más, y no uno aparte.
+   */
+  inversiones?: boolean;
 }
 
 /** El ejercicio de posiciones que sube y baja desplazándose. */

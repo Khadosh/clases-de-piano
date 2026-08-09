@@ -1,6 +1,5 @@
 import type { Block } from "@/content/types";
 import ChordLab from "./ChordLab";
-import InversionLab from "./InversionLab";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -78,17 +77,6 @@ export function BlockView({ block }: { block: Block }) {
               {rich(block.intro)}
             </p>
           )}
-        </section>
-      );
-
-    case "inversions":
-      return (
-        <section>
-          <Titulo>{block.title}</Titulo>
-          {block.intro && (
-            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
-          )}
-          <InversionLab qualityIds={block.qualities} />
         </section>
       );
 
@@ -172,6 +160,7 @@ export function BlockView({ block }: { block: Block }) {
           <ChordLab
             qualityIds={block.qualities}
             dictation={block.dictation}
+            inversiones={block.inversiones}
           />
         </section>
       );
