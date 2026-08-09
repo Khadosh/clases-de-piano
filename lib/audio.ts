@@ -33,6 +33,15 @@ export function wakeAudio() {
   ensure();
 }
 
+/**
+ * El mismo AudioContext que usa el sintetizador, para que el micrófono no abra
+ * uno aparte: dos contextos compiten por el audio del sistema y en algunos
+ * browsers uno de los dos queda mudo.
+ */
+export function getAudioContext(): AudioContext | null {
+  return ensure();
+}
+
 export function playNote(pitch: Pitch, duration = 0.9, delay = 0) {
   const ac = ensure();
   if (!ac || !master) return;

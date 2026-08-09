@@ -15,6 +15,8 @@ teclado y el cifrado inglés se practica hasta que entra.
   cifrado, ponés las manos, después mirás.
 - **Ejercicios animados** — el ejercicio de posiciones que se desplaza, con
   metrónomo, digitación en las teclas y las dos manos en colores distintos.
+- **Modo "escuchame tocar"** — el ejercicio abre el micrófono, escucha qué nota
+  tocás y avanza sola cuando acertás. Sin reloj: el ritmo lo ponés vos.
 - **Quiz de cifrado inglés** — del cifrado al teclado y del teclado al cifrado,
   con racha.
 - **Identificador de acordes** — tocás teclas y te dice qué armaste, incluso si
@@ -48,4 +50,6 @@ Next.js 15 (App Router) · React 19 · TypeScript · Tailwind v4.
 Sin base de datos, sin CMS, sin assets externos: el piano es un SVG dibujado a
 mano y el sonido son osciladores de WebAudio. El motor de teoría musical vive
 en [`lib/music.ts`](./lib/music.ts) y arma cada acorde apilando semitonos, igual
-que como se cuenta en clase.
+que como se cuenta en clase. La detección de notas por micrófono está en
+[`lib/pitch.ts`](./lib/pitch.ts), también sin dependencias; `npm run test:pitch`
+la verifica contra tonos sintéticos con armónicos.

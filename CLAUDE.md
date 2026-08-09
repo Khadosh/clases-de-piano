@@ -63,6 +63,35 @@ Si en una clase aparece un acorde nuevo:
 El teclado, el dictado, el quiz, el identificador de acordes y la página
 `/acordes` lo levantan solos. No hay que tocar nada más.
 
+## El micrófono
+
+El bloque `exercise` tiene un modo "escuchame tocar": abre el micrófono, detecta
+qué nota estás tocando y avanza sola cuando acertás. Vive en tres archivos:
+
+- `lib/pitch.ts` — el detector (método de McLeod: autocorrelación normalizada).
+  Escrito a mano, sin dependencias. **Sirve para una nota por vez.**
+- `lib/useMicPitch.ts` — el hook que abre el micrófono y avisa nota por nota.
+  Corre a 60 lecturas por segundo pero refresca React mucho menos seguido, a
+  propósito: arriba hay un teclado SVG que no conviene redibujar tan rápido.
+- El panel de la UI está al final de `components/ExerciseRunner.tsx`.
+
+Reglas que ya están resueltas y conviene no romper:
+
+- Se compara **por nota, no por octava**. El ejercicio es una figura de dedos y
+  da igual dónde lo toques.
+- Escuchar y reproducir son excluyentes, si no el micrófono se oye a sí mismo.
+- `echoCancellation`, `noiseSuppression` y `autoGainControl` van en `false`:
+  están pensados para voz y se comen las notas que se apagan.
+- Hacen falta 3 lecturas iguales seguidas para dar una nota por buena. Con
+  menos, el golpe del ataque (que es ruido de banda ancha) mete notas fantasma.
+
+`npm run test:pitch` prueba el detector contra tonos sintéticos con armónicos,
+de Do2 a Do6. Correlo si tocás `lib/pitch.ts`: el modo en que falla un detector
+de altura es contestar la octava de arriba, y eso se ve enseguida ahí.
+
+**Los acordes no se pueden escuchar todavía.** Detectar varias notas a la vez es
+otro problema (análisis espectral, no autocorrelación) y no está hecho.
+
 ## Convenciones
 
 - **Todo en castellano rioplatense**, incluidos los nombres de variables de

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
 import {
   buildExercise,
+  mod12,
   noteName,
   positionPitches,
   type ExerciseStep,
@@ -11,6 +12,8 @@ import {
   type Hand,
 } from "@/lib/music";
 import { playNote, wakeAudio } from "@/lib/audio";
+import { useMicPitch, type EstadoMic } from "@/lib/useMicPitch";
+import type { PitchReading } from "@/lib/pitch";
 
 export interface Variant {
   label: string;
@@ -28,7 +31,15 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   const [bpm, setBpm] = useState(72);
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
+  const [escuchando, setEscuchando] = useState(false);
+  const [puntaje, setPuntaje] = useState({ bien: 0, mal: 0 });
+  const [ultimoError, setUltimoError] = useState<number | null>(null);
+  const [completo, setCompleto] = useState(false);
   const v = variants[vi];
+
+  // El micrófono sólo distingue una nota por vez: con las dos manos juntas
+  // sonando en simultáneo no hay nada que hacer.
+  const micPosible = v.hand !== "ambas";
 
   const { izq, der } = useMemo(() => {
     const izq =
@@ -54,16 +65,68 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
 
   const total = (izq ?? der)!.length;
 
+  const reiniciar = useCallback(() => {
+    setI(0);
+    setPuntaje({ bien: 0, mal: 0 });
+    setUltimoError(null);
+    setCompleto(false);
+  }, []);
+
   // Reinicia al cambiar de variante.
   useEffect(() => {
-    setI(0);
+    reiniciar();
     setPlaying(false);
-  }, [vi]);
+    setEscuchando(false);
+  }, [vi, reiniciar]);
 
   const izqRef = useRef(izq);
   const derRef = useRef(der);
   izqRef.current = izq;
   derRef.current = der;
+
+  // ---- Modo escuchar: la app espera a que toques la nota que toca ----------
+
+  const esperado = (izq ?? der)![i];
+
+  const iRef = useRef(i);
+  iRef.current = i;
+  const totalRef = useRef(total);
+  totalRef.current = total;
+
+  const onNota = useCallback(
+    (midi: number) => {
+      const objetivo = (izqRef.current ?? derRef.current)![iRef.current];
+      // Se compara por nota, no por octava: el ejercicio es una figura de
+      // dedos, y da igual en qué octava del piano la estés haciendo.
+      if (mod12(midi) === mod12(objetivo.pitch)) {
+        setUltimoError(null);
+        setPuntaje((p) => ({ ...p, bien: p.bien + 1 }));
+        setI((prev) => {
+          const next = prev + 1;
+          if (next >= totalRef.current) {
+            setCompleto(true);
+            return prev;
+          }
+          return next;
+        });
+      } else {
+        setUltimoError(midi);
+        setPuntaje((p) => ({ ...p, mal: p.mal + 1 }));
+      }
+    },
+    [],
+  );
+
+  const { estado: estadoMic, lectura } = useMicPitch({
+    activo: escuchando && micPosible,
+    onNota,
+  });
+
+  // Escuchar y reproducir solo son incompatibles: el micrófono se escucharía a
+  // sí mismo por los parlantes.
+  useEffect(() => {
+    if (escuchando) setPlaying(false);
+  }, [escuchando]);
 
   useEffect(() => {
     if (!playing) return;
@@ -102,6 +165,16 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   };
   pushHand(izq, "izq", BASE_IZQ);
   pushHand(der, "der", BASE_DER);
+
+  // Mientras escucha, la nota equivocada se pinta donde caiga en el teclado.
+  if (escuchando && ultimoError !== null) {
+    const dentro = [ultimoError - 12, ultimoError, ultimoError + 12].find(
+      (p) => p >= 45 && p <= 84,
+    );
+    if (dentro !== undefined && dentro !== esperado.pitch) {
+      marks.push({ pitch: dentro, tone: "brasa", label: "✗" });
+    }
+  }
 
   const actual = [izq?.[i], der?.[i]].filter(Boolean) as ExerciseStep[];
   const posicion = ((izq ?? der)![i].position ?? 0) + 1;
@@ -145,7 +218,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
           <button
             onClick={() => {
               setPlaying(false);
-              setI(0);
+              reiniciar();
             }}
             className="rounded-full bg-carta-2 px-4 py-2 text-sm font-bold transition hover:bg-borde"
           >
@@ -169,6 +242,23 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
             → Una nota
           </button>
 
+          {micPosible && (
+            <button
+              onClick={() => {
+                wakeAudio();
+                setEscuchando((e) => !e);
+                if (!escuchando) reiniciar();
+              }}
+              className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                escuchando
+                  ? "bg-brasa text-noche"
+                  : "bg-uva text-noche hover:brightness-110"
+              }`}
+            >
+              {escuchando ? "⏹ Dejar de escuchar" : "🎤 Escuchame tocar"}
+            </button>
+          )}
+
           <label className="ml-auto flex items-center gap-2 text-sm text-humo">
             <span className="font-mono">{bpm} bpm</span>
             <input
@@ -181,6 +271,19 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
             />
           </label>
         </div>
+
+        {escuchando && (
+          <MicPanel
+            estado={estadoMic}
+            lectura={lectura}
+            esperado={esperado}
+            puntaje={puntaje}
+            ultimoError={ultimoError}
+            completo={completo}
+            restantes={total - i}
+            onReiniciar={reiniciar}
+          />
+        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-noche-2 px-4 py-3 text-sm">
           <span
@@ -217,6 +320,136 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
           </span>
         </div>
       </div>
+    </div>
+  );
+}
+
+const MENSAJES: Record<EstadoMic, string> = {
+  apagado: "",
+  pidiendo: "Pidiéndole permiso al navegador…",
+  escuchando: "",
+  denegado:
+    "El navegador bloqueó el micrófono. Hay que habilitarlo en el candadito de la barra de direcciones y volver a intentar.",
+  "sin-soporte":
+    "Este navegador no da acceso al micrófono. Suele pasar en conexiones sin HTTPS.",
+  error: "No se pudo abrir el micrófono. ¿Lo está usando otro programa?",
+};
+
+/** El panel que aparece abajo del teclado cuando el ejercicio te está escuchando. */
+function MicPanel({
+  estado,
+  lectura,
+  esperado,
+  puntaje,
+  ultimoError,
+  completo,
+  restantes,
+  onReiniciar,
+}: {
+  estado: EstadoMic;
+  lectura: PitchReading | null;
+  esperado: ExerciseStep;
+  puntaje: { bien: number; mal: number };
+  ultimoError: number | null;
+  completo: boolean;
+  restantes: number;
+  onReiniciar: () => void;
+}) {
+  const mensaje = MENSAJES[estado];
+  const total = puntaje.bien + puntaje.mal;
+  const limpio = total > 0 ? Math.round((puntaje.bien / total) * 100) : null;
+
+  if (completo) {
+    return (
+      <div className="mt-4 rounded-2xl border border-menta/40 bg-menta/10 px-5 py-4">
+        <p className="font-display text-2xl font-bold text-menta">
+          ¡Octava completa! 🎉
+        </p>
+        <p className="mt-1 text-sm text-humo">
+          {puntaje.bien} notas bien
+          {puntaje.mal > 0 && ` y ${puntaje.mal} al lado`}
+          {limpio !== null && ` · ${limpio}% limpio`}.
+        </p>
+        <button
+          onClick={onReiniciar}
+          className="mt-3 rounded-full bg-menta px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
+        >
+          Otra vez
+        </button>
+      </div>
+    );
+  }
+
+  if (mensaje) {
+    return (
+      <div className="mt-4 rounded-2xl border border-brasa/30 bg-brasa/10 px-5 py-4 text-sm text-tiza/90">
+        {mensaje}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 rounded-2xl bg-noche-2 px-5 py-4">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        <div>
+          <p className="text-xs tracking-[0.2em] text-humo uppercase">
+            Tocá esta
+          </p>
+          <p className="font-display text-3xl font-black text-sol">
+            {noteName(esperado.pitch)}
+            <span className="ml-2 text-base font-bold text-humo">
+              dedo {esperado.finger}
+            </span>
+          </p>
+        </div>
+
+        <div className="min-w-32">
+          <p className="text-xs tracking-[0.2em] text-humo uppercase">
+            Te escucho
+          </p>
+          <p
+            className={`font-display text-3xl font-black ${
+              ultimoError !== null ? "text-brasa" : "text-tiza"
+            }`}
+          >
+            {lectura ? (
+              <>
+                {noteName(lectura.midi)}
+                <span className="ml-2 font-mono text-xs font-normal text-humo">
+                  {lectura.cents > 0 ? "+" : ""}
+                  {lectura.cents}¢
+                </span>
+              </>
+            ) : (
+              <span className="text-humo">—</span>
+            )}
+          </p>
+        </div>
+
+        {/* Vúmetro: sirve para saber si el micrófono te está llegando. */}
+        <div className="h-2 w-24 overflow-hidden rounded-full bg-carta-2">
+          <div
+            className="h-full rounded-full bg-menta transition-[width] duration-75"
+            style={{
+              width: `${Math.min(100, Math.round((lectura?.rms ?? 0) * 400))}%`,
+            }}
+          />
+        </div>
+
+        <div className="ml-auto text-right text-sm">
+          <p className="font-mono">
+            <span className="text-menta">{puntaje.bien}</span>
+            <span className="text-humo"> / </span>
+            <span className="text-brasa">{puntaje.mal}</span>
+          </p>
+          <p className="text-xs text-humo">faltan {restantes}</p>
+        </div>
+      </div>
+
+      <p className="mt-3 text-xs text-humo">
+        Tocá tranquilo, no hay reloj: la nota avanza cuando la acertás. La
+        octava no importa, sí la nota.
+      </p>
     </div>
   );
 }
