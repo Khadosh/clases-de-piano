@@ -49,13 +49,26 @@ export function midiToHz(midi: number): number {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
+/**
+ * Qué tan alto tiene que ser un pico, comparado con el más alto, para que se lo
+ * tome como el período real.
+ *
+ * Es la perilla de los errores de octava, y la tentación es subirla: si una
+ * nota parpadea entre su octava y la de arriba, parece que hay que ser más
+ * estricto con el pico temprano. Probado contra una grabación de piano de
+ * verdad, subirla empeora todo (a 0.97 los errores se triplican). El 0.9 de la
+ * receta original es el que va; el parpadeo se arregla en otro lado.
+ */
+const K_PICO = 0.9;
+
 export function detectPitch(
   buf: Float32Array,
   sampleRate: number,
-  opts: { rmsMin?: number; clarityMin?: number } = {},
+  opts: { rmsMin?: number; clarityMin?: number; k?: number } = {},
 ): PitchReading | null {
   const rmsMin = opts.rmsMin ?? RMS_MIN;
   const clarityMin = opts.clarityMin ?? CLARITY_MIN;
+  const k = opts.k ?? K_PICO;
 
   const rms = rmsOf(buf);
   if (rms < rmsMin) return null;
@@ -100,12 +113,18 @@ export function detectPitch(
   if (peaks.length === 0) return null;
 
   // Acá está la gracia del método: en vez del pico más alto, se toma el
-  // *primero* que llegue al 90% del más alto. Ese es el período real; los
-  // posteriores son sus múltiplos (la octava abajo, la doceava, etc).
+  // *primero* que llegue a cierto porcentaje del más alto. Ese es el período
+  // real; los posteriores son sus múltiplos (la octava abajo, la doceava).
+  //
+  // El porcentaje es delicado. Si una nota tiene el segundo armónico fuerte
+  // —el piano casi siempre— hay un pico en la mitad del período real, y si ese
+  // pico entra por el umbral se contesta la octava de arriba. Con el 0.9 de la
+  // receta original, en una grabación de piano de verdad las notas parpadeaban
+  // entre su octava y la de arriba varias veces por nota.
   let maxVal = 0;
   for (const p of peaks) if (nsdf[p] > maxVal) maxVal = nsdf[p];
-  const umbral = maxVal * 0.9;
-  const elegido = peaks.find((p) => nsdf[p] >= umbral)!;
+  const umbral = maxVal * k;
+  const elegido = peaks.find((p) => nsdf[p] >= umbral) ?? peaks[0];
 
   // Interpolación parabólica: el período real casi nunca cae justo en una
   // muestra, y sin esto la afinación se va hasta medio semitono en los agudos.

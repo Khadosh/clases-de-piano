@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test:pitch": "node --experimental-strip-types scripts/probar-pitch.mjs",
-    "escuchar": "node --experimental-strip-types scripts/escuchar-grabacion.mjs"
+    "escuchar": "node --experimental-strip-types scripts/escuchar-grabacion.mjs",
+    "calibrar": "node --experimental-strip-types scripts/calibrar-mic.mjs"
   },
   "dependencies": {
     "next": "^16.3.0",

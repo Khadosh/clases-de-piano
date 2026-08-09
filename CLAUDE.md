@@ -79,23 +79,55 @@ Reglas que ya están resueltas y conviene no romper:
 
 - Se compara **por nota, no por octava**. El ejercicio es una figura de dedos y
   da igual dónde lo toques.
+- **La nota ya contada se recuerda por clase, no con su octava.** Esto es lo
+  más importante de todo. El detector se equivoca de octava seguido: una nota
+  real parpadea entre La3 y La4 varias veces mientras suena. Recordando la
+  octava, cada parpadeo contaba como nota nueva, y de ahí salían casi todos los
+  errores (17 notas inventadas en una sola pasada del ejercicio).
+- **Una nota se da por soltada recién tras 6 lecturas seguidas sin sonido.** En
+  el medio de una nota tenida hay baches de un frame o dos, y con un solo frame
+  de silencio la misma nota volvía a contar.
 - Escuchar y reproducir son excluyentes, si no el micrófono se oye a sí mismo.
 - `echoCancellation`, `noiseSuppression` y `autoGainControl` van en `false`:
   están pensados para voz y se comen las notas que se apagan.
 - Hacen falta 3 lecturas iguales seguidas para dar una nota por buena. Con
   menos, el golpe del ataque (que es ruido de banda ancha) mete notas fantasma.
+- Si lo que tocás es la nota *siguiente* a la esperada, se saltea sin penalizar:
+  quiere decir que el micrófono se comió una, y el error es nuestro. Sin eso,
+  una sola nota perdida te deja trabado tocando algo que la app ya pasó.
+- El `k` del método de McLeod se queda en 0.9. Cuando una nota parpadea de
+  octava, la tentación es subirlo; medido contra una grabación real, subirlo
+  **empeora** (a 0.97 los errores se triplican).
 
 `npm run test:pitch` prueba el detector contra tonos sintéticos con armónicos,
 de Do2 a Do6. Correlo si tocás `lib/pitch.ts`: el modo en que falla un detector
 de altura es contestar la octava de arriba, y eso se ve enseguida ahí.
 
 Pero los tonos sintéticos sólo dicen si el algoritmo está bien, no si los
-umbrales sirven para un piano de verdad grabado con un celular. Para eso está
-`npm run escuchar -- grabacion.wav`, que pasa una grabación por el detector y
-lista tramo por tramo qué escuchó, con claridad y volumen, más las notas que la
-app habría registrado. Acepta `--clarity` y `--rms` para probar umbrales sin
-tocar el código: la forma de calibrar es correrlo con distintos valores sobre
-una grabación donde se sabe qué se tocó.
+umbrales sirven para un piano de verdad grabado con un celular. Para eso hay
+dos herramientas, y conviene usarlas en este orden:
+
+1. `npm run escuchar -- grabacion.wav` lista tramo por tramo qué escuchó, con
+   claridad y volumen. Sirve para *mirar* una grabación y entender qué pasa.
+2. `npm run calibrar -- grabacion.wav` sabe qué había que tocar (el ejercicio
+   entero) y mide el error de verdad, más un barrido de umbrales.
+
+Dos cosas de método que costaron y no hay que volver a aprender:
+
+- **No puntúes como la app para calibrar.** La app espera nota por nota, así
+  que si se desincroniza una vez, todo lo que sigue cuenta como error y el
+  número deja de hablar del detector. Hay que alinear con distancia de edición
+  y separar notas cambiadas, inventadas y comidas. Las *inventadas* son las que
+  rompen la app.
+- **Una grabación no se autocorrige y vos sí.** Tocando en vivo mirás la
+  pantalla y volvés a intentar la nota; una grabación sigue de largo. Por eso
+  el puntaje que da un replay siempre es más feo que el real, y no hay que
+  perseguirlo hasta el cero.
+
+Y una advertencia: sobre una sola grabación, una diferencia de uno o dos
+errores es ruido. Mover un umbral se justifica cuando la mejora es grande (como
+lo de la octava, que fue de 25 errores a 8) o cuando se sostiene en varias
+grabaciones.
 
 **Los acordes no se pueden escuchar todavía.** Detectar varias notas a la vez es
 otro problema (análisis espectral, no autocorrelación) y no está hecho.

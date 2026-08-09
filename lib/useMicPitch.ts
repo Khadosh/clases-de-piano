@@ -20,6 +20,16 @@ export type EstadoMic =
  */
 const CONFIRMACIONES = 3;
 
+/**
+ * Cuántas lecturas seguidas sin nota hacen falta para dar la nota por soltada.
+ *
+ * Con una sola alcanzaba para desastre: en el medio de una nota sostenida hay
+ * baches de un frame o dos (el sonido decae, pasa por debajo del umbral y
+ * vuelve), y cada bache hacía que la misma nota contara de nuevo. Seis frames
+ * son unos 100ms de silencio real, que ninguna nota tenida tiene en el medio.
+ */
+const SOLTAR_TRAS = 6;
+
 /** Cada cuánto se refresca lo que se muestra en pantalla (ms). */
 const REFRESCO_UI = 70;
 
@@ -110,9 +120,11 @@ export function useMicPitch({ activo, onNota }: Opciones) {
       // micrófono saldría por los parlantes y se escucharía a sí mismo.
 
       const buf = new Float32Array(analyser.fftSize);
-      let ultimaConfirmada: number | null = null;
+      /** La *clase* de la última nota contada, no su octava. Ver abajo. */
+      let ultimaClase: number | null = null;
       let candidata: number | null = null;
       let repeticiones = 0;
+      let silencios = 0;
       let ultimoRefresco = 0;
 
       setEstado("escuchando");
@@ -125,20 +137,31 @@ export function useMicPitch({ activo, onNota }: Opciones) {
         const r = detectPitch(buf, ctx.sampleRate);
 
         if (!r) {
-          // Silencio: se suelta la nota, así la misma tecla puede volver a
-          // contar cuando se la toca de nuevo.
           candidata = null;
           repeticiones = 0;
-          ultimaConfirmada = null;
-        } else if (r.midi === candidata) {
-          repeticiones++;
-          if (repeticiones === CONFIRMACIONES && r.midi !== ultimaConfirmada) {
-            ultimaConfirmada = r.midi;
-            onNotaRef.current?.(r.midi, r);
-          }
+          silencios++;
+          // Recién con silencio sostenido se da la nota por soltada y se
+          // permite que la misma vuelva a contar.
+          if (silencios >= SOLTAR_TRAS) ultimaClase = null;
         } else {
-          candidata = r.midi;
-          repeticiones = 1;
+          silencios = 0;
+          // Se recuerda la clase de nota (do, re, mi…) y no la nota con su
+          // octava, a propósito: el detector se equivoca de octava seguido —
+          // una nota real parpadea entre La3 y La4 varias veces mientras
+          // suena— y si se recordara la octava, cada parpadeo contaría como
+          // una nota nueva. Con la clase, el parpadeo es invisible. Además es
+          // lo mismo que compara el ejercicio, así que no se pierde nada.
+          const clase = ((r.midi % 12) + 12) % 12;
+          if (r.midi === candidata) {
+            repeticiones++;
+            if (repeticiones === CONFIRMACIONES && clase !== ultimaClase) {
+              ultimaClase = clase;
+              onNotaRef.current?.(r.midi, r);
+            }
+          } else {
+            candidata = r.midi;
+            repeticiones = 1;
+          }
         }
 
         const ahora = performance.now();

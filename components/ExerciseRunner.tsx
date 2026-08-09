@@ -93,28 +93,47 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   const totalRef = useRef(total);
   totalRef.current = total;
 
+  const avanzar = useCallback((cuantas: number) => {
+    setUltimoError(null);
+    setPuntaje((p) => ({ ...p, bien: p.bien + cuantas }));
+    setI((prev) => {
+      const next = prev + cuantas;
+      if (next >= totalRef.current) {
+        setCompleto(true);
+        return prev;
+      }
+      return next;
+    });
+  }, []);
+
   const onNota = useCallback(
     (midi: number) => {
-      const objetivo = (izqRef.current ?? derRef.current)![iRef.current];
+      const pasos = (izqRef.current ?? derRef.current)!;
+      const i = iRef.current;
       // Se compara por nota, no por octava: el ejercicio es una figura de
       // dedos, y da igual en qué octava del piano la estés haciendo.
-      if (mod12(midi) === mod12(objetivo.pitch)) {
-        setUltimoError(null);
-        setPuntaje((p) => ({ ...p, bien: p.bien + 1 }));
-        setI((prev) => {
-          const next = prev + 1;
-          if (next >= totalRef.current) {
-            setCompleto(true);
-            return prev;
-          }
-          return next;
-        });
+      const clase = mod12(midi);
+      const claseDe = (n: number) =>
+        n >= 0 && n < pasos.length ? mod12(pasos[n].pitch) : -1;
+
+      if (clase === claseDe(i)) {
+        avanzar(1);
+      } else if (clase === claseDe(i - 1)) {
+        // La nota que acabamos de dar por buena, otra vez: es un rebote del
+        // detector (la misma tecla que suena entrecortada), no un error tuyo.
+        // Se ignora en silencio.
+      } else if (clase === claseDe(i + 1)) {
+        // Tocaste la que sigue: la anterior sonó y no la escuchamos. El error
+        // es nuestro, no tuyo, así que se saltea sin penalizar. Sin esto, una
+        // sola nota que el micrófono se pierde te deja trabado tocando algo
+        // que la app ya pasó.
+        avanzar(2);
       } else {
         setUltimoError(midi);
         setPuntaje((p) => ({ ...p, mal: p.mal + 1 }));
       }
     },
-    [],
+    [avanzar],
   );
 
   const { estado: estadoMic, lectura } = useMicPitch({
