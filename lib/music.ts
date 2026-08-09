@@ -288,6 +288,55 @@ export interface Chord {
   quality: ChordQuality;
 }
 
+// ---------------------------------------------------------------------------
+// Inversiones
+// ---------------------------------------------------------------------------
+
+/**
+ * Invertir es agarrar la nota de abajo y subirla una octava. Nada más.
+ * El acorde sigue siendo el mismo —las mismas notas— pero cambia cuál queda
+ * en el bajo, y con eso cambia el color y la comodidad de la mano.
+ *
+ * Un acorde de tres notas tiene dos inversiones; uno de cuatro, tres.
+ */
+export function invertir(pitches: Pitch[], n: number): Pitch[] {
+  const out = [...pitches];
+  for (let i = 0; i < n; i++) {
+    const grave = out.shift();
+    if (grave === undefined) break;
+    out.push(grave + 12);
+  }
+  return out;
+}
+
+/** Cuántas inversiones tiene un acorde: siempre una menos que sus notas. */
+export const cantidadDeInversiones = (q: ChordQuality) => q.stack.length;
+
+export const NOMBRES_INVERSION = [
+  "fundamental",
+  "1ª inversión",
+  "2ª inversión",
+  "3ª inversión",
+] as const;
+
+/** Qué grado del acorde queda abajo en cada inversión: 1, 3, 5, 7. */
+export const GRADOS_ACORDE = ["1", "3", "5", "7"] as const;
+
+/**
+ * Cifrado con barra: C/E es un Do mayor con el Mi en el bajo. Es como se
+ * escribe una inversión cuando importa qué nota quedó abajo.
+ */
+export function simboloConBajo(
+  root: PitchClass,
+  q: ChordQuality,
+  inversion: number,
+): string {
+  const base = chordSymbol(root, q);
+  if (inversion === 0) return base;
+  const bajo = mod12(root + intervalsOf(q)[inversion]);
+  return `${base}/${NOTES_EN[bajo]}`;
+}
+
 export function allChords(filter?: (q: ChordQuality) => boolean): Chord[] {
   const qs = filter ? CHORD_QUALITIES.filter(filter) : CHORD_QUALITIES;
   const out: Chord[] = [];
@@ -316,10 +365,17 @@ export type Hand = "izquierda" | "derecha";
 /** De qué lado de la posición queda el grado que se saltea. */
 export type Gap = "abajo" | "arriba";
 
+/** Para dónde se va desplazando la mano. */
+export type Sentido = "sube" | "baja";
+
 export interface ExerciseStep {
   pitch: Pitch;
   finger: number;
-  /** En qué desplazamiento de la mano estamos (0 = la posición inicial). */
+  /** Grado más grave de las cinco teclas apoyadas en este momento. */
+  home: number;
+  /** De qué lado está el hueco ahora: en el ejercicio completo cambia a mitad. */
+  gap: Gap;
+  /** Cuántos desplazamientos van (0 = la posición inicial). */
   position: number;
   /** Marca la nota en la que la mano se corre un lugar. */
   isNewPosition?: boolean;
@@ -335,15 +391,10 @@ export function positionOffsets(gap: Gap): number[] {
   return gap === "abajo" ? [0, 2, 3, 4, 5] : [0, 1, 2, 3, 5];
 }
 
-/** Las cinco teclas apoyadas en el desplazamiento `position`. */
-export function positionPitches(
-  gap: Gap,
-  position: number,
-  base: Pitch = 60,
-  startDegree = 0,
-): Pitch[] {
-  return positionOffsets(gap).map((o) =>
-    scaleDegreeToPitch(startDegree + position + o, base),
+/** Las cinco teclas que la mano tiene apoyadas en un momento dado. */
+export function manoEn(step: ExerciseStep, base: Pitch = 60): Pitch[] {
+  return positionOffsets(step.gap).map((o) =>
+    scaleDegreeToPitch(step.home + o, base),
   );
 }
 
@@ -371,8 +422,34 @@ export function buildExercise(opts: {
   positions?: number;
   startDegree?: number;
   base?: Pitch;
+  sentido?: Sentido;
+  /**
+   * La primera nota ya sonó en la fase anterior (para encadenar subida y
+   * bajada sin repetirla).
+   */
+  incluirPrimera?: boolean;
+  /**
+   * Cómo termina la última posición. `cierra` vuelve a su nota de arranque;
+   * `solo-ida` corta al llegar al otro extremo, que es lo que hace falta
+   * cuando después sigue otra fase o cuando el ejercicio termina ahí.
+   */
+  ultima?: "cierra" | "solo-ida";
+  /** Desde qué número empezar a contar las posiciones, para encadenar fases. */
+  desdePosicion?: number;
 }): ExerciseStep[] {
-  const { hand, gap, positions = 8, startDegree = 0, base = 60 } = opts;
+  const {
+    hand,
+    gap,
+    positions = 8,
+    startDegree = 0,
+    base = 60,
+    sentido = "sube",
+    incluirPrimera = true,
+    ultima = "cierra",
+    desdePosicion = 0,
+  } = opts;
+
+  const dir = sentido === "sube" ? 1 : -1;
   const offsets = positionOffsets(gap);
   // En la izquierda el dedo 5 toca la nota más grave; en la derecha, el 1.
   const fingers = hand === "izquierda" ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
@@ -384,27 +461,77 @@ export function buildExercise(opts: {
   const vuelta = gap === "abajo" ? [3, 2, 1] : [1, 2, 3];
 
   const steps: ExerciseStep[] = [];
-  const nota = (position: number, i: number, isNewPosition = false) => ({
-    pitch: scaleDegreeToPitch(startDegree + position + offsets[i], base),
-    finger: fingers[i],
-    position,
-    isNewPosition,
-  });
+  const nota = (p: number, i: number, isNewPosition = false): ExerciseStep => {
+    const home = startDegree + dir * p;
+    return {
+      pitch: scaleDegreeToPitch(home + offsets[i], base),
+      finger: fingers[i],
+      home,
+      gap,
+      position: desdePosicion + p,
+      isNewPosition,
+    };
+  };
 
   for (let p = 0; p < positions; p++) {
     // La primera nota de cada posición ya sonó: es la nota del desplazamiento
-    // con la que cerró la posición anterior. Sólo la posición 0 tiene que
-    // tocarla.
-    if (p === 0) steps.push(nota(p, lead, true));
+    // con la que cerró la posición anterior. Sólo la primera de todas hay que
+    // tocarla, y ni siquiera eso si viene encadenada de otra fase.
+    if (p === 0 && incluirPrimera) steps.push(nota(p, lead, true));
+
+    const esUltima = p === positions - 1;
     for (const i of ida.slice(1)) steps.push(nota(p, i));
+    if (esUltima && ultima === "solo-ida") break;
+
     for (const i of vuelta) steps.push(nota(p, i));
     // El desplazamiento: el dedo que guía cae un lugar más adentro y con eso
     // ya arrancó la posición siguiente.
-    if (p < positions - 1) steps.push(nota(p + 1, lead, true));
-    // La última cierra sobre su propia nota de arranque: la octava.
+    if (!esUltima) steps.push(nota(p + 1, lead, true));
     else steps.push(nota(p, lead));
   }
   return steps;
+}
+
+/**
+ * El ejercicio completo: sube una octava con el hueco abajo y baja una octava
+ * con el hueco arriba.
+ *
+ * El pivote es lo lindo: al terminar la subida el dedo 1 está en la nota más
+ * aguda, y la bajada arranca *de esa misma nota*. La mano no se mueve de
+ * lugar, sólo se reacomoda —el hueco pasa del lado del dedo 5 al lado del
+ * dedo 1— y ahora el que saltea y se desplaza es el agudo. Es el mismo
+ * ejercicio dado vuelta, sin cortar el hilo.
+ */
+export function buildExerciseCompleto(opts: {
+  hand: Hand;
+  base?: Pitch;
+  startDegree?: number;
+  /** Desplazamientos por tramo. 8 = una octava para cada lado. */
+  positions?: number;
+}): ExerciseStep[] {
+  const { hand, base = 60, startDegree = 0, positions = 8 } = opts;
+  const subida = buildExercise({
+    hand,
+    gap: "abajo",
+    sentido: "sube",
+    positions,
+    startDegree,
+    base,
+    ultima: "solo-ida",
+  });
+  const bajada = buildExercise({
+    hand,
+    gap: "arriba",
+    sentido: "baja",
+    positions,
+    // Arranca donde terminó la subida, con la mano en el mismo lugar.
+    startDegree: startDegree + positions - 1,
+    base,
+    incluirPrimera: false,
+    ultima: "solo-ida",
+    desdePosicion: positions,
+  });
+  return [...subida, ...bajada];
 }
 
 // ---------------------------------------------------------------------------

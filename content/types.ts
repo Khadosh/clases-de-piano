@@ -6,16 +6,30 @@
  * nueva es escribir bloques, nunca tocar componentes.
  */
 
-import type { Gap, Hand } from "@/lib/music";
+import type { Hand } from "@/lib/music";
 
 export type Block =
+  | SectionBlock
   | ProseBlock
   | CorrectionBlock
   | ChordLabBlock
+  | InversionsBlock
   | ExerciseBlock
   | HandsBlock
   | NomenclatureBlock
   | QuoteBlock;
+
+/**
+ * Divide la clase en partes. No dibuja contenido: pone un título grande y
+ * arma el índice de la clase, que se calcula solo a partir de estos bloques.
+ * Las clases largas sin esto se vuelven un chorizo.
+ */
+export interface SectionBlock {
+  kind: "section";
+  title: string;
+  intro?: string;
+  emoji: string;
+}
 
 /** Texto suelto. `text` acepta *asteriscos* para resaltar. */
 export interface ProseBlock {
@@ -47,6 +61,15 @@ export interface ChordLabBlock {
   dictation?: boolean;
 }
 
+/** Las inversiones de un acorde: la misma receta con otra nota en el bajo. */
+export interface InversionsBlock {
+  kind: "inversions";
+  title: string;
+  intro?: string;
+  /** Ids de CHORD_QUALITIES. Conviene mezclar tríadas y séptimas. */
+  qualities: string[];
+}
+
 /** El ejercicio de posiciones que sube y baja desplazándose. */
 export interface ExerciseBlock {
   kind: "exercise";
@@ -55,8 +78,11 @@ export interface ExerciseBlock {
   variants: {
     label: string;
     hand: Hand | "ambas";
-    /** De qué lado de la mano queda el grado que se saltea. */
-    gap: Gap;
+    /**
+     * `completo` sube una octava con el hueco abajo y baja otra con el hueco
+     * arriba. `sube` y `baja` son cada tramo por separado, para estudiarlos.
+     */
+    recorrido: "completo" | "sube" | "baja";
     note?: string;
   }[];
 }

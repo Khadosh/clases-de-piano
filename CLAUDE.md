@@ -34,13 +34,19 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 
 | Bloque | Para qué | Genera |
 |---|---|---|
+| `section` | Partir la clase en temas | Título grande + entrada en el índice de la clase |
 | `prose` | Contexto, cómo venía la mano, qué se habló | Texto. `*así*` resalta en amarillo |
 | `correction` | Algo que el profe corrigió | Tarjeta con "lo que hacía" / "lo que va" + la analogía destacada |
 | `quote` | Una frase del profe que quedó picando | Cita grande |
 | `chord-lab` | Un set de acordes | Teclado interactivo con selector, sonido y modo dictado |
-| `exercise` | El ejercicio de posiciones que se desplaza | Reproductor con variantes, metrónomo y teclado animado |
+| `inversions` | Inversiones de un acorde | Selector de inversión, cifrado con barra y "girarlas todas" |
+| `exercise` | El ejercicio de posiciones que se desplaza | Reproductor con variantes, metrónomo, teclado animado y micrófono |
 | `hands` | Un reparto de notas entre las dos manos | Teclado con las dos manos en colores + intercambio automático |
 | `nomenclature` | Cifrado inglés | Tablita de ejemplos + quiz |
+
+**Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
+lee como un chorizo. El índice de arriba de la clase se arma solo a partir de
+ellas, así que dividir es gratis.
 
 También hay dos campos sueltos por clase:
 
@@ -60,8 +66,26 @@ Si en una clase aparece un acorde nuevo:
    cifrado inglés, una línea de `vibe` y el número de clase en `learnedIn`.
 2. Referenciar su `id` desde el bloque `chord-lab` de esa clase.
 
-El teclado, el dictado, el quiz, el identificador de acordes y la página
-`/acordes` lo levantan solos. No hay que tocar nada más.
+El teclado, el dictado, las inversiones, el quiz, el identificador de acordes y
+la página `/acordes` lo levantan solos. No hay que tocar nada más — incluidas
+las inversiones, que se calculan de la cantidad de notas del `stack`.
+
+## El ejercicio de posiciones
+
+Vive en `buildExercise` y `buildExerciseCompleto`, en `lib/music.ts`. Dos cosas
+que no son obvias y cuesta reconstruir:
+
+- **Nunca vuelve al dedo que arrancó.** La última nota de la bajada de cada
+  posición *ya es* la nota nueva del dedo que guía: cierre y desplazamiento son
+  la misma nota, y por eso el ciclo no se corta.
+- **El pivote de arriba no mueve la mano.** Al terminar la subida, el dedo 1
+  está en la nota más aguda y la bajada arranca de esa misma nota. Lo único que
+  pasa es que el hueco cambia de lado (`gap` pasa de `abajo` a `arriba`), o sea
+  que los dedos del medio se reacomodan y el que saltea pasa a ser el agudo.
+
+Por eso cada paso guarda su `home` y su `gap` en vez de un número de posición:
+en el ejercicio completo el `gap` cambia a mitad de camino, y las cinco teclas
+apoyadas (`manoEn`) no se pueden deducir del índice.
 
 ## El micrófono
 

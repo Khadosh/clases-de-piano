@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { LESSONS, formatDate, lessonBySlug, slugOf } from "@/content";
-import { BlockView } from "@/components/Blocks";
+import { BlockView, anchorDe } from "@/components/Blocks";
 
 export function generateStaticParams() {
   return LESSONS.map((l) => ({ slug: slugOf(l) }));
@@ -34,6 +34,7 @@ export default async function ClasePage({
   const idx = LESSONS.findIndex((l) => l.n === lesson.n);
   const anterior = LESSONS[idx - 1];
   const siguiente = LESSONS[idx + 1];
+  const secciones = lesson.blocks.filter((b) => b.kind === "section");
 
   return (
     <article className="pt-10">
@@ -65,6 +66,28 @@ export default async function ClasePage({
           ))}
         </div>
       </header>
+
+      {/* El índice sale solo de los bloques `section`. */}
+      {secciones.length > 1 && (
+        <nav className="card mb-12 px-6 py-5">
+          <p className="mb-3 text-xs tracking-[0.2em] text-humo uppercase">
+            En esta clase
+          </p>
+          <ol className="flex flex-wrap gap-2">
+            {secciones.map((s) => (
+              <li key={s.title}>
+                <a
+                  href={`#${anchorDe(s.title)}`}
+                  className="flex items-center gap-2 rounded-full bg-carta-2 px-4 py-2 text-sm font-semibold transition hover:bg-borde"
+                >
+                  <span>{s.emoji}</span>
+                  {s.title}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
 
       <div className="space-y-12">
         {lesson.blocks.map((block, i) => (

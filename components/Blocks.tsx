@@ -1,5 +1,6 @@
 import type { Block } from "@/content/types";
 import ChordLab from "./ChordLab";
+import InversionLab from "./InversionLab";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -52,8 +53,45 @@ function parseSymbol(sym: string) {
   return { root, quality };
 }
 
+/** El id de ancla de una sección, para el índice de la clase. */
+export const anchorDe = (titulo: string) =>
+  titulo
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
 export function BlockView({ block }: { block: Block }) {
   switch (block.kind) {
+    case "section":
+      return (
+        <section id={anchorDe(block.title)} className="scroll-mt-20 pt-6">
+          <div className="flex items-center gap-3 border-b-2 border-borde pb-3">
+            <span className="text-3xl">{block.emoji}</span>
+            <h2 className="font-display text-3xl font-black tracking-tight sm:text-4xl">
+              {block.title}
+            </h2>
+          </div>
+          {block.intro && (
+            <p className="mt-4 text-lg leading-relaxed text-humo">
+              {rich(block.intro)}
+            </p>
+          )}
+        </section>
+      );
+
+    case "inversions":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <InversionLab qualityIds={block.qualities} />
+        </section>
+      );
+
     case "prose":
       return (
         <section>

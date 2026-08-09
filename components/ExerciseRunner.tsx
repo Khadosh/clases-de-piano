@@ -4,11 +4,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
 import {
   buildExercise,
+  buildExerciseCompleto,
+  manoEn,
   mod12,
   noteName,
-  positionPitches,
   type ExerciseStep,
-  type Gap,
   type Hand,
 } from "@/lib/music";
 import { playNote, wakeAudio } from "@/lib/audio";
@@ -18,13 +18,36 @@ import type { PitchReading } from "@/lib/pitch";
 export interface Variant {
   label: string;
   hand: Hand | "ambas";
-  gap: Gap;
+  recorrido: "completo" | "sube" | "baja";
   note?: string;
 }
 
 const BASE_IZQ = 48; // Do3
 const BASE_DER = 60; // Do4
-const POSICIONES = 8; // una octava
+const POSICIONES = 8; // una octava por tramo
+
+/** Arma el recorrido pedido para una mano. */
+function armar(hand: Hand, recorrido: Variant["recorrido"], base: number) {
+  if (recorrido === "completo")
+    return buildExerciseCompleto({ hand, base, positions: POSICIONES });
+  if (recorrido === "sube")
+    return buildExercise({
+      hand,
+      gap: "abajo",
+      sentido: "sube",
+      positions: POSICIONES,
+      base,
+    });
+  // La bajada suelta arranca arriba y vuelve, con el hueco del lado del agudo.
+  return buildExercise({
+    hand,
+    gap: "arriba",
+    sentido: "baja",
+    positions: POSICIONES,
+    startDegree: POSICIONES - 1,
+    base,
+  });
+}
 
 export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   const [vi, setVi] = useState(0);
@@ -43,27 +66,14 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
 
   const { izq, der } = useMemo(() => {
     const izq =
-      v.hand === "derecha"
-        ? null
-        : buildExercise({
-            hand: "izquierda",
-            gap: v.gap,
-            positions: POSICIONES,
-            base: BASE_IZQ,
-          });
+      v.hand === "derecha" ? null : armar("izquierda", v.recorrido, BASE_IZQ);
     const der =
-      v.hand === "izquierda"
-        ? null
-        : buildExercise({
-            hand: "derecha",
-            gap: v.gap,
-            positions: POSICIONES,
-            base: BASE_DER,
-          });
+      v.hand === "izquierda" ? null : armar("derecha", v.recorrido, BASE_DER);
     return { izq, der };
   }, [v]);
 
   const total = (izq ?? der)!.length;
+  const totalPosiciones = v.recorrido === "completo" ? POSICIONES * 2 : POSICIONES;
 
   const reiniciar = useCallback(() => {
     setI(0);
@@ -172,7 +182,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
     if (!steps) return;
     const step = steps[i];
     // La "casa" de la mano acá y ahora: las cinco teclas apoyadas.
-    for (const pitch of positionPitches(v.gap, step.position, base)) {
+    for (const pitch of manoEn(step, base)) {
       marks.push({ pitch, tone, ghost: true });
     }
     marks.push({
@@ -196,8 +206,15 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   }
 
   const actual = [izq?.[i], der?.[i]].filter(Boolean) as ExerciseStep[];
-  const posicion = ((izq ?? der)![i].position ?? 0) + 1;
+  const paso = (izq ?? der)![i];
+  const posicion = paso.position + 1;
   const desplazando = actual.some((s) => s.isNewPosition);
+  const tramo =
+    v.recorrido === "completo"
+      ? paso.gap === "abajo"
+        ? "subiendo · hueco abajo"
+        : "bajando · hueco arriba"
+      : null;
 
   return (
     <div className="card overflow-hidden">
@@ -313,9 +330,20 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
             }`}
           >
             {desplazando
-              ? `↗ se corre a la posición ${posicion}`
-              : `posición ${posicion} de ${POSICIONES}`}
+              ? `→ se corre a la posición ${posicion}`
+              : `posición ${posicion} de ${totalPosiciones}`}
           </span>
+          {tramo && (
+            <span
+              className={`rounded-lg px-2 py-1 text-xs tracking-wider uppercase ${
+                paso.gap === "abajo"
+                  ? "bg-menta/15 text-menta"
+                  : "bg-uva/15 text-uva"
+              }`}
+            >
+              {tramo}
+            </span>
+          )}
           {actual.map((s, idx) => (
             <span key={idx} className="font-mono">
               <span className="text-humo">dedo</span>{" "}
