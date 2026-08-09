@@ -1,0 +1,51 @@
+# 🎹 Cuaderno de piano
+
+Un cuaderno de clases de piano que **se toca**. Clases con Quique Yance, los
+miércoles.
+
+No son apuntes: los acordes suenan, los ejercicios se mueven solos en el
+teclado y el cifrado inglés se practica hasta que entra.
+
+## Qué hay adentro
+
+- **Línea de tiempo de clases** — una por miércoles, con lo que se corrigió, lo
+  que se vio y lo que quedó para preguntar.
+- **Laboratorio de acordes** — elegís fundamental y receta, ves las teclas y lo
+  escuchás. Con modo *dictado*, que es el juego que hace el profe: sale un
+  cifrado, ponés las manos, después mirás.
+- **Ejercicios animados** — el ejercicio de posiciones que se desplaza, con
+  metrónomo, digitación en las teclas y las dos manos en colores distintos.
+- **Quiz de cifrado inglés** — del cifrado al teclado y del teclado al cifrado,
+  con racha.
+- **Identificador de acordes** — tocás teclas y te dice qué armaste, incluso si
+  es una inversión.
+
+## Cómo crece
+
+Cada clase es un archivo en `content/lessons/`. Se agrega uno, se suma al
+índice, y la home, los contadores, la sala de práctica y la navegación se
+actualizan solas. Un commit por miércoles.
+
+Las instrucciones completas están en [`CLAUDE.md`](./CLAUDE.md).
+
+## Correr local
+
+```bash
+npm install
+npm run dev
+```
+
+## Deploy
+
+Es una app de Next.js 15 completamente estática (todas las rutas se
+prerenderizan en el build). En Vercel: importar el repo y darle deploy, sin
+configuración ni variables de entorno.
+
+## Cómo está hecho
+
+Next.js 15 (App Router) · React 19 · TypeScript · Tailwind v4.
+
+Sin base de datos, sin CMS, sin assets externos: el piano es un SVG dibujado a
+mano y el sonido son osciladores de WebAudio. El motor de teoría musical vive
+en [`lib/music.ts`](./lib/music.ts) y arma cada acorde apilando semitonos, igual
+que como se cuenta en clase.

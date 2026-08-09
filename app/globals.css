@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@theme {
+  --color-noche: #0a0912;
+  --color-noche-2: #12101f;
+  --color-carta: #1b182c;
+  --color-carta-2: #24203a;
+  --color-borde: #322c4d;
+  --color-tiza: #f4f1e8;
+  --color-humo: #a49dbd;
+
+  --color-sol: #ffcb3d;
+  --color-luna: #7aa2ff;
+  --color-brasa: #ff6f4e;
+  --color-menta: #4fd6a9;
+  --color-uva: #c07dff;
+  --color-rosa: #ff8ec4;
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-blob: 1.75rem;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-noche);
+    color: var(--color-tiza);
+    font-family: var(--font-sans);
+    /* Trama de teclas muy tenue, para que el fondo no sea un vacío. */
+    background-image:
+      radial-gradient(
+        900px 500px at 12% -8%,
+        color-mix(in oklab, var(--color-uva) 20%, transparent),
+        transparent
+      ),
+      radial-gradient(
+        800px 460px at 92% 4%,
+        color-mix(in oklab, var(--color-menta) 14%, transparent),
+        transparent
+      ),
+      repeating-linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.022) 0 2px,
+        transparent 2px 46px
+      );
+    background-attachment: fixed;
+  }
+
+  ::selection {
+    background: var(--color-sol);
+    color: #12101f;
+  }
+}
+
+@utility card {
+  background: linear-gradient(
+    150deg,
+    var(--color-carta),
+    var(--color-noche-2) 70%
+  );
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radius-blob);
+}
+
+/* El subrayado grueso de los títulos. Con text-decoration en vez de una barra
+   posicionada a mano: así sigue a las letras aunque el line-height sea
+   apretadísimo, como en las portadas. */
+@utility marcador {
+  color: var(--color-sol);
+  text-decoration: underline;
+  text-decoration-color: color-mix(
+    in oklab,
+    var(--color-sol) 45%,
+    transparent
+  );
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.1em;
+  text-decoration-skip-ink: none;
+}
+
+@keyframes flotar {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-7px) rotate(var(--tilt, 0deg));
+  }
+}
+
+@utility flota {
+  animation: flotar 6s ease-in-out infinite;
+}
+
+@keyframes pulso-tecla {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-sol) 60%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+
+@utility pulso {
+  animation: pulso-tecla 1.1s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
