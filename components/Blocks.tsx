@@ -166,8 +166,16 @@ export function BlockView({ block }: { block: Block }) {
 
     case "nomenclature": {
       const parsed = block.examples
-        .map((sym) => ({ sym, chord: parseSymbol(sym) }))
-        .filter((e) => e.chord);
+        .map((sym) => {
+          const chord = parseSymbol(sym);
+          if (!chord) return null;
+          const pitches = chordPitches(60 + chord.root, chord.quality);
+          // Una octava y media arrancando en el Do de abajo del acorde: entra
+          // cualquier fundamental sin que el teclado cambie de tamaño.
+          const from = Math.floor((pitches[0] - 1) / 12) * 12;
+          return { sym, chord, pitches, from };
+        })
+        .filter((e) => e !== null);
       return (
         <section>
           <Titulo>{block.title}</Titulo>
@@ -176,30 +184,30 @@ export function BlockView({ block }: { block: Block }) {
               {rich(block.intro)}
             </p>
           )}
-          <div className="mb-4 grid gap-2 sm:grid-cols-2">
-            {parsed.map(({ sym, chord }) => (
-              <div
-                key={sym}
-                className="card flex items-center gap-3 px-4 py-3"
-              >
-                <span className="font-display w-20 shrink-0 text-2xl font-black text-sol">
-                  {sym}
-                </span>
-                <span className="min-w-0 flex-1 text-sm text-humo">
-                  {chord!.quality.name}
-                  <span className="ml-2 font-mono text-xs">
-                    {chord!.quality.stack.join("+")}
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            {parsed.map(({ sym, chord, pitches, from }) => (
+              <div key={sym} className="card p-4">
+                <div className="mb-3 flex flex-wrap items-baseline gap-x-3">
+                  <span className="font-display text-2xl font-black text-sol">
+                    {sym}
                   </span>
-                </span>
-                <span className="w-28 shrink-0">
+                  <span className="text-sm text-humo">
+                    {chord.quality.name}
+                  </span>
+                  <span className="ml-auto rounded-full bg-carta-2 px-2.5 py-1 font-mono text-xs">
+                    {chord.quality.stack.join(" + ")}
+                  </span>
+                </div>
+                <div className="rounded-xl bg-noche-2 p-2">
                   <Keyboard
-                    from={60}
-                    to={76}
-                    marks={chordPitches(60 + chord!.root, chord!.quality).map(
-                      (p) => ({ pitch: p, tone: chord!.quality.tone }),
-                    )}
+                    from={from}
+                    to={from + 17}
+                    marks={pitches.map((p) => ({
+                      pitch: p,
+                      tone: chord.quality.tone,
+                    }))}
                   />
-                </span>
+                </div>
               </div>
             ))}
           </div>

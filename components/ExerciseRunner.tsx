@@ -5,9 +5,9 @@ import Keyboard, { type Mark } from "./Keyboard";
 import {
   buildExercise,
   noteName,
-  positionDegrees,
-  scaleDegreeToPitch,
+  positionPitches,
   type ExerciseStep,
+  type Gap,
   type Hand,
 } from "@/lib/music";
 import { playNote, wakeAudio } from "@/lib/audio";
@@ -15,14 +15,13 @@ import { playNote, wakeAudio } from "@/lib/audio";
 export interface Variant {
   label: string;
   hand: Hand | "ambas";
-  gapAt: 5 | 1;
+  gap: Gap;
   note?: string;
 }
 
 const BASE_IZQ = 48; // Do3
 const BASE_DER = 60; // Do4
-const POSICIONES = 4;
-const PASOS_POR_POSICION = 9; // 5 subiendo + 4 bajando
+const POSICIONES = 8; // una octava
 
 export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   const [vi, setVi] = useState(0);
@@ -37,7 +36,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
         ? null
         : buildExercise({
             hand: "izquierda",
-            gapAt: v.gapAt,
+            gap: v.gap,
             positions: POSICIONES,
             base: BASE_IZQ,
           });
@@ -46,7 +45,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
         ? null
         : buildExercise({
             hand: "derecha",
-            gapAt: v.gapAt,
+            gap: v.gap,
             positions: POSICIONES,
             base: BASE_DER,
           });
@@ -89,16 +88,11 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
     base: number,
   ) => {
     if (!steps) return;
-    const pos = Math.floor(i / PASOS_POR_POSICION);
-    // La "casa" de la mano en esta posición: las cinco teclas apoyadas.
-    for (const d of positionDegrees(v.gapAt)) {
-      marks.push({
-        pitch: scaleDegreeToPitch(pos + d, base),
-        tone,
-        ghost: true,
-      });
-    }
     const step = steps[i];
+    // La "casa" de la mano acá y ahora: las cinco teclas apoyadas.
+    for (const pitch of positionPitches(v.gap, step.position, base)) {
+      marks.push({ pitch, tone, ghost: true });
+    }
     marks.push({
       pitch: step.pitch,
       tone,
@@ -110,7 +104,8 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   pushHand(der, "der", BASE_DER);
 
   const actual = [izq?.[i], der?.[i]].filter(Boolean) as ExerciseStep[];
-  const posicion = Math.floor(i / PASOS_POR_POSICION) + 1;
+  const posicion = ((izq ?? der)![i].position ?? 0) + 1;
+  const desplazando = actual.some((s) => s.isNewPosition);
 
   return (
     <div className="card overflow-hidden">
@@ -188,8 +183,16 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-noche-2 px-4 py-3 text-sm">
-          <span className="rounded-lg bg-carta-2 px-2 py-1 text-xs tracking-wider text-humo uppercase">
-            posición {posicion} de {POSICIONES}
+          <span
+            className={`rounded-lg px-2 py-1 text-xs tracking-wider uppercase transition ${
+              desplazando
+                ? "bg-sol font-bold text-noche"
+                : "bg-carta-2 text-humo"
+            }`}
+          >
+            {desplazando
+              ? `↗ se corre a la posición ${posicion}`
+              : `posición ${posicion} de ${POSICIONES}`}
           </span>
           {actual.map((s, idx) => (
             <span key={idx} className="font-mono">

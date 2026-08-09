@@ -59,35 +59,35 @@ const lesson: Lesson = {
       kind: "exercise",
       title: "El ejercicio que se desplaza",
       intro:
-        "Do – mi – fa – sol – la. El dedo 5 arranca, se saltea un grado, y de ahí para arriba van todas seguidas. Se sube, se baja, y cuando volvés al dedo 5 lo corrés un lugar y arrancás de nuevo: re – fa – sol – la – si. Y así.",
+        "Do – mi – fa – sol – la, y de ahí para abajo: sol – fa – mi – *re*. Ese re ya es la mano corrida un lugar, así que el ciclo nunca vuelve al dedo que arrancó ni se corta: sigue derecho hasta completar una octava.",
       variants: [
         {
-          label: "Izquierda, salto abajo",
+          label: "Izquierda, hueco abajo",
           hand: "izquierda",
-          gapAt: 5,
-          note: "La versión original. El hueco queda entre el dedo 5 y el 4.",
+          gap: "abajo",
+          note: "La versión original. El dedo 5 arranca y se saltea un grado; el hueco queda entre el 5 y el 4.",
         },
         {
-          label: "Izquierda, invertido",
+          label: "Izquierda, hueco arriba",
           hand: "izquierda",
-          gapAt: 1,
-          note: "El mismo ejercicio con el salto del otro lado: sale del dedo 1 y el hueco queda arriba.",
+          gap: "arriba",
+          note: "El invertido: arranca el dedo 1, baja hasta el 5, vuelve, y el 1 se corre un lugar.",
         },
         {
-          label: "Derecha",
+          label: "Derecha, hueco abajo",
           hand: "derecha",
-          gapAt: 5,
-          note: "Misma figura, otra mano. Ojo con el pulgar, que tiende a hundirse.",
+          gap: "abajo",
+          note: "Las mismas notas que la izquierda, pero con la digitación al revés: acá el 1 es el que arranca. Ojo con el pulgar, que tiende a hundirse.",
         },
         {
-          label: "Derecha, invertido",
+          label: "Derecha, hueco arriba",
           hand: "derecha",
-          gapAt: 1,
+          gap: "arriba",
         },
         {
           label: "Las dos manos",
           hand: "ambas",
-          gapAt: 5,
+          gap: "abajo",
           note: "El objetivo final de la semana. Primero lentísimo, en espejo.",
         },
       ],
@@ -126,7 +126,8 @@ const lesson: Lesson = {
     "Dictado de acordes: que alguien tire un cifrado raro y ponerlo sin pensar demasiado.",
   ],
   openQuestions: [
-    "En la versión invertida del ejercicio, ¿el salto va entre el dedo 1 y el 2, o el recorrido se lee al revés? Confirmar con el profe.",
+    "En las variantes de la mano derecha, ¿el hueco va del mismo lado del teclado que en la izquierda (mismas notas, otra digitación) o del mismo lado de la mano (el dedo 5 saltea igual, y entonces son otras notas)? Están las dos para probar.",
+    "Al llegar a la octava, ¿se vuelve bajando con la misma figura o se corta ahí?",
     "En el Sol repartido, ¿la inversión sube la izquierda una octava o cruza las manos?",
   ],
 };

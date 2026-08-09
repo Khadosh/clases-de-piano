@@ -313,55 +313,96 @@ export function scaleDegreeToPitch(degree: number, base: Pitch = 60): Pitch {
 
 export type Hand = "izquierda" | "derecha";
 
+/** De qué lado de la posición queda el grado que se saltea. */
+export type Gap = "abajo" | "arriba";
+
 export interface ExerciseStep {
   pitch: Pitch;
   finger: number;
-  /** Marca el momento en el que la mano se desplaza un lugar. */
+  /** En qué desplazamiento de la mano estamos (0 = la posición inicial). */
+  position: number;
+  /** Marca la nota en la que la mano se corre un lugar. */
   isNewPosition?: boolean;
+}
+
+/**
+ * Los cinco grados que ocupa la mano, de grave a agudo, relativos al más grave.
+ *
+ * Con el hueco abajo: 0, 2, 3, 4, 5 → do _ mi fa sol la.
+ * Con el hueco arriba: 0, 1, 2, 3, 5 → do re mi fa _ la.
+ */
+export function positionOffsets(gap: Gap): number[] {
+  return gap === "abajo" ? [0, 2, 3, 4, 5] : [0, 1, 2, 3, 5];
+}
+
+/** Las cinco teclas apoyadas en el desplazamiento `position`. */
+export function positionPitches(
+  gap: Gap,
+  position: number,
+  base: Pitch = 60,
+  startDegree = 0,
+): Pitch[] {
+  return positionOffsets(gap).map((o) =>
+    scaleDegreeToPitch(startDegree + position + o, base),
+  );
 }
 
 /**
  * El ejercicio de la clase 1.
  *
- * En su versión original (mano izquierda, dedo 5 abajo): do - mi - fa - sol - la.
- * O sea: el dedo 5 arranca, se saltea un grado, y de ahí en adelante van todos
- * seguidos. Sube, baja, y cuando vuelve el dedo 5 se corre un lugar y empieza
- * de nuevo: re - fa - sol - la - si.
+ * Es un recorrido continuo, no una ida y vuelta que cierra: **nunca se vuelve
+ * al dedo que arrancó**. Se sube hasta el otro extremo de la mano, se baja, y
+ * la última nota de la bajada ya es la nota nueva del dedo que guía: ahí la
+ * mano se corrió un lugar y el ciclo sigue sin cortarse.
  *
- * `gapAt: 5` pone el salto del lado del dedo 5; `gapAt: 1`, del lado del dedo 1
- * (la variante invertida).
+ * Con la izquierda y el hueco abajo, arrancando en do, sale así:
+ *
+ *   do mi fa sol la sol fa mi | re · fa sol la si la sol fa | mi · sol la si do…
+ *   └── posición 1 ────────┘   └ posición 2 ──────────────┘   └ posición 3 …
+ *
+ * El "re" cierra la primera posición y abre la segunda al mismo tiempo.
+ * Se sigue hasta completar una octava; recién la última posición cierra
+ * volviendo a su propia nota de arranque, para terminar en algún lado.
  */
-export function positionDegrees(gapAt: 5 | 1): number[] {
-  // Grados relativos al primer grado de la posición.
-  return gapAt === 5 ? [0, 2, 3, 4, 5] : [0, 1, 2, 3, 5];
-}
-
 export function buildExercise(opts: {
   hand: Hand;
-  gapAt: 5 | 1;
-  positions: number;
+  gap: Gap;
+  /** Cuántos desplazamientos. 8 = una octava entera. */
+  positions?: number;
   startDegree?: number;
   base?: Pitch;
 }): ExerciseStep[] {
-  const { hand, gapAt, positions, startDegree = 0, base = 60 } = opts;
-  const rel = positionDegrees(gapAt);
+  const { hand, gap, positions = 8, startDegree = 0, base = 60 } = opts;
+  const offsets = positionOffsets(gap);
+  // En la izquierda el dedo 5 toca la nota más grave; en la derecha, el 1.
+  const fingers = hand === "izquierda" ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
+
+  // El dedo que guía es el que está del lado del hueco: es el que arranca,
+  // el que cierra y el que se desplaza.
+  const lead = gap === "abajo" ? 0 : 4;
+  const ida = gap === "abajo" ? [0, 1, 2, 3, 4] : [4, 3, 2, 1, 0];
+  const vuelta = gap === "abajo" ? [3, 2, 1] : [1, 2, 3];
+
   const steps: ExerciseStep[] = [];
+  const nota = (position: number, i: number, isNewPosition = false) => ({
+    pitch: scaleDegreeToPitch(startDegree + position + offsets[i], base),
+    finger: fingers[i],
+    position,
+    isNewPosition,
+  });
 
   for (let p = 0; p < positions; p++) {
-    const degrees = rel.map((d) => startDegree + p + d);
-    // El dedo 5 de la izquierda toca la nota más grave; el de la derecha, la más
-    // aguda. La secuencia siempre sube y baja; lo que cambia es la digitación.
-    const fingers =
-      hand === "izquierda" ? [5, 4, 3, 2, 1] : [1, 2, 3, 4, 5];
-
-    const up = degrees.map((d, i) => ({
-      pitch: scaleDegreeToPitch(d, base),
-      finger: fingers[i],
-      isNewPosition: i === 0,
-    }));
-    // La vuelta no repite la nota de arriba ni la de abajo.
-    const down = up.slice(0, -1).reverse().map((s) => ({ ...s, isNewPosition: false }));
-    steps.push(...up, ...down);
+    // La primera nota de cada posición ya sonó: es la nota del desplazamiento
+    // con la que cerró la posición anterior. Sólo la posición 0 tiene que
+    // tocarla.
+    if (p === 0) steps.push(nota(p, lead, true));
+    for (const i of ida.slice(1)) steps.push(nota(p, i));
+    for (const i of vuelta) steps.push(nota(p, i));
+    // El desplazamiento: el dedo que guía cae un lugar más adentro y con eso
+    // ya arrancó la posición siguiente.
+    if (p < positions - 1) steps.push(nota(p + 1, lead, true));
+    // La última cierra sobre su propia nota de arranque: la octava.
+    else steps.push(nota(p, lead));
   }
   return steps;
 }

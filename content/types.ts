@@ -6,7 +6,7 @@
  * nueva es escribir bloques, nunca tocar componentes.
  */
 
-import type { Hand } from "@/lib/music";
+import type { Gap, Hand } from "@/lib/music";
 
 export type Block =
   | ProseBlock
@@ -55,7 +55,8 @@ export interface ExerciseBlock {
   variants: {
     label: string;
     hand: Hand | "ambas";
-    gapAt: 5 | 1;
+    /** De qué lado de la mano queda el grado que se saltea. */
+    gap: Gap;
     note?: string;
   }[];
 }
