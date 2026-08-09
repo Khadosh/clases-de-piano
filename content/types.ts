@@ -13,6 +13,7 @@ export type Block =
   | ProseBlock
   | CorrectionBlock
   | ChordLabBlock
+  | SemitonesBlock
   | ExerciseBlock
   | HandsBlock
   | NomenclatureBlock
@@ -64,6 +65,16 @@ export interface ChordLabBlock {
    * fila más, y no uno aparte.
    */
   inversiones?: boolean;
+}
+
+/**
+ * Por qué mi♯ es fa: los dos lugares del teclado donde no hay negra en el
+ * medio. No lleva datos porque la escala de Do es siempre la misma.
+ */
+export interface SemitonesBlock {
+  kind: "semitonos";
+  title: string;
+  intro?: string;
 }
 
 /** El ejercicio de posiciones que sube y baja desplazándose. */

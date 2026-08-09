@@ -56,14 +56,24 @@ const lesson: Lesson = {
         "Toda la teoría de la clase entra en una idea: un acorde es una *receta de distancias*, y la fundamental es sólo desde dónde empezás a contar.",
     },
     {
-      kind: "prose",
-      title: "Primero: la receta",
-      text: "No hay que memorizar doce acordes mayores: hay que memorizar *una receta*. Se cuenta en semitonos (teclas, blancas y negras juntas) desde un dedo al siguiente. Cambiar de fundamental es la misma receta empezando en otra tecla.",
+      kind: "quote",
+      text: "En la escala de do, el fa en realidad es un mi sostenido.",
+      by: "Quique",
     },
     {
-      kind: "quote",
-      text: "Sus2 y sus4 son el mismo acorde con el dedo del medio corrido un lugar: para abajo o para arriba.",
-      by: "Quique",
+      kind: "semitonos",
+      title: "Las dos grietas del teclado",
+      intro:
+        "Dicho así suena a chicana, y es la cosa más importante de la clase. Las notas tienen nombre de letra, pero *las letras mienten sobre las distancias*: de do a re hay dos semitonos y de mi a fa hay uno solo. La diferencia está a la vista — entre mi y fa no hay tecla negra donde caer, así que el sostenido de mi no tiene más remedio que ser fa. Lo mismo pasa entre si y do.",
+    },
+    {
+      kind: "prose",
+      text: "Ahora, *escribir* la escala de do con un mi♯ adentro sería raro, y hay una razón: en una escala cada letra se usa una sola vez. Do re mi fa sol la si — siete notas, siete letras. Si pusieras mi♯ te quedarías sin fa y tendrías dos mi.\n\nPero hay escalas donde no te queda otra. En fa♯ mayor la séptima *se escribe* mi♯, no fa, porque la efe ya está ocupada por la tónica. Ahí el dato deja de ser un juego mental y se vuelve la única forma correcta de escribirlo.",
+    },
+    {
+      kind: "prose",
+      title: "Por eso se cuenta en semitonos",
+      text: "Si las letras no dicen la distancia, hay que contar teclas. Y ahí se acaba el problema: no hay que memorizar doce acordes mayores, hay que memorizar *una receta* en semitonos. Cambiar de fundamental es la misma receta empezando en otra tecla.\n\nSus2 y sus4, por ejemplo, son el mismo acorde con el dedo del medio corrido un lugar: para abajo o para arriba.",
     },
     {
       kind: "prose",

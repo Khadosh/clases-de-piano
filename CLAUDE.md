@@ -39,6 +39,7 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `correction` | Algo que el profe corrigió | Tarjeta con "lo que hacía" / "lo que va" + la analogía destacada |
 | `quote` | Una frase del profe que quedó picando | Cita grande |
 | `chord-lab` | Un set de acordes | Teclado con fundamental, receta e inversión, sonido y dictado |
+| `semitonos` | Por qué mi♯ es fa | Octava de Do con las distancias y un botón para reescribirlas |
 | `exercise` | El ejercicio de posiciones que se desplaza | Reproductor con variantes, metrónomo, teclado animado y micrófono |
 | `hands` | Un reparto de notas entre las dos manos | Teclado con las dos manos en colores + intercambio automático |
 | `nomenclature` | Cifrado inglés | Tablita de ejemplos + quiz |
@@ -46,6 +47,11 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 **Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
 lee como un chorizo. El índice de arriba de la clase se arma solo a partir de
 ellas, así que dividir es gratis.
+
+**Las citas son citas.** El bloque `quote` lleva el nombre del profe abajo, así
+que ahí va sólo lo que dijo de verdad. Si el concepto está bien pero la frase
+es una reconstrucción, va como `prose` sin atribuir a nadie. Ya pasó una vez de
+inventar una cita que sonaba a él y no era suya.
 
 También hay dos campos sueltos por clase:
 

@@ -1,5 +1,6 @@
 import type { Block } from "@/content/types";
 import ChordLab from "./ChordLab";
+import Semitonos from "./Semitonos";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -82,11 +83,14 @@ export function BlockView({ block }: { block: Block }) {
 
     case "prose":
       return (
-        <section>
+        <section className="space-y-4">
           {block.title && <Titulo>{block.title}</Titulo>}
-          <p className="text-lg leading-relaxed text-humo">
-            {rich(block.text)}
-          </p>
+          {/* Una línea en blanco separa párrafos, como en cualquier texto. */}
+          {block.text.split(/\n\s*\n/).map((parrafo, i) => (
+            <p key={i} className="text-lg leading-relaxed text-humo">
+              {rich(parrafo)}
+            </p>
+          ))}
         </section>
       );
 
@@ -162,6 +166,17 @@ export function BlockView({ block }: { block: Block }) {
             dictation={block.dictation}
             inversiones={block.inversiones}
           />
+        </section>
+      );
+
+    case "semitonos":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Semitonos />
         </section>
       );
 
