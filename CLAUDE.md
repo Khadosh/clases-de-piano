@@ -89,6 +89,14 @@ Reglas que ya están resueltas y conviene no romper:
 de Do2 a Do6. Correlo si tocás `lib/pitch.ts`: el modo en que falla un detector
 de altura es contestar la octava de arriba, y eso se ve enseguida ahí.
 
+Pero los tonos sintéticos sólo dicen si el algoritmo está bien, no si los
+umbrales sirven para un piano de verdad grabado con un celular. Para eso está
+`npm run escuchar -- grabacion.wav`, que pasa una grabación por el detector y
+lista tramo por tramo qué escuchó, con claridad y volumen, más las notas que la
+app habría registrado. Acepta `--clarity` y `--rms` para probar umbrales sin
+tocar el código: la forma de calibrar es correrlo con distintos valores sobre
+una grabación donde se sabe qué se tocó.
+
 **Los acordes no se pueden escuchar todavía.** Detectar varias notas a la vez es
 otro problema (análisis espectral, no autocorrelación) y no está hecho.
 

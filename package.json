@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test:pitch": "node --experimental-strip-types scripts/probar-pitch.mjs"
+    "test:pitch": "node --experimental-strip-types scripts/probar-pitch.mjs",
+    "escuchar": "node --experimental-strip-types scripts/escuchar-grabacion.mjs"
   },
   "dependencies": {
     "next": "^16.3.0",
