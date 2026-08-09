@@ -181,11 +181,6 @@ const lesson: Lesson = {
     "Cada acorde en sus tres posiciones (fundamental, 1ª y 2ª), y las séptimas también en la 3ª.",
     "Dictado de acordes: que alguien tire un cifrado raro y ponerlo sin pensar demasiado.",
   ],
-  openQuestions: [
-    "En la mano derecha, ¿el hueco va del mismo lado del teclado que en la izquierda (mismas notas, otra digitación) o del mismo lado de la mano (el dedo 5 saltea igual, y entonces son otras notas)?",
-    "En el pivote de arriba del ejercicio, ¿la nota más aguda se toca una sola vez (como está acá) o se repite al empezar la bajada?",
-    "En el Sol repartido, ¿la inversión sube la izquierda una octava o cruza las manos?",
-  ],
 };
 
 export default lesson;
