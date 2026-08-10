@@ -69,11 +69,29 @@ Si en una clase aparece un acorde nuevo:
 
 1. Agregar la entrada a `CHORD_QUALITIES` con su `stack`, su `suffix` en
    cifrado inglés, una línea de `vibe` y el número de clase en `learnedIn`.
+   Si no apila terceras (como los sus), además su `grados`.
 2. Referenciar su `id` desde el bloque `chord-lab` de esa clase.
 
 El teclado, el dictado, las inversiones, el quiz, el identificador de acordes y
 la página `/acordes` lo levantan solos. No hay que tocar nada más — incluidas
 las inversiones, que se calculan de la cantidad de notas del `stack`.
+
+**Los acordes se escriben con la letra que les toca, no con la tecla que son.**
+Mi♭ menor es `Mi♭ · Sol♭ · Si♭`, aunque Sol♭ y Fa♯ sean el mismo dedo. La regla
+es una sola y está en `deletrearAcorde()`: cada nota del acorde usa su propia
+letra, y una tríada salta de a letra por medio (Mi Sol Si). Con eso el signo
+sale solo y no hay tabla de excepciones. Las recetas que no apilan terceras
+—sus2 va 1-2-5, sus4 va 1-4-5— lo declaran en su campo `grados`.
+
+Es lo primero que se rompe si alguien vuelve a escribir `NOTES_ES[pc]` para
+mostrar la nota de un acorde: eso da la tecla, no el nombre, y aparecen cosas
+como "Mi♭ menor = Re♯ · Fa♯ · La♯". Para mostrar notas de un acorde va
+`notasDeAcorde()` / `notasDeInversion()`; `noteName()` es sólo para teclas
+sueltas, donde no hay contexto que decida.
+
+Cuando la letra correcta pide un doble signo (Si aumentado sería Si Re♯ Fa♯♯)
+escribimos la tecla llana: Si · Re♯ · Sol. Es mentira en el papel y es lo que se
+lee de un vistazo, que acá gana.
 
 **El dictado se responde en el teclado.** Se aprietan las teclas y la app
 corrige. El criterio es el musical y no el literal: tienen que estar las mismas
@@ -84,6 +102,11 @@ es un caso aparte, porque es *el* error típico de las inversiones.
 
 Corrige recién cuando el acorde está completo. Ir marcando tecla por tecla
 convertiría el ejercicio en adivinar por descarte.
+
+**El rango del teclado se calcula, no se elige.** Un `<Keyboard from to>` con
+números a mano se rompe callado: si una nota cae afuera no se dibuja mal, no se
+dibuja, y el ejercicio queda sin respuesta posible. Ya pasó con Bm7 en un
+teclado de 55 a 79. Para mostrar un acorde va `rangoParaAcorde(pitches)`.
 
 **Armar un acorde y girarlo son la misma operación**, así que son un solo
 bloque (`chord-lab` con `inversiones: true`) y no dos. Se intentó tenerlos

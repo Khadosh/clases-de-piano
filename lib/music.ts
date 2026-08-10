@@ -96,6 +96,94 @@ export function noteName(
   return table[mod12(p)];
 }
 
+// ---------------------------------------------------------------------------
+// Cómo se escribe una nota
+// ---------------------------------------------------------------------------
+
+/**
+ * Las siete letras y su nota sin alterar. Do = 0, Re = 2, Mi = 4…
+ *
+ * Una nota escrita son dos cosas separadas: *qué letra es* y *cuánto se le
+ * corre*. El teclado no distingue —la misma tecla negra es Re♯ y Mi♭— pero el
+ * papel sí, y el nombre del acorde también: Mi♭ menor tiene Sol♭, no Fa♯,
+ * aunque sea el mismo dedo. Es la otra cara de lo que dijo el profe con que
+ * "fa es en realidad mi♯": el nombre depende de dónde venís.
+ */
+export const LETRAS_PC = [0, 2, 4, 5, 7, 9, 11] as const;
+
+export const LETRAS_ES = ["Do", "Re", "Mi", "Fa", "Sol", "La", "Si"] as const;
+export const LETRAS_EN = ["C", "D", "E", "F", "G", "A", "B"] as const;
+
+export interface NotaEscrita {
+  /** 0 = Do/C, 1 = Re/D, … 6 = Si/B. */
+  letra: number;
+  /** Cuántos semitonos se le corre: -1 bemol, 0 natural, +1 sostenido. */
+  alter: number;
+  /** La tecla que termina siendo, por si hace falta tocarla. */
+  pc: PitchClass;
+}
+
+const SIGNOS: Record<number, string> = {
+  [-2]: "♭♭",
+  [-1]: "♭",
+  0: "",
+  1: "♯",
+  2: "♯♯",
+};
+
+const SIGNOS_EN: Record<number, string> = {
+  [-2]: "bb",
+  [-1]: "b",
+  0: "",
+  1: "#",
+  2: "##",
+};
+
+export function escribirNota(n: NotaEscrita, lang: "es" | "en" = "es"): string {
+  const letra = lang === "es" ? LETRAS_ES[n.letra] : LETRAS_EN[n.letra];
+  const signo = lang === "es" ? SIGNOS[n.alter] : SIGNOS_EN[n.alter];
+  return `${letra}${signo ?? ""}`;
+}
+
+/**
+ * Cómo escribimos cada fundamental cuando no hay contexto que mande.
+ *
+ * Es la lista de siempre: Do♯ y Fa♯ con sostenido, Mi♭, La♭ y Si♭ con bemol.
+ * Son las que se leen en cualquier cancionero; nadie escribe D♯m ni G♭.
+ */
+const RAIZ_PREFERIDA: [number, number][] = [
+  [0, 0], // Do
+  [0, 1], // Do♯
+  [1, 0], // Re
+  [2, -1], // Mi♭
+  [2, 0], // Mi
+  [3, 0], // Fa
+  [3, 1], // Fa♯
+  [4, 0], // Sol
+  [5, -1], // La♭
+  [5, 0], // La
+  [6, -1], // Si♭
+  [6, 0], // Si
+];
+
+/** El deletreo sin pensar: el de la tabla de sostenidos, o el de la de bemoles. */
+function deletreoLlano(pc: PitchClass, bemoles: boolean): NotaEscrita {
+  const natural = LETRAS_PC.indexOf(pc as (typeof LETRAS_PC)[number]);
+  if (natural >= 0) return { letra: natural, alter: 0, pc };
+  const vecina = bemoles ? pc + 1 : pc - 1;
+  return {
+    letra: LETRAS_PC.indexOf(vecina as (typeof LETRAS_PC)[number]),
+    alter: bemoles ? -1 : 1,
+    pc,
+  };
+}
+
+/** Cómo se escribe una fundamental suelta: la de RAIZ_PREFERIDA. */
+export function raizEscrita(root: PitchClass): NotaEscrita {
+  const [letra, alter] = RAIZ_PREFERIDA[mod12(root)];
+  return { letra, alter, pc: mod12(root) };
+}
+
 export function octaveOf(p: Pitch): number {
   return Math.floor(p / 12) - 1;
 }
@@ -129,6 +217,16 @@ export interface ChordQuality {
    * al siguiente. Mayor = [4, 3] → "cuatro y tres".
    */
   stack: number[];
+  /**
+   * Qué letra le toca a cada nota, contando desde la fundamental: 0 la misma
+   * letra, 2 la de dos más arriba. Casi todos los acordes apilan terceras
+   * (0, 2, 4, 6 → Do Mi Sol Si) y por eso se puede omitir; los sus son la
+   * excepción, porque van 1-2-5 y 1-4-5.
+   *
+   * Es lo único que hace falta para que Mi♭ menor se escriba con Sol♭ y no con
+   * Fa♯, que es la misma tecla pero la letra equivocada.
+   */
+  grados?: number[];
   /** Una línea de por qué suena como suena. */
   vibe: string;
   /** Clase de color de Tailwind para pintarlo en el teclado. */
@@ -187,6 +285,7 @@ export const CHORD_QUALITIES: ChordQuality[] = [
     suffix: "sus2",
     family: "suspendido",
     stack: [2, 5],
+    grados: [0, 1, 4], // 1-2-5: Do Re Sol, no Do Mi Sol
     vibe: "Corrés el dedo del medio un lugar para abajo. Ni alegre ni triste: abierto.",
     tone: "menta",
     learnedIn: 1,
@@ -198,6 +297,7 @@ export const CHORD_QUALITIES: ChordQuality[] = [
     aliases: ["sus"],
     family: "suspendido",
     stack: [5, 2],
+    grados: [0, 3, 4], // 1-4-5: Do Fa Sol
     vibe: "Corrés el dedo del medio un lugar para arriba. Queda colgado, pidiendo resolver.",
     tone: "menta",
     learnedIn: 1,
@@ -272,15 +372,51 @@ export function chordPitches(root: Pitch, q: ChordQuality): Pitch[] {
 }
 
 /**
- * Cifrado inglés completo: "C", "Am", "F#maj7", "Gsus4".
- * Elegimos sostenido o bemol según lo que se lea menos horrible.
+ * Las notas del acorde escritas como corresponde, no como salga.
+ *
+ * La regla es de una línea: **cada nota del acorde usa su propia letra**. Una
+ * tríada salta de a letra por medio (Mi Sol Si), y con eso el signo sale solo:
+ * si la letra que toca es Sol y la tecla que va es la de seis semitonos arriba
+ * de Mi♭, entonces se llama Sol♭ y no Fa♯. Es la misma tecla y es otro nombre.
+ *
+ * Existe porque la app antes escribía todo con sostenidos y quedaban cosas
+ * como "Mi♭ menor = Re♯ · Fa♯ · La♯": tres notas, tres nombres mal.
+ *
+ * Cuando la letra correcta pide un doble signo —Si aumentado es, en el papel,
+ * Si Re♯ Fa♯♯— escribimos la tecla llana (Sol). Es una mentira a propósito: en
+ * un cuaderno de piano gana lo que se lee de un vistazo.
  */
+export function deletrearAcorde(
+  root: PitchClass,
+  q: ChordQuality,
+): NotaEscrita[] {
+  const base = raizEscrita(root);
+  const bemoles = base.alter < 0;
+  return intervalsOf(q).map((iv, i) => {
+    const pc = mod12(root + iv);
+    const letra = (base.letra + (q.grados?.[i] ?? i * 2)) % 7;
+    let alter = mod12(pc - LETRAS_PC[letra]);
+    if (alter > 6) alter -= 12;
+    return Math.abs(alter) > 1 ? deletreoLlano(pc, bemoles) : { letra, alter, pc };
+  });
+}
+
+/** Las notas del acorde listas para mostrar: ["Mi♭", "Sol♭", "Si♭"]. */
+export function notasDeAcorde(
+  root: PitchClass,
+  q: ChordQuality,
+  lang: "es" | "en" = "es",
+): string[] {
+  return deletrearAcorde(root, q).map((n) => escribirNota(n, lang));
+}
+
+/** Cifrado inglés completo: "C", "Am", "F#maj7", "Ebm7", "Gsus4". */
 export function chordSymbol(root: PitchClass, q: ChordQuality): string {
-  return `${NOTES_EN[mod12(root)]}${q.suffix}`;
+  return `${escribirNota(raizEscrita(root), "en")}${q.suffix}`;
 }
 
 export function chordNameEs(root: PitchClass, q: ChordQuality): string {
-  return `${NOTES_ES[mod12(root)]} ${q.name.toLowerCase()}`;
+  return `${escribirNota(raizEscrita(root))} ${q.name.toLowerCase()}`;
 }
 
 export interface Chord {
@@ -325,6 +461,9 @@ export const GRADOS_ACORDE = ["1", "3", "5", "7"] as const;
 /**
  * Cifrado con barra: C/E es un Do mayor con el Mi en el bajo. Es como se
  * escribe una inversión cuando importa qué nota quedó abajo.
+ *
+ * El bajo se toma del deletreo del acorde, no de la tecla suelta: la primera
+ * inversión de Mi♭ menor es E♭m/G♭, nunca E♭m/F♯.
  */
 export function simboloConBajo(
   root: PitchClass,
@@ -333,8 +472,32 @@ export function simboloConBajo(
 ): string {
   const base = chordSymbol(root, q);
   if (inversion === 0) return base;
-  const bajo = mod12(root + intervalsOf(q)[inversion]);
-  return `${base}/${NOTES_EN[bajo]}`;
+  const bajo = deletrearAcorde(root, q)[inversion];
+  return `${base}/${escribirNota(bajo, "en")}`;
+}
+
+/**
+ * Cómo se llama, en castellano, la nota que queda abajo en cada inversión.
+ * Es el mismo deletreo del acorde, girado igual que las teclas.
+ */
+export function bajoDeInversion(
+  root: PitchClass,
+  q: ChordQuality,
+  inversion: number,
+  lang: "es" | "en" = "es",
+): string {
+  return escribirNota(deletrearAcorde(root, q)[inversion], lang);
+}
+
+/** Las notas de un acorde invertido, en el orden en que suenan de grave a agudo. */
+export function notasDeInversion(
+  root: PitchClass,
+  q: ChordQuality,
+  inversion: number,
+  lang: "es" | "en" = "es",
+): string[] {
+  const nombres = notasDeAcorde(root, q, lang);
+  return [...nombres.slice(inversion), ...nombres.slice(0, inversion)];
 }
 
 export function allChords(filter?: (q: ChordQuality) => boolean): Chord[] {
@@ -344,6 +507,20 @@ export function allChords(filter?: (q: ChordQuality) => boolean): Chord[] {
     for (const quality of qs) out.push({ root, quality });
   }
   return out;
+}
+
+/**
+ * Un rango de teclado que entra el acorde entero, empezando en un Do.
+ *
+ * Existe porque ya pasó lo contrario: el quiz tenía el teclado fijo de 55 a 79
+ * y en Bm7 la cuarta nota (La5) caía afuera, así que la pregunta era imposible
+ * de contestar mirando. Dos octavas alcanzan siempre: el acorde más abierto que
+ * tenemos ocupa once semitonos, y arrancando en el Do de abajo no llega nunca
+ * al techo.
+ */
+export function rangoParaAcorde(pitches: Pitch[]): { from: Pitch; to: Pitch } {
+  const from = Math.floor(Math.min(...pitches) / 12) * 12;
+  return { from, to: from + 24 };
 }
 
 /**

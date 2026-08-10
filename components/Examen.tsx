@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
-import { corregirAcorde, noteName } from "@/lib/music";
+import { corregirAcorde } from "@/lib/music";
 import { generarExamen, type OpcionesExamen, type Pregunta } from "@/lib/examen";
 import { playChord, playNote, wakeAudio } from "@/lib/audio";
 
@@ -245,7 +245,7 @@ export default function Examen(opciones: OpcionesExamen) {
             <p className="mt-1 text-sm text-humo">{pregunta.explicacion}</p>
             {pregunta.tipo === "armar" && !acerto && (
               <p className="mt-1 font-mono text-sm text-tiza">
-                {pregunta.pitches.map((p) => noteName(p)).join(" · ")}
+                {pregunta.notas.join(" · ")}
               </p>
             )}
             <button

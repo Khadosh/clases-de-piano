@@ -6,17 +6,17 @@ import {
   CHORD_QUALITIES,
   GRADOS_ACORDE,
   NOMBRES_INVERSION,
-  NOTES_EN,
-  NOTES_ES,
   cantidadDeInversiones,
   chordNameEs,
   chordPitches,
   chordSymbol,
   corregirAcorde,
+  escribirNota,
   invertir,
   mod12,
-  noteName,
+  notasDeInversion,
   pickRandom,
+  raizEscrita,
   qualityById,
   simboloConBajo,
   stackLabel,
@@ -199,9 +199,9 @@ export default function ChordLab({
     <div className="card overflow-hidden">
       {/* Fundamental */}
       <div className="flex flex-wrap gap-1.5 border-b border-borde/60 p-4">
-        {NOTES_ES.map((n, i) => (
+        {Array.from({ length: 12 }, (_, i) => raizEscrita(i)).map((nota, i) => (
           <button
-            key={n}
+            key={i}
             onClick={() => {
               salirDelDictado();
               setRoot(i);
@@ -212,8 +212,10 @@ export default function ChordLab({
                 : "bg-carta-2 text-humo hover:text-tiza"
             }`}
           >
-            {NOTES_EN[i]}
-            <span className="ml-1 text-[10px] opacity-60">{n}</span>
+            {escribirNota(nota, "en")}
+            <span className="ml-1 text-[10px] opacity-60">
+              {escribirNota(nota)}
+            </span>
           </button>
         ))}
       </div>
@@ -323,7 +325,11 @@ export default function ChordLab({
         {!oculto && (
           <div className="mt-4 rounded-2xl bg-noche-2 px-4 py-3">
             <p className="font-mono text-lg">
-              {pitches.map((p, i) => (
+              {notasDeInversion(
+                mostrado.root,
+                mostrado.quality,
+                inversion,
+              ).map((nombre, i) => (
                 <span key={i}>
                   {i > 0 && <span className="text-humo"> · </span>}
                   <span
@@ -333,7 +339,7 @@ export default function ChordLab({
                         : undefined
                     }
                   >
-                    {noteName(p)}
+                    {nombre}
                   </span>
                 </span>
               ))}
@@ -353,7 +359,11 @@ export default function ChordLab({
                   {chordSymbol(mostrado.root, mostrado.quality)}, pero ahora el
                   bajo es{" "}
                   <span className="font-semibold text-tiza">
-                    {noteName(pitches[0])}
+                    {notasDeInversion(
+                      mostrado.root,
+                      mostrado.quality,
+                      inversion,
+                    )[0]}
                   </span>
                   , la{" "}
                   {grados[0] === "3"

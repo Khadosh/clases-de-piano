@@ -1,11 +1,17 @@
 import {
   CHORD_QUALITIES,
+  LETRAS_ES,
+  LETRAS_PC,
   NOMBRES_INVERSION,
-  NOTES_ES,
+  bajoDeInversion,
   cantidadDeInversiones,
+  chordNameEs,
   chordPitches,
+  deletrearAcorde,
+  escribirNota,
   invertir,
-  noteName,
+  notasDeAcorde,
+  notasDeInversion,
   pickRandom,
   shuffle,
   simboloConBajo,
@@ -39,6 +45,8 @@ export type Pregunta =
       destacado: string;
       /** Las notas que hay que apretar, con su octava de referencia. */
       pitches: Pitch[];
+      /** Las mismas, escritas como se llaman en este acorde ("Sol♭", no "Fa♯"). */
+      notas: string[];
       explicacion: string;
     };
 
@@ -102,25 +110,21 @@ function preguntaReceta(pozo: ChordQuality[]): Pregunta {
 function preguntaCifrado(pozo: ChordQuality[]): Pregunta {
   const q = pickRandom(pozo);
   const root = Math.floor(Math.random() * 12);
-  const notas = chordPitches(BASE + root, q)
-    .map((p) => noteName(p))
-    .join(" · ");
+  const notas = notasDeAcorde(root, q).join(" · ");
   const distractoras = new Set<string>();
   let guard = 0;
   while (distractoras.size < 3 && guard++ < 100) {
     const otra = pickRandom(pozo);
     const otroRoot =
       Math.random() < 0.5 ? root : Math.floor(Math.random() * 12);
-    const cand = chordPitches(BASE + otroRoot, otra)
-      .map((p) => noteName(p))
-      .join(" · ");
+    const cand = notasDeAcorde(otroRoot, otra).join(" · ");
     if (cand !== notas) distractoras.add(cand);
   }
   return conOpciones(
     "¿Qué notas tiene este acorde?",
     notas,
     [...distractoras],
-    `${NOTES_ES[root]} ${q.name.toLowerCase()} se arma contando ${stackLabel(q)} desde ${NOTES_ES[root]}.`,
+    `${chordNameEs(root, q)} se arma contando ${stackLabel(q)} desde ${notasDeAcorde(root, q)[0]}.`,
     simboloConBajo(root, q, 0),
   );
 }
@@ -140,10 +144,11 @@ function preguntaArmar(pozo: ChordQuality[], conInversiones: boolean): Pregunta 
         : "Armalo en el teclado, con el bajo que pide.",
     destacado: simboloConBajo(root, q, inv),
     pitches,
+    notas: notasDeInversion(root, q, inv),
     explicacion:
       inv === 0
-        ? `${NOTES_ES[root]} ${q.name.toLowerCase()}: ${stackLabel(q)} desde ${NOTES_ES[root]}.`
-        : `Es ${NOTES_ES[root]} ${q.name.toLowerCase()} en ${NOMBRES_INVERSION[inv]}: las mismas notas, pero con ${noteName(pitches[0])} abajo de todo.`,
+        ? `${chordNameEs(root, q)}: ${stackLabel(q)} desde ${notasDeAcorde(root, q)[0]}.`
+        : `Es ${chordNameEs(root, q)} en ${NOMBRES_INVERSION[inv]}: las mismas notas, pero con ${bajoDeInversion(root, q, inv)} abajo de todo.`,
   };
 }
 
@@ -173,14 +178,25 @@ function preguntaInversion(pozo: ChordQuality[]): Pregunta {
   const q = pickRandom(pozo.filter((x) => cantidadDeInversiones(x) >= 2) ?? pozo);
   const root = Math.floor(Math.random() * 12);
   const inv = 1 + Math.floor(Math.random() * cantidadDeInversiones(q));
-  const pitches = invertir(chordPitches(BASE + root, q), inv);
-  const correcta = noteName(pitches[0]);
-  const otras = NOTES_ES.filter((n) => n !== correcta);
+  const escritas = deletrearAcorde(root, q);
+  const correcta = escribirNota(escritas[inv]);
+  // Las trampas son las otras notas del mismo acorde: la pregunta es si leíste
+  // la barra, no si sabés notas sueltas. Si falta, se completa con letras de
+  // afuera, y se descartan por tecla y no por nombre: Sol♭ y Fa♯ se escriben
+  // distinto y son la misma respuesta.
+  const teclasUsadas = new Set(escritas.map((n) => n.pc));
+  const otras = escritas.filter((_, i) => i !== inv).map((n) => escribirNota(n));
+  for (const i of shuffle([0, 1, 2, 3, 4, 5, 6])) {
+    if (otras.length >= 3) break;
+    if (teclasUsadas.has(LETRAS_PC[i])) continue;
+    teclasUsadas.add(LETRAS_PC[i]);
+    otras.push(LETRAS_ES[i]);
+  }
   return conOpciones(
     `¿Qué nota queda abajo de todo?`,
     correcta,
-    shuffle([...otras]).slice(0, 3),
-    `La barra dice cuál va en el bajo. ${simboloConBajo(root, q, inv)} es ${NOTES_ES[root]} ${q.name.toLowerCase()} con ${correcta} abajo.`,
+    shuffle(otras).slice(0, 3),
+    `La barra dice cuál va en el bajo. ${simboloConBajo(root, q, inv)} es ${chordNameEs(root, q)} con ${correcta} abajo.`,
     simboloConBajo(root, q, inv),
   );
 }

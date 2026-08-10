@@ -5,7 +5,12 @@ import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
 import Keyboard from "./Keyboard";
-import { CHORD_QUALITIES, chordPitches, mod12 } from "@/lib/music";
+import {
+  CHORD_QUALITIES,
+  chordPitches,
+  mod12,
+  rangoParaAcorde,
+} from "@/lib/music";
 
 /** Convierte *esto* en negrita, sin traer un parser de markdown entero. */
 export function rich(text: string) {
@@ -212,10 +217,7 @@ export function BlockView({ block }: { block: Block }) {
           const chord = parseSymbol(sym);
           if (!chord) return null;
           const pitches = chordPitches(60 + chord.root, chord.quality);
-          // Una octava y media arrancando en el Do de abajo del acorde: entra
-          // cualquier fundamental sin que el teclado cambie de tamaño.
-          const from = Math.floor((pitches[0] - 1) / 12) * 12;
-          return { sym, chord, pitches, from };
+          return { sym, chord, pitches, ...rangoParaAcorde(pitches) };
         })
         .filter((e) => e !== null);
       return (
@@ -227,7 +229,7 @@ export function BlockView({ block }: { block: Block }) {
             </p>
           )}
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            {parsed.map(({ sym, chord, pitches, from }) => (
+            {parsed.map(({ sym, chord, pitches, from, to }) => (
               <div key={sym} className="card p-4">
                 <div className="mb-3 flex flex-wrap items-baseline gap-x-3">
                   <span className="font-display text-2xl font-black text-sol">
@@ -243,7 +245,7 @@ export function BlockView({ block }: { block: Block }) {
                 <div className="rounded-xl bg-noche-2 p-2">
                   <Keyboard
                     from={from}
-                    to={from + 17}
+                    to={to}
                     marks={pitches.map((p) => ({
                       pitch: p,
                       tone: chord.quality.tone,

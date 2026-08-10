@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
-import { CHORD_QUALITIES, intervalsOf, mod12, noteName } from "@/lib/music";
+import {
+  CHORD_QUALITIES,
+  chordSymbol,
+  deletrearAcorde,
+  escribirNota,
+  intervalsOf,
+  mod12,
+  noteName,
+} from "@/lib/music";
 import { playNote, wakeAudio } from "@/lib/audio";
 
 /**
@@ -76,10 +84,14 @@ function identificar(pitches: number[]): string | null {
         target.length === rel.length &&
         target.every((v, i) => v === rel[i])
       ) {
-        const esFundamental = mod12(Math.min(...pitches)) === root;
-        return `${noteName(root, { lang: "en" })}${q.suffix}${
-          esFundamental ? "" : ` (invertido, bajo en ${noteName(Math.min(...pitches))})`
-        }`;
+        const bajo = mod12(Math.min(...pitches));
+        if (bajo === root) return chordSymbol(root, q);
+        // El bajo se nombra como lo nombra el acorde: en un Mi♭ menor la tecla
+        // negra del medio es Sol♭, aunque suelta se la llame Fa♯.
+        const escrito = deletrearAcorde(root, q).find((n) => n.pc === bajo);
+        return `${chordSymbol(root, q)} (invertido, bajo en ${
+          escrito ? escribirNota(escrito) : noteName(bajo)
+        })`;
       }
     }
   }

@@ -4,12 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Keyboard from "./Keyboard";
 import {
   CHORD_QUALITIES,
-  NOTES_ES,
   chordPitches,
   chordSymbol,
   intervalsOf,
+  mod12,
+  notasDeAcorde,
   pickRandom,
   qualityById,
+  rangoParaAcorde,
   shuffle,
   stackLabel,
   type ChordQuality,
@@ -26,9 +28,14 @@ interface Question {
 }
 
 const notesText = (root: number, q: ChordQuality) =>
+  notasDeAcorde(root, q).join(" · ");
+
+/** Qué teclas usa el acorde, sin importar cómo se llamen ni en qué orden. */
+const teclas = (root: number, q: ChordQuality) =>
   intervalsOf(q)
-    .map((iv) => NOTES_ES[(root + iv) % 12])
-    .join(" · ");
+    .map((iv) => mod12(root + iv))
+    .sort((a, b) => a - b)
+    .join(",");
 
 function buildQuestion(pool: ChordQuality[]): Question {
   const mode: Mode =
@@ -38,6 +45,7 @@ function buildQuestion(pool: ChordQuality[]): Question {
 
   const distractors: { root: number; quality: ChordQuality }[] = [];
   const seen = new Set([`${root}-${quality.id}`]);
+  const teclasCorrectas = teclas(root, quality);
   let guard = 0;
   while (distractors.length < 3 && guard++ < 200) {
     // Mitad de las trampas cambian la receta, mitad cambian la fundamental:
@@ -49,6 +57,11 @@ function buildQuestion(pool: ChordQuality[]): Question {
     };
     const key = `${d.root}-${d.quality.id}`;
     if (seen.has(key)) continue;
+    // Cuando la pregunta es "mirá el teclado y decime el cifrado", un acorde
+    // que usa las mismas teclas es otra respuesta correcta y no una trampa: Do
+    // aumentado y Mi aumentado son las mismas tres teclas con nombres distintos.
+    if (mode === "notas-a-cifrado" && teclas(d.root, d.quality) === teclasCorrectas)
+      continue;
     seen.add(key);
     distractors.push(d);
   }
@@ -117,8 +130,6 @@ export default function NomenclatureQuiz({
     });
   };
 
-  const correcta = q.options.find((o) => o.ok)!;
-
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center gap-3 border-b border-borde/60 px-4 py-3 text-sm">
@@ -146,8 +157,7 @@ export default function NomenclatureQuiz({
           <div>
             <div className="rounded-2xl bg-noche-2 p-3">
               <Keyboard
-                from={55}
-                to={79}
+                {...rangoParaAcorde(chordPitches(60 + q.root, q.quality))}
                 marks={chordPitches(60 + q.root, q.quality).map((p) => ({
                   pitch: p,
                   tone: "sol" as const,
@@ -192,7 +202,11 @@ export default function NomenclatureQuiz({
               </span>{" "}
               <span className="text-humo">= {q.quality.name.toLowerCase()},</span>{" "}
               <span className="font-mono text-sol">{stackLabel(q.quality)}</span>{" "}
-              <span className="text-humo">→ {correcta.text}</span>
+              {/* Siempre las notas: en "del teclado al cifrado" la respuesta
+                  correcta es el cifrado, y repetirlo no enseña nada. */}
+              <span className="text-humo">
+                → {notesText(q.root, q.quality)}
+              </span>
             </p>
             <button
               onClick={siguiente}
