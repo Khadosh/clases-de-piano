@@ -116,10 +116,10 @@ export default function PracticaPage() {
             <p className="mb-4 max-w-2xl text-humo">
               Fundamental, receta e inversión, todo en el mismo teclado. Para
               practicar en serio: <strong className="text-tiza">dictado</strong>{" "}
-              — sale un cifrado, ponés las manos, después mirás. Sin pensar de
-              más: la idea es que la fórmula salga del dedo, no de la cabeza.
-              Cuando eso ya sale, prendé las inversiones y empiezan a aparecer
-              cifrados con barra.
+              — sale un cifrado y lo armás apretando las teclas, sin necesidad
+              de tener el piano al lado. Te dice si está bien, y si le erraste
+              sólo al bajo también te lo dice. Cuando eso ya sale, prendé las
+              inversiones y empiezan a aparecer cifrados con barra.
             </p>
             <ChordLab qualityIds={TODOS} dictation inversiones />
           </div>

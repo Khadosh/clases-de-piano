@@ -75,6 +75,16 @@ El teclado, el dictado, las inversiones, el quiz, el identificador de acordes y
 la página `/acordes` lo levantan solos. No hay que tocar nada más — incluidas
 las inversiones, que se calculan de la cantidad de notas del `stack`.
 
+**El dictado se responde en el teclado.** Se aprietan las teclas y la app
+corrige. El criterio es el musical y no el literal: tienen que estar las mismas
+notas, en cualquier octava y en cualquier orden, y el bajo tiene que ser el que
+corresponde. Eso acepta cualquier disposición razonable y a la vez no deja
+pasar una inversión por otra — de hecho "las notas están bien pero el bajo no"
+es un caso aparte, porque es *el* error típico de las inversiones.
+
+Corrige recién cuando el acorde está completo. Ir marcando tecla por tecla
+convertiría el ejercicio en adivinar por descarte.
+
 **Armar un acorde y girarlo son la misma operación**, así que son un solo
 bloque (`chord-lab` con `inversiones: true`) y no dos. Se intentó tenerlos
 separados y eran dos componentes casi idénticos. Lo que sí conviene separar es

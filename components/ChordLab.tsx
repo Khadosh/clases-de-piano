@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Keyboard, { type Mark, type Tone } from "./Keyboard";
 import {
   CHORD_QUALITIES,
@@ -13,6 +13,7 @@ import {
   chordPitches,
   chordSymbol,
   invertir,
+  mod12,
   noteName,
   pickRandom,
   qualityById,
@@ -20,7 +21,7 @@ import {
   stackLabel,
   type ChordQuality,
 } from "@/lib/music";
-import { playArpeggio, playChord, wakeAudio } from "@/lib/audio";
+import { playArpeggio, playChord, playNote, wakeAudio } from "@/lib/audio";
 
 /**
  * El laboratorio de acordes.
@@ -65,6 +66,10 @@ export default function ChordLab({
   const [revelado, setRevelado] = useState(false);
   const [ronda, setRonda] = useState(0);
   const [dictarInversiones, setDictarInversiones] = useState(false);
+  /** Las teclas que fuiste apretando para armar el acorde del dictado. */
+  const [armado, setArmado] = useState<number[]>([]);
+  const [acertado, setAcertado] = useState(false);
+  const [puntaje, setPuntaje] = useState({ bien: 0, rondas: 0 });
 
   const elegido = qualityById(qid) ?? qualities[0];
   const mostrado = dictado ?? {
@@ -84,8 +89,49 @@ export default function ChordLab({
 
   const oculto = Boolean(dictado) && !revelado;
 
+  /**
+   * Corregir lo que armaste. El criterio es el musical, no el literal: tienen
+   * que estar las mismas notas (en cualquier octava, en cualquier orden) y el
+   * bajo tiene que ser el que corresponde. Eso acepta cualquier disposición
+   * razonable y a la vez no deja pasar una inversión por otra.
+   */
+  const veredicto = useMemo(() => {
+    if (!dictado || armado.length !== pitches.length) return null;
+    const clases = new Set(armado.map(mod12));
+    const objetivo = new Set(pitches.map(mod12));
+    const mismasNotas =
+      clases.size === objetivo.size && [...objetivo].every((c) => clases.has(c));
+    const bajoOk = mod12(Math.min(...armado)) === mod12(Math.min(...pitches));
+    if (mismasNotas && bajoOk) return "bien" as const;
+    if (mismasNotas) return "bajo" as const;
+    return "mal" as const;
+  }, [dictado, armado, pitches]);
+
+  // Se anota el acierto una sola vez por ronda, la primera que sale bien.
+  useEffect(() => {
+    if (veredicto !== "bien" || acertado) return;
+    setAcertado(true);
+    setPuntaje((p) => ({ ...p, bien: p.bien + 1 }));
+    wakeAudio();
+    playChord(invertir(chordPitches(BASE + mostrado.root, mostrado.quality), inversion));
+  }, [veredicto, acertado, mostrado.root, mostrado.quality, inversion]);
+
+  /** Mientras armás en el teclado, cada tecla se pinta según cómo viene. */
+  const marcasArmado: Mark[] = armado.map((p) => {
+    const enElAcorde = pitches.some((o) => mod12(o) === mod12(p));
+    const esElBajo = p === Math.min(...armado);
+    // Recién cuando está completo se dice si estuvo bien: mientras tanto sólo
+    // se muestran las teclas puestas, sin ir corrigiendo tecla por tecla.
+    if (!veredicto) return { pitch: p, tone: "luna" as const };
+    if (veredicto === "bien") return { pitch: p, tone: "menta" as const, label: "✓" };
+    if (!enElAcorde) return { pitch: p, tone: "brasa" as const, label: "✗" };
+    if (veredicto === "bajo" && esElBajo)
+      return { pitch: p, tone: "brasa" as const, label: "↓" };
+    return { pitch: p, tone: "menta" as const };
+  });
+
   const marks: Mark[] = oculto
-    ? []
+    ? marcasArmado
     : pitches.map((p, i) => {
         // Las que subieron una octava se pintan distinto: de eso se trata
         // invertir, y si no se ve cuáles se movieron no se entiende nada.
@@ -137,10 +183,29 @@ export default function ChordLab({
           : 0,
     });
     setRevelado(false);
+    setArmado([]);
+    setAcertado(false);
+    setPuntaje((p) => ({ ...p, rondas: p.rondas + 1 }));
     setRonda((n) => n + 1);
   };
 
-  const salirDelDictado = () => setDictado(null);
+  const salirDelDictado = () => {
+    setDictado(null);
+    setArmado([]);
+    setAcertado(false);
+  };
+
+  /** En el dictado el teclado se toca: es el piano de repuesto. */
+  const armarEnTeclado = (p: number) => {
+    if (!dictado || revelado) return;
+    wakeAudio();
+    if (!armado.includes(p)) playNote(p, 0.9);
+    setArmado((prev) =>
+      prev.includes(p)
+        ? prev.filter((x) => x !== p)
+        : [...prev, p].sort((a, b) => a - b),
+    );
+  };
 
   return (
     <div className="card overflow-hidden">
@@ -225,14 +290,20 @@ export default function ChordLab({
           <div className="mb-4 text-center">
             <p className="text-xs tracking-[0.25em] text-humo uppercase">
               Dictado · ronda {ronda}
+              {puntaje.rondas > 1 && (
+                <span className="ml-2 font-mono text-menta normal-case">
+                  {puntaje.bien}/{puntaje.rondas - (acertado ? 0 : 1)}
+                </span>
+              )}
             </p>
             <p className="font-display my-3 text-6xl font-black text-sol">
               {simboloConBajo(mostrado.root, mostrado.quality, inversion)}
             </p>
             <p className="text-sm text-humo">
-              {inversion > 0
-                ? "Ojo con el bajo: la letra de después de la barra va abajo de todo."
-                : "Poné las manos. Después fijate si te dio."}
+              Armalo en el teclado de abajo, o en el piano de verdad si lo
+              tenés al lado.
+              {inversion > 0 &&
+                " Ojo con el bajo: la letra de después de la barra va abajo de todo."}
             </p>
           </div>
         ) : (
@@ -251,8 +322,15 @@ export default function ChordLab({
         )}
 
         <div className="rounded-2xl bg-noche-2 p-3">
-          <Keyboard from={45} to={81} marks={marks} />
+          <Keyboard
+            from={45}
+            to={81}
+            marks={marks}
+            onKeyPress={oculto ? armarEnTeclado : undefined}
+          />
         </div>
+
+        {oculto && <Correccion veredicto={veredicto} faltan={pitches.length - armado.length} onBorrar={() => setArmado([])} />}
 
         {!oculto && (
           <div className="mt-4 rounded-2xl bg-noche-2 px-4 py-3">
@@ -354,5 +432,74 @@ export default function ChordLab({
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Le dice al que practica cómo le fue. Sólo aparece en el dictado, y sólo
+ * corrige cuando el acorde está completo: ir marcando tecla por tecla
+ * convertiría el ejercicio en adivinar por descarte.
+ */
+function Correccion({
+  veredicto,
+  faltan,
+  onBorrar,
+}: {
+  veredicto: "bien" | "mal" | "bajo" | null;
+  faltan: number;
+  onBorrar: () => void;
+}) {
+  if (veredicto === "bien") {
+    return (
+      <div className="mt-4 rounded-2xl border border-menta/40 bg-menta/10 px-4 py-3">
+        <p className="font-display text-xl font-bold text-menta">¡Ahí está! 🎉</p>
+        <p className="mt-0.5 text-sm text-humo">
+          Dale a Dictado para que te tire otro.
+        </p>
+      </div>
+    );
+  }
+
+  if (veredicto === "bajo") {
+    return (
+      <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-sol/40 bg-sol/10 px-4 py-3">
+        <p className="text-sm text-tiza/90">
+          <span className="font-semibold text-sol">Casi.</span> Las notas son
+          esas, pero abajo de todo tiene que quedar la que va después de la
+          barra. Está invertido.
+        </p>
+        <button
+          onClick={onBorrar}
+          className="ml-auto rounded-full bg-carta-2 px-3 py-1.5 text-xs font-bold transition hover:bg-borde"
+        >
+          Borrar y probar de nuevo
+        </button>
+      </div>
+    );
+  }
+
+  if (veredicto === "mal") {
+    return (
+      <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-brasa/40 bg-brasa/10 px-4 py-3">
+        <p className="text-sm text-tiza/90">
+          Las teclas con <span className="font-bold text-brasa">✗</span> no van.
+          Contá la receta de nuevo desde la fundamental.
+        </p>
+        <button
+          onClick={onBorrar}
+          className="ml-auto rounded-full bg-carta-2 px-3 py-1.5 text-xs font-bold transition hover:bg-borde"
+        >
+          Borrar y probar de nuevo
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <p className="mt-4 text-center text-sm text-humo">
+      {faltan > 0
+        ? `Tocá las teclas del acorde — faltan ${faltan}.`
+        : "Sacá alguna: te pasaste de notas."}
+    </p>
   );
 }

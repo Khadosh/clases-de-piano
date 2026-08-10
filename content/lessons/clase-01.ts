@@ -84,7 +84,7 @@ const lesson: Lesson = {
       kind: "chord-lab",
       title: "El laboratorio",
       intro:
-        "Elegís la fundamental, la receta y la inversión, y las tres cosas se ven en el teclado a la vez. El *dictado* es el juego del profe: sale un cifrado, ponés las manos y después mirás — y se le puede pedir que incluya inversiones, que es la versión difícil.",
+        "Elegís la fundamental, la receta y la inversión, y las tres cosas se ven en el teclado a la vez. El *dictado* es el juego del profe: sale un cifrado y lo armás — en el piano si lo tenés al lado, o apretando las teclas del teclado de la pantalla, que te corrige. Se le puede pedir que incluya inversiones, que es la versión difícil.",
       qualities: [
         "maj",
         "min",

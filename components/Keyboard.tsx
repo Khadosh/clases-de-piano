@@ -1,7 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { isBlack, mod12, noteName, type Pitch } from "@/lib/music";
+import {
+  isBlack,
+  mod12,
+  noteName,
+  noteNameWithOctave,
+  type Pitch,
+} from "@/lib/music";
 
 export type Tone =
   | "sol"
@@ -104,6 +110,8 @@ export default function Keyboard({
             key={pitch}
             onClick={interactive ? () => onKeyPress?.(pitch) : undefined}
             className={interactive ? "cursor-pointer" : undefined}
+            role={interactive ? "button" : undefined}
+            aria-label={interactive ? noteNameWithOctave(pitch) : undefined}
           >
             <rect
               x={x + 1}
@@ -163,6 +171,8 @@ export default function Keyboard({
             key={pitch}
             onClick={interactive ? () => onKeyPress?.(pitch) : undefined}
             className={interactive ? "cursor-pointer" : undefined}
+            role={interactive ? "button" : undefined}
+            aria-label={interactive ? noteNameWithOctave(pitch) : undefined}
           >
             <rect
               x={x}
