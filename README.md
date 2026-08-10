@@ -47,8 +47,12 @@ configuración ni variables de entorno.
 
 Next.js 15 (App Router) · React 19 · TypeScript · Tailwind v4.
 
-Sin base de datos, sin CMS, sin assets externos: el piano es un SVG dibujado a
-mano y el sonido son osciladores de WebAudio. El motor de teoría musical vive
+Sin base de datos y sin CMS. El teclado es un SVG dibujado a mano; el sonido son
+samples del [Salamander Grand Piano](https://creativecommons.org/licenses/by/3.0/)
+de Alexander Holm (CC-BY 3.0) servidos con Tone.js, que se cargan recién cuando
+tocás algo, con osciladores de WebAudio cubriendo mientras tanto.
+
+El motor de teoría musical vive
 en [`lib/music.ts`](./lib/music.ts) y arma cada acorde apilando semitonos, igual
 que como se cuenta en clase. La detección de notas por micrófono está en
 [`lib/pitch.ts`](./lib/pitch.ts), también sin dependencias; `npm run test:pitch`

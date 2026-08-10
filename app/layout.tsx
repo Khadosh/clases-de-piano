@@ -70,8 +70,23 @@ export default function RootLayout({
 
         <main className="mx-auto max-w-5xl px-4 pb-24">{children}</main>
 
-        <footer className="border-t border-borde/60 py-8 text-center text-xs text-humo">
-          Clases con Quique Yance · miércoles · escrito a cuatro manos con Claude
+        <footer className="border-t border-borde/60 px-4 py-8 text-center text-xs leading-relaxed text-humo">
+          <p>
+            Clases con Quique Yance · miércoles · escrito a cuatro manos con
+            Claude
+          </p>
+          <p className="mt-1.5 text-humo/70">
+            El piano suena con el Salamander Grand Piano de Alexander Holm (
+            <a
+              href="https://creativecommons.org/licenses/by/3.0/"
+              className="underline underline-offset-2 hover:text-tiza"
+              target="_blank"
+              rel="noreferrer"
+            >
+              CC-BY 3.0
+            </a>
+            )
+          </p>
         </footer>
       </body>
     </html>

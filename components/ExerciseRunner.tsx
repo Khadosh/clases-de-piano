@@ -12,6 +12,7 @@ import {
   type Hand,
 } from "@/lib/music";
 import { playNote, wakeAudio } from "@/lib/audio";
+import { useMetronomo } from "@/lib/useMetronomo";
 import { useMicPitch, type EstadoMic } from "@/lib/useMicPitch";
 import type { PitchReading } from "@/lib/pitch";
 
@@ -157,21 +158,21 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
     if (escuchando) setPlaying(false);
   }, [escuchando]);
 
-  useEffect(() => {
-    if (!playing) return;
-    const ms = 60_000 / bpm;
-    const id = setInterval(() => {
-      setI((prev) => {
-        const next = (prev + 1) % total;
-        const l = izqRef.current?.[next];
-        const r = derRef.current?.[next];
-        if (l) playNote(l.pitch, 0.42);
-        if (r) playNote(r.pitch, 0.42);
-        return next;
-      });
-    }, ms);
-    return () => clearInterval(id);
-  }, [playing, bpm, total]);
+  useMetronomo({
+    activo: playing,
+    bpm,
+    total,
+    // Arranca en la nota donde estás parado, no en la siguiente: antes,
+    // apretar play desde el principio se comía el primer Do.
+    desde: () => iRef.current,
+    agendar: (indice, cuando) => {
+      const l = izqRef.current?.[indice];
+      const r = derRef.current?.[indice];
+      if (l) playNote(l.pitch, 0.42, cuando);
+      if (r) playNote(r.pitch, 0.42, cuando);
+    },
+    mostrar: setI,
+  });
 
   const marks: Mark[] = [];
   const pushHand = (

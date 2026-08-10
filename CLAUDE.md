@@ -97,6 +97,45 @@ Por eso cada paso guarda su `home` y su `gap` en vez de un número de posición:
 en el ejercicio completo el `gap` cambia a mitad de camino, y las cinco teclas
 apoyadas (`manoEn`) no se pueden deducir del índice.
 
+## El sonido
+
+Vive en `lib/audio.ts` y tiene tres decisiones que no son obvias:
+
+- **Hay un solo AudioContext y lo creamos nosotros.** Después se le pide a Tone
+  que use ése (`Tone.setContext`). Si Tone arma el suyo quedan dos contextos
+  compitiendo por el audio del sistema y en algunos browsers uno queda mudo —
+  y el que quedaría mudo es el del micrófono.
+- **Tone se importa tarde**, con `await import("tone")` adentro de `wakeAudio()`.
+  Son 59 KB comprimidos y no hacen falta hasta que algo suena; como `wakeAudio()`
+  siempre corre desde un gesto del usuario, baja junto con los samples. La
+  página carga sin nada de eso.
+- **Los osciladores no son un fallback de emergencia.** Son lo que suena en el
+  primer segundo, mientras bajan los samples, y también si algún día no están.
+  La app nunca queda muda.
+
+El piano son 17 samples del Salamander Grand Piano, uno cada tres semitonos, en
+`public/piano/` (ver `CREDITOS.md` ahí: es CC-BY y hay que atribuirlo, por eso
+está el pie de página). Uno cada tres semitonos alcanza porque el sampler estira
+el más cercano; separarlos más ya se nota.
+
+## El pulso del ejercicio
+
+`lib/useMetronomo.ts`. **No uses `setInterval` para tocar notas.** Antes era así
+y el pulso tambaleaba: cada salto del timer tocaba la nota "ahora" y en el mismo
+tick React redibujaba un teclado SVG entero, así que el tiempo de render se iba
+derecho al audio.
+
+Ahora hay dos relojes, que es la forma canónica:
+
+- Un timer impreciso cada 25ms que agenda **contra el reloj del audio** todo lo
+  que caiga en los próximos 120ms. Que el timer llegue tarde no mueve el pulso.
+- Un `requestAnimationFrame` que destapa la parte visual cuando el reloj del
+  audio llega a cada nota. Si se pierde un frame, se atrasa la imagen, no el
+  sonido.
+
+El bpm se lee por ref a propósito: si el efecto dependiera de él, mover el
+slider cortaría y rearmaría el pulso en vez de acelerarlo.
+
 ## El micrófono
 
 El bloque `exercise` tiene un modo "escuchame tocar": abre el micrófono, detecta
@@ -172,9 +211,11 @@ otro problema (análisis espectral, no autocorrelación) y no está hecho.
   dominio (`izquierda`, `acordes`, `siguiente`). El código de infraestructura
   puede quedar en inglés donde ya lo está.
 - **Notas en MIDI**: Do central (C4) = 60. Do3 = 48, Do2 = 36.
-- **Nada de assets externos**: el piano es SVG y el sonido son osciladores de
-  WebAudio. Sin imágenes que bajar, sin samples. Si alguna vez hace falta una
-  ilustración, generarla y guardarla en `public/`, nunca linkear a un CDN.
+- **Nada se baja de un CDN.** Todo lo que la app necesita está en el repo. El
+  teclado es SVG dibujado a mano y las ilustraciones, si alguna vez hacen falta,
+  se generan y se guardan en `public/`.
+  La única excepción son los samples del piano (`public/piano/`, 1,3 MB), y
+  están *adentro* del repo justamente para no depender de nadie. Ver abajo.
 - **Todo estático**: no hay base de datos ni CMS. Cada clase es un commit, cada
   commit es un deploy. Ese es el "incremental" del proyecto.
 - El puntaje del quiz vive en memoria y se pierde al recargar. Es a propósito:
