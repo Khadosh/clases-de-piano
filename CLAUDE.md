@@ -90,6 +90,23 @@ bloque (`chord-lab` con `inversiones: true`) y no dos. Se intentó tenerlos
 separados y eran dos componentes casi idénticos. Lo que sí conviene separar es
 el *texto*: primero la receta, después "y además se puede girar".
 
+## El examen
+
+Cada clase termina con un examen de ocho preguntas, y **no hay que escribirlo**:
+se genera de los bloques de esa misma clase. `temarioDe()` en `content/index.ts`
+mira qué acordes tocó, si vio inversiones y si vio lo de los semitonos, y
+`lib/examen.ts` arma las preguntas con eso. Una clase nueva trae su examen sola.
+
+Dos decisiones:
+
+- **Se genera distinto cada vez.** Si las preguntas fueran fijas se aprendería
+  la respuesta en vez de la receta.
+- **Siempre hay al menos una de armar en el teclado.** Es la única que no se
+  puede acertar de casualidad; las de opciones tienen una chance en cuatro.
+
+Si en una clase aparece un tipo de pregunta nuevo, va en `lib/examen.ts` como
+una fábrica más y se suma al pozo. No hace falta tocar el componente.
+
 ## El ejercicio de posiciones
 
 Vive en `buildExercise` y `buildExerciseCompleto`, en `lib/music.ts`. Dos cosas

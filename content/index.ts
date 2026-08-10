@@ -28,6 +28,24 @@ export function formatDate(iso: string, opts: { weekday?: boolean } = {}) {
   }).format(date);
 }
 
+/**
+ * De qué se puede examinar una clase, sacado de sus propios bloques. Así una
+ * clase nueva trae su examen sin que haya que escribir preguntas a mano.
+ */
+export function temarioDe(lesson: Lesson) {
+  const qualityIds = new Set<string>();
+  let inversiones = false;
+  let semitonos = false;
+  for (const b of lesson.blocks) {
+    if (b.kind === "chord-lab") {
+      b.qualities.forEach((q) => qualityIds.add(q));
+      if (b.inversiones) inversiones = true;
+    }
+    if (b.kind === "semitonos") semitonos = true;
+  }
+  return { qualityIds: [...qualityIds], inversiones, semitonos };
+}
+
 export interface Stats {
   clases: number;
   /** Miércoles consecutivos con clase, contando desde la última hacia atrás. */

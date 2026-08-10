@@ -346,6 +346,33 @@ export function allChords(filter?: (q: ChordQuality) => boolean): Chord[] {
   return out;
 }
 
+/**
+ * ¿Lo que armaste es el acorde que se pedía?
+ *
+ * El criterio es el musical y no el literal: tienen que estar las mismas notas
+ * —en cualquier octava y en cualquier orden— y el bajo tiene que ser el que
+ * corresponde. Eso acepta cualquier disposición razonable de la mano y a la vez
+ * no deja pasar una inversión por otra.
+ *
+ * `bajo` es su propio caso a propósito: armar bien las notas y equivocarse de
+ * vuelta es *el* error típico de las inversiones, y decirle "está mal" a eso no
+ * enseña nada.
+ */
+export function corregirAcorde(
+  armado: Pitch[],
+  objetivo: Pitch[],
+): "bien" | "bajo" | "mal" | null {
+  if (armado.length !== objetivo.length || armado.length === 0) return null;
+  const clases = new Set(armado.map(mod12));
+  const esperadas = new Set(objetivo.map(mod12));
+  const mismasNotas =
+    clases.size === esperadas.size && [...esperadas].every((c) => clases.has(c));
+  if (!mismasNotas) return "mal";
+  return mod12(Math.min(...armado)) === mod12(Math.min(...objetivo))
+    ? "bien"
+    : "bajo";
+}
+
 // ---------------------------------------------------------------------------
 // Escalas y ejercicios
 // ---------------------------------------------------------------------------

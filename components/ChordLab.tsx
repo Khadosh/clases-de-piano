@@ -12,6 +12,7 @@ import {
   chordNameEs,
   chordPitches,
   chordSymbol,
+  corregirAcorde,
   invertir,
   mod12,
   noteName,
@@ -89,23 +90,10 @@ export default function ChordLab({
 
   const oculto = Boolean(dictado) && !revelado;
 
-  /**
-   * Corregir lo que armaste. El criterio es el musical, no el literal: tienen
-   * que estar las mismas notas (en cualquier octava, en cualquier orden) y el
-   * bajo tiene que ser el que corresponde. Eso acepta cualquier disposición
-   * razonable y a la vez no deja pasar una inversión por otra.
-   */
-  const veredicto = useMemo(() => {
-    if (!dictado || armado.length !== pitches.length) return null;
-    const clases = new Set(armado.map(mod12));
-    const objetivo = new Set(pitches.map(mod12));
-    const mismasNotas =
-      clases.size === objetivo.size && [...objetivo].every((c) => clases.has(c));
-    const bajoOk = mod12(Math.min(...armado)) === mod12(Math.min(...pitches));
-    if (mismasNotas && bajoOk) return "bien" as const;
-    if (mismasNotas) return "bajo" as const;
-    return "mal" as const;
-  }, [dictado, armado, pitches]);
+  const veredicto = useMemo(
+    () => (dictado ? corregirAcorde(armado, pitches) : null),
+    [dictado, armado, pitches],
+  );
 
   // Se anota el acierto una sola vez por ronda, la primera que sale bien.
   useEffect(() => {

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { LESSONS, formatDate, lessonBySlug, slugOf } from "@/content";
+import { LESSONS, formatDate, lessonBySlug, slugOf, temarioDe } from "@/content";
 import { BlockView, anchorDe } from "@/components/Blocks";
+import Examen from "@/components/Examen";
 
 export function generateStaticParams() {
   return LESSONS.map((l) => ({ slug: slugOf(l) }));
@@ -35,6 +36,7 @@ export default async function ClasePage({
   const anterior = LESSONS[idx - 1];
   const siguiente = LESSONS[idx + 1];
   const secciones = lesson.blocks.filter((b) => b.kind === "section");
+  const temario = temarioDe(lesson);
 
   return (
     <article className="pt-10">
@@ -94,6 +96,12 @@ export default async function ClasePage({
           <BlockView key={i} block={block} />
         ))}
       </div>
+
+      {temario.qualityIds.length > 0 && (
+        <section className="mt-16">
+          <Examen {...temario} />
+        </section>
+      )}
 
       {lesson.homework && lesson.homework.length > 0 && (
         <section className="mt-14">
