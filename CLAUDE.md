@@ -274,12 +274,29 @@ de altura es contestar la octava de arriba, y eso se ve enseguida ahí.
 
 Pero los tonos sintéticos sólo dicen si el algoritmo está bien, no si los
 umbrales sirven para un piano de verdad grabado con un celular. Para eso hay
-dos herramientas, y conviene usarlas en este orden:
+tres herramientas, y conviene usarlas en este orden:
+
+0. **`/grabar`** (la página, no está en la navegación) graba el micrófono y,
+   si hay un teclado MIDI conectado, lo que tocaste de verdad — las dos cosas
+   **con el mismo reloj**. Baja un WAV PCM que los scripts leen sin convertir
+   nada y un JSON con las notas.
+
+   Que las dos cosas salgan de la misma página no es comodidad: si el audio se
+   grabara en el celular y el MIDI en la compu habría que alinear dos relojes a
+   mano, y 50ms de error ahí arruinan justo lo que se quiere medir.
+
+   Graba con el micrófono de la máquina y no por la salida del teclado a
+   propósito. Nuestros errores vienen del micrófono, la sala y el control de
+   ganancia; con audio limpio se mide un problema que no tenemos.
 
 1. `npm run escuchar -- grabacion.wav` lista tramo por tramo qué escuchó, con
    claridad y volumen. Sirve para *mirar* una grabación y entender qué pasa.
-2. `npm run calibrar -- grabacion.wav` sabe qué había que tocar (el ejercicio
-   entero) y mide el error de verdad, más un barrido de umbrales.
+2. `npm run calibrar -- grabacion.wav [--midi grabacion.json]` mide el error.
+   **Con `--midi` sabe qué tocaste de verdad**; sin él tiene que suponer que la
+   interpretación fue perfecta, y entonces tocar mal cuenta como que el
+   detector oyó mal, sin forma de separar una cosa de la otra. Con el MIDI
+   además informa cuánto tarda la app en enterarse de cada nota (medido: 90ms,
+   que son 40 del detector más los 50 de nuestra regla de duración).
 
 Tres cosas de método que costaron y no hay que volver a aprender:
 

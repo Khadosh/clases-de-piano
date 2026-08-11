@@ -29,14 +29,25 @@ import { buildExercise, mod12, noteName } from "../lib/music.ts";
 import { segmentar } from "../lib/notas.ts";
 import { seguirTanda } from "../lib/puntaje.ts";
 
-const archivo = process.argv[2];
+const args = process.argv.slice(2);
+const archivo = args.find((a) => !a.startsWith("--"));
+const iMidi = args.indexOf("--midi");
+const archivoMidi = iMidi >= 0 ? args[iMidi + 1] : null;
+
 if (!archivo || !existsSync(archivo)) {
   console.error(
-    "Uso: calibrar-mic.mjs <grabacion.wav>\n" +
-      "Tiene que ser el ejercicio de la izquierda con hueco abajo, desde do,\n" +
-      "una octava entera. Si no es WAV, convertilo antes:\n" +
+    "Uso: calibrar-mic.mjs <grabacion.wav> [--midi grabacion.json]\n\n" +
+      "Sin --midi se supone que tocaste el ejercicio de la izquierda con hueco\n" +
+      "abajo, desde do, una octava entera — y cualquier error tuyo se le carga\n" +
+      "al detector. Con --midi (el JSON que baja /grabar) se sabe qué tocaste\n" +
+      "de verdad y se puede separar una cosa de la otra.\n\n" +
+      "Si no es WAV, convertilo antes:\n" +
       "  ffmpeg -i grabacion.m4a -ac 1 -ar 48000 -c:a pcm_s16le grabacion.wav",
   );
+  process.exit(1);
+}
+if (archivoMidi && !existsSync(archivoMidi)) {
+  console.error(`No encontré el MIDI "${archivoMidi}".`);
   process.exit(1);
 }
 
@@ -68,12 +79,27 @@ function leerWav(buf) {
 }
 
 const { muestras, sampleRate } = leerWav(readFileSync(archivo));
-const esperado = buildExercise({
-  hand: "izquierda",
-  gap: "abajo",
-  positions: 8,
-  base: 48,
-}).map((s) => mod12(s.pitch));
+
+/**
+ * Qué había que tocar.
+ *
+ * Con --midi sale del teclado, o sea que es la verdad y no una suposición. Sin
+ * --midi se asume el ejercicio perfecto, que es lo único que se podía hacer
+ * antes de que existiera /grabar: ahí, tocar mal cuenta como que el detector
+ * oyó mal, y no hay forma de distinguirlo.
+ */
+const verdad = archivoMidi
+  ? JSON.parse(readFileSync(archivoMidi, "utf8")).notas.slice().sort((a, b) => a.t - b.t)
+  : null;
+
+const esperado = verdad
+  ? verdad.map((n) => mod12(n.midi))
+  : buildExercise({
+      hand: "izquierda",
+      gap: "abajo",
+      positions: 8,
+      base: 48,
+    }).map((s) => mod12(s.pitch));
 
 const VENTANA = 2048;
 const SALTO = 800; // ~60 lecturas/s, como el requestAnimationFrame del browser
@@ -165,7 +191,38 @@ function transcribir(p) {
   return segmentar(lecturas, {
     duracionMinimaMs: p.duracionMinMs,
     silencioMs: p.soltarTras * MS_POR_FRAME,
-  }).map((n) => n.dato);
+  });
+}
+
+/** Sólo las clases, que es lo que compara casi todo el script. */
+const clasesDe = (notas) => notas.map((n) => n.dato);
+
+/**
+ * Cuánto tarda la app en enterarse de una nota, en milisegundos.
+ *
+ * Sólo se puede medir con --midi: hace falta saber el instante real del ataque.
+ * Cada nota detectada se aparea con el note-on más cercano de la misma clase, y
+ * se informa la mediana — el promedio lo arruina un solo apareo desafortunado.
+ *
+ * Se mide contra `avisadaEn` y no contra el arranque del tramo: lo que importa
+ * es cuándo reacciona la pantalla. Parte de ese retraso es nuestro y es a
+ * propósito —la regla de duración no avisa hasta que el tramo duró 50ms— así
+ * que lo esperable es *al menos* eso; el resto es lo que tarda el detector en
+ * engancharla.
+ */
+function retrasos(notas, verdad) {
+  const out = [];
+  for (const n of notas) {
+    let mejor = null;
+    for (const v of verdad) {
+      if (mod12(v.midi) !== n.dato) continue;
+      const d = n.avisadaEn - v.t;
+      if (mejor === null || Math.abs(d) < Math.abs(mejor)) mejor = d;
+    }
+    if (mejor !== null) out.push(mejor);
+  }
+  out.sort((a, b) => a - b);
+  return out;
 }
 
 /*
@@ -212,7 +269,7 @@ function alinear(oido, esp) {
   return r;
 }
 
-const ev = (p) => alinear(transcribir(p), esperado);
+const ev = (p) => alinear(clasesDe(transcribir(p)), esperado);
 const fmt = (r) =>
   `${String(r.n).padStart(3)} notas · ${String(r.ok).padStart(2)} ok · ` +
   `${String(r.cambiadas).padStart(2)} cambiadas · ${String(r.inventadas).padStart(3)} inventadas · ` +
@@ -228,11 +285,18 @@ const ACTUAL = {
   porClase: true,
 };
 
+console.log(
+  verdad
+    ? `comparando contra el MIDI del teclado: ${verdad.length} notas de verdad\n`
+    : "comparando contra el ejercicio perfecto (sin --midi, tocar mal cuenta\n" +
+        "como que el detector oyó mal)\n",
+);
 console.log("con los valores que tiene la app hoy:");
 console.log("  " + fmt(ev(ACTUAL)));
 
+const oido = transcribir(ACTUAL);
 const enPantalla = seguirTanda(
-  transcribir(ACTUAL).map((c) => [c]),
+  clasesDe(oido).map((c) => [c]),
   esperado.map((c) => [c]),
 );
 console.log(
@@ -243,6 +307,17 @@ for (const m of enPantalla.marcadas) {
   console.log(
     `    en la nota ${m.en + 1} esperaba ${noteName(m.esperaba?.[0] ?? -1)} y oyó ${noteName(m.oyo[0])}`,
   );
+}
+
+if (verdad) {
+  const rs = retrasos(oido, verdad);
+  if (rs.length) {
+    const mediana = rs[Math.floor(rs.length / 2)];
+    console.log(
+      `  la app se entera ${Math.round(mediana)}ms después del ataque ` +
+        `(de ${Math.round(rs[0])} a ${Math.round(rs[rs.length - 1])})`,
+    );
+  }
 }
 
 console.log("\nqué pasa si me muevo de cada uno (menos errores = mejor):");
@@ -288,6 +363,6 @@ console.log(
 );
 
 console.log("\nlo que escuchó:");
-console.log("  " + transcribir(ACTUAL).map(noteName).join(" "));
+console.log("  " + clasesDe(oido).map(noteName).join(" "));
 console.log("lo que había que tocar:");
 console.log("  " + esperado.map(noteName).join(" "));

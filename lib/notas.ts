@@ -42,6 +42,13 @@ export interface Nota<T = unknown> {
   clases: Clases;
   /** Cuándo empezó a sonar. */
   desde: number;
+  /**
+   * Cuándo la dimos por buena, que es siempre más tarde que `desde` — como
+   * mínimo, `duracionMinimaMs`. Es el instante en que la app reacciona, así que
+   * es el que hay que mirar para saber cuánto se atrasa la pantalla respecto de
+   * los dedos.
+   */
+  avisadaEn: number;
   /** La lectura más limpia del tramo: la que conviene mostrar. */
   dato: T;
 }
@@ -155,6 +162,7 @@ export function crearSegmentador<T>(opciones: OpcionesSegmentador = {}) {
       return {
         clases: tramo.clases,
         desde: tramo.desde,
+        avisadaEn: l.t,
         dato: tramo.mejor.dato as T,
       };
     },
