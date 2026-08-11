@@ -213,11 +213,36 @@ Reglas que ya están resueltas y conviene no romper:
 - Escuchar y reproducir son excluyentes, si no el micrófono se oye a sí mismo.
 - `echoCancellation`, `noiseSuppression` y `autoGainControl` van en `false`:
   están pensados para voz y se comen las notas que se apagan.
-- Hacen falta 3 lecturas iguales seguidas para dar una nota por buena. Con
-  menos, el golpe del ataque (que es ruido de banda ancha) mete notas fantasma.
-- Si lo que tocás es la nota *siguiente* a la esperada, se saltea sin penalizar:
-  quiere decir que el micrófono se comió una, y el error es nuestro. Sin eso,
-  una sola nota perdida te deja trabado tocando algo que la app ya pasó.
+- **Una nota se cree recién cuando duró 50ms, y se mide el tiempo del tramo, no
+  la cantidad de lecturas.** Es la regla que más errores sacó. La idea es de
+  Joaquín y es de sentido común: si en "la si la" el si duró veinte
+  milisegundos, ese si no existió.
+
+  Antes se contaban lecturas iguales seguidas ("tres y va") y no alcanzaba, por
+  un motivo que no se ve: la ventana del analizador son 2048 muestras (~46ms) y
+  avanzamos de a un frame (~17ms), así que **las ventanas se pisan casi
+  enteras**. Un blip de 20ms cae adentro de tres o cuatro ventanas consecutivas
+  y junta sus tres confirmaciones solo. Tres lecturas nunca fueron 50ms de
+  evidencia: eran el mismo instante mirado tres veces.
+
+  Lo lindo es que sale gratis: un tramo corto muere sin avisar y sin tocar la
+  última nota contada, así que "la si la" se colapsa en un solo la.
+
+- **Si lo que tocaste aparece en las próximas 3 notas, se salta hasta ahí.**
+  Esto es lo que evita el arrastre, que resultó ser la causa de casi todos los
+  errores que se ven en pantalla. Cuando el micrófono se come una nota, la app
+  se queda esperándola y a partir de ahí *todo* lo que tocás bien sale marcado
+  en rojo. Sobre una grabación real: con ventana 1 (que era lo que había) 33
+  errores en pantalla, con 2 nueve, con 3 dos.
+
+  De ahí para arriba no mejora, sólo se vuelve difícil que te marque un error
+  de verdad.
+
+- **Las dos reglas se necesitan, y juntas piden umbrales distintos que por
+  separado.** Con la ventana de resync conviene la duración *más baja*: una
+  nota inventada la absorbe la ventana, una nota comida no. Por eso 50ms y no
+  100ms, que fue la primera respuesta mirando sólo la alineación y era peor
+  (7 errores en pantalla contra 2).
 - El `k` del método de McLeod se queda en 0.9. Cuando una nota parpadea de
   octava, la tentación es subirlo; medido contra una grabación real, subirlo
   **empeora** (a 0.97 los errores se triplican).
@@ -235,13 +260,22 @@ dos herramientas, y conviene usarlas en este orden:
 2. `npm run calibrar -- grabacion.wav` sabe qué había que tocar (el ejercicio
    entero) y mide el error de verdad, más un barrido de umbrales.
 
-Dos cosas de método que costaron y no hay que volver a aprender:
+Tres cosas de método que costaron y no hay que volver a aprender:
 
-- **No puntúes como la app para calibrar.** La app espera nota por nota, así
-  que si se desincroniza una vez, todo lo que sigue cuenta como error y el
-  número deja de hablar del detector. Hay que alinear con distancia de edición
-  y separar notas cambiadas, inventadas y comidas. Las *inventadas* son las que
-  rompen la app.
+- **Hacen falta los dos números, y miden cosas distintas.** `calibrar` imprime
+  la alineación (notas cambiadas, inventadas y comidas, con distancia de
+  edición) *y* cuántos errores te marcaría la app en pantalla. La alineación
+  dice qué tan bien oye el detector; el simulacro dice cuántas veces te va a
+  decir que te equivocaste sin que te hayas equivocado. **Mirar uno solo lleva
+  a la decisión equivocada**, y ya pasó: por la alineación, 100ms de duración
+  mínima parecía la mejor opción, y en pantalla daba 7 errores contra los 2 de
+  50ms. El que se siente es el segundo.
+- **Si tocás la lógica de la app, tocá el simulacro.** `transcribir()` y
+  `simularApp()` en `calibrar-mic.mjs` tienen que ser la misma máquina que
+  `useMicPitch.ts` y `ExerciseRunner.tsx`. Si se separan, el número sigue
+  saliendo prolijo y deja de querer decir algo. (Cuando coinciden se nota: la
+  última medición dio 65 bien y 2 en rojo en el script, y exactamente 65 y 2 en
+  el browser.)
 - **Una grabación no se autocorrige y vos sí.** Tocando en vivo mirás la
   pantalla y volvés a intentar la nota; una grabación sigue de largo. Por eso
   el puntaje que da un replay siempre es más feo que el real, y no hay que
@@ -249,7 +283,8 @@ Dos cosas de método que costaron y no hay que volver a aprender:
 
 Y una advertencia: sobre una sola grabación, una diferencia de uno o dos
 errores es ruido. Mover un umbral se justifica cuando la mejora es grande (como
-lo de la octava, que fue de 25 errores a 8) o cuando se sostiene en varias
+lo de la octava, que fue de 25 errores a 8, o lo de la duración más el resync,
+que fue de 45 errores en pantalla a 2) o cuando se sostiene en varias
 grabaciones.
 
 **Los acordes no se pueden escuchar todavía.** Detectar varias notas a la vez es

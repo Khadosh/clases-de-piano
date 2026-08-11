@@ -8,12 +8,16 @@
  *
  * Dos decisiones importantes de método:
  *
- * 1. NO puntúa como la app. La app espera nota por nota, así que si se
- *    desincroniza una vez, todo lo que viene después cuenta como error y el
- *    número deja de decir nada sobre el detector. Acá se alinea con distancia
- *    de edición, que separa los tres errores que son distintos entre sí:
- *    notas cambiadas, notas inventadas y notas comidas. Las *inventadas* son
- *    las que rompen la app.
+ * 1. Imprime DOS números, porque miden cosas distintas y mirar uno solo lleva
+ *    a la decisión equivocada.
+ *
+ *    La *alineación* (distancia de edición, con notas cambiadas, inventadas y
+ *    comidas por separado) dice qué tan bien oye el detector, sin que un
+ *    desfasaje contamine todo lo que viene después.
+ *
+ *    El *simulacro de la app* dice cuántas veces te va a marcar un error en
+ *    pantalla, que es lo que se siente y no es lo mismo: la app avanza nota
+ *    por nota y sin poder volver atrás.
  *
  * 2. La autocorrelación de cada ventana se calcula una sola vez y se guardan
  *    los picos. Probar un juego de umbrales después es sólo recorrer esa
@@ -132,36 +136,94 @@ function leer(w, k, clarityMin, rmsMin) {
   return elegido.midi >= 33 && elegido.midi <= 96 ? elegido.midi : null;
 }
 
+/** El mismo que components/ExerciseRunner.tsx. */
+const VENTANA_RESYNC = 3;
+
+/** Milisegundos que dura cada frame. Tiene que dar lo mismo que el browser. */
+const MS_POR_FRAME = (SALTO / sampleRate) * 1000;
+
+/**
+ * La misma lógica que `lib/useMicPitch.ts`: se agrupan las lecturas en tramos
+ * de la misma clase y se avisa recién cuando el tramo duró `duracionMinMs`.
+ *
+ * Que sea la misma importa: si esto simula otra cosa, el número que sale de
+ * acá deja de decir nada sobre lo que te va a pasar tocando.
+ */
 function transcribir(p) {
-  let candidata = null;
-  let reps = 0;
   let ultima = null;
+  let tramo = null;
   let silencios = 0;
   const out = [];
   for (const w of tabla) {
     const midi = leer(w, p.k, p.clarityMin, p.rmsMin);
     if (midi === null) {
       silencios++;
-      candidata = null;
-      reps = 0;
-      if (silencios >= p.soltarTras) ultima = null;
+      if (silencios >= p.soltarTras) {
+        ultima = null;
+        tramo = null;
+      }
       continue;
     }
     silencios = 0;
     const clase = mod12(midi);
     const id = p.porClase ? clase : midi;
-    if (midi === candidata) {
-      reps++;
-      if (reps === p.confirmaciones && id !== ultima) {
+    if (tramo?.id !== id) {
+      tramo = { id, clase, frames: 1, avisado: false };
+    } else {
+      tramo.frames++;
+    }
+    // frames - 1 y no frames: el browser mide contra el instante de la primera
+    // lectura del tramo, así que con dos lecturas pasó un intervalo, no dos.
+    if (!tramo.avisado && (tramo.frames - 1) * MS_POR_FRAME >= p.duracionMinMs) {
+      tramo.avisado = true;
+      if (id !== ultima) {
         ultima = id;
         out.push(clase);
       }
-    } else {
-      candidata = midi;
-      reps = 1;
     }
   }
   return out;
+}
+
+/**
+ * Cuántos errores te marcaría la app en pantalla, que no es lo mismo que
+ * cuántos hubo.
+ *
+ * La app avanza nota por nota: acepta la esperada, se banca en silencio la
+ * anterior (rebote del detector), busca lo que tocaste en las próximas
+ * VENTANA_RESYNC —así se vuelve a enganchar si el micrófono se comió alguna—
+ * y recién si no aparece lo marca en rojo. Este simulacro corre esa misma
+ * máquina sobre lo transcripto.
+ *
+ * Va *además* de la alineación, no en vez de ella: la alineación dice qué tan
+ * bien oye el detector, y esto dice cuántas veces te va a decir que te
+ * equivocaste sin que te hayas equivocado. Es el número que se siente.
+ */
+function simularApp(oido, esp, ventana = VENTANA_RESYNC) {
+  let i = 0;
+  let bien = 0;
+  let mal = 0;
+  const marcadas = [];
+  const en = (n) => (n >= 0 && n < esp.length ? esp[n] : -1);
+  for (const clase of oido) {
+    if (clase === en(i - 1)) continue; // rebote del detector
+    let saltoA = -1;
+    for (let d = 0; d <= ventana; d++) {
+      if (clase === en(i + d)) {
+        saltoA = i + d;
+        break;
+      }
+    }
+    if (saltoA >= 0) {
+      bien += saltoA - i + 1;
+      i = saltoA + 1;
+    } else {
+      mal++;
+      marcadas.push({ en: i, oyo: clase, esperaba: en(i) });
+    }
+    if (i >= esp.length) break;
+  }
+  return { bien, mal, marcadas };
 }
 
 /** Levenshtein con desglose de qué tipo de error fue cada uno. */
@@ -213,7 +275,7 @@ const ACTUAL = {
   k: 0.9,
   clarityMin: 0.88,
   rmsMin: 0.01,
-  confirmaciones: 3,
+  duracionMinMs: 50,
   soltarTras: 6,
   porClase: true,
 };
@@ -221,12 +283,23 @@ const ACTUAL = {
 console.log("con los valores que tiene la app hoy:");
 console.log("  " + fmt(ev(ACTUAL)));
 
+const enPantalla = simularApp(transcribir(ACTUAL), esperado);
+console.log(
+  `  y en pantalla verías: ${enPantalla.bien} bien · ` +
+    `${enPantalla.mal} marcada(s) en rojo`,
+);
+for (const m of enPantalla.marcadas) {
+  console.log(
+    `    en la nota ${m.en + 1} esperaba ${noteName(m.esperaba)} y oyó ${noteName(m.oyo)}`,
+  );
+}
+
 console.log("\nqué pasa si me muevo de cada uno (menos errores = mejor):");
 for (const [campo, valores] of [
   ["k", [0.85, 0.88, 0.9, 0.92, 0.95, 0.97]],
   ["clarityMin", [0.82, 0.85, 0.88, 0.9, 0.92, 0.95]],
   ["rmsMin", [0.005, 0.008, 0.01, 0.015, 0.02, 0.03]],
-  ["confirmaciones", [2, 3, 4, 5]],
+  ["duracionMinMs", [0, 33, 50, 83, 100, 133, 200, 333]],
   ["soltarTras", [1, 2, 4, 6, 8, 12]],
   ["porClase", [true, false]],
 ]) {
@@ -245,16 +318,16 @@ let mejor = null;
 for (const k of [0.85, 0.88, 0.9, 0.92, 0.95])
   for (const clarityMin of [0.82, 0.85, 0.88, 0.9, 0.92])
     for (const rmsMin of [0.005, 0.01, 0.015, 0.02])
-      for (const confirmaciones of [2, 3, 4, 5])
+      for (const duracionMinMs of [33, 50, 83, 100, 133, 200])
         for (const soltarTras of [2, 4, 6, 8, 12]) {
-          const p = { k, clarityMin, rmsMin, confirmaciones, soltarTras, porClase: true };
+          const p = { k, clarityMin, rmsMin, duracionMinMs, soltarTras, porClase: true };
           const r = ev(p);
           if (!mejor || r.total < mejor.r.total) mejor = { p, r };
         }
 console.log("\nla mejor combinación del barrido:");
 console.log(
   `  k=${mejor.p.k} claridad=${mejor.p.clarityMin} rms=${mejor.p.rmsMin} ` +
-    `confirmaciones=${mejor.p.confirmaciones} soltarTras=${mejor.p.soltarTras}`,
+    `duracionMinMs=${mejor.p.duracionMinMs} soltarTras=${mejor.p.soltarTras}`,
 );
 console.log("  " + fmt(mejor.r));
 console.log(

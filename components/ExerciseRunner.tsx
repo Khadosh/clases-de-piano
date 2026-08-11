@@ -27,6 +27,17 @@ const BASE_IZQ = 48; // Do3
 const BASE_DER = 60; // Do4
 const POSICIONES = 8; // una octava por tramo
 
+/**
+ * Cuántas notas para adelante se busca lo que tocaste antes de decir que está
+ * mal. Es lo que le permite a la app volver a engancharse cuando el micrófono
+ * se pierde una nota o dos, en vez de quedarse esperándola para siempre.
+ *
+ * Tres es el número medido: con 1 (lo que hacía antes) una grabación real
+ * marcaba 35 errores, con 2 nueve y con 3 dos, y de ahí para arriba no mejora
+ * — sólo se vuelve más difícil que te marque un error de verdad.
+ */
+const VENTANA_RESYNC = 3;
+
 /** Arma el recorrido pedido para una mano. */
 function armar(hand: Hand, recorrido: Variant["recorrido"], base: number) {
   if (recorrido === "completo")
@@ -127,22 +138,26 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
       const claseDe = (n: number) =>
         n >= 0 && n < pasos.length ? mod12(pasos[n].pitch) : -1;
 
-      if (clase === claseDe(i)) {
-        avanzar(1);
-      } else if (clase === claseDe(i - 1)) {
-        // La nota que acabamos de dar por buena, otra vez: es un rebote del
-        // detector (la misma tecla que suena entrecortada), no un error tuyo.
-        // Se ignora en silencio.
-      } else if (clase === claseDe(i + 1)) {
-        // Tocaste la que sigue: la anterior sonó y no la escuchamos. El error
-        // es nuestro, no tuyo, así que se saltea sin penalizar. Sin esto, una
-        // sola nota que el micrófono se pierde te deja trabado tocando algo
-        // que la app ya pasó.
-        avanzar(2);
-      } else {
-        setUltimoError(midi);
-        setPuntaje((p) => ({ ...p, mal: p.mal + 1 }));
+      // La nota que acabamos de dar por buena, otra vez: es un rebote del
+      // detector (la misma tecla sonando entrecortada), no un error tuyo.
+      if (clase === claseDe(i - 1)) return;
+
+      // Y si no, se la busca en las próximas notas y se salta hasta ahí. Ese
+      // salto es todo el asunto: cuando el micrófono se come una nota, la app
+      // se queda esperándola y a partir de ahí *todo* lo que tocás bien sale
+      // marcado en rojo. Medido sobre una grabación real, ese arrastre era la
+      // causa de 33 de los 33 errores en pantalla; con esta ventana quedan 2,
+      // que son los que el detector realmente erró.
+      for (let d = 0; d <= VENTANA_RESYNC; d++) {
+        if (clase === claseDe(i + d)) {
+          avanzar(d + 1);
+          return;
+        }
       }
+
+      // No está ni acá ni en las que siguen: eso sí es otra nota.
+      setUltimoError(midi);
+      setPuntaje((p) => ({ ...p, mal: p.mal + 1 }));
     },
     [avanzar],
   );

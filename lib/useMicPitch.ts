@@ -13,12 +13,37 @@ export type EstadoMic =
   | "error";
 
 /**
- * Cuántas lecturas seguidas iguales hacen falta para dar una nota por buena.
- * Con dos se colaban errores fantasma: el golpe inicial de cada nota es ruido
- * de banda ancha y por un frame se lee cualquier cosa. Tres (unos 50ms) filtra
- * el ataque sin agregar latencia perceptible.
+ * Cuánto tiene que durar una nota para creerle, en milisegundos.
+ *
+ * Es *la* regla del micrófono, y es de Joaquín: si en "la si la" el si duró
+ * veinte milisegundos, ese si no existió. Una nota de piano de verdad dura
+ * cientos de milisegundos; lo que dura treinta es el golpe del ataque, una
+ * tecla vecina rozada, o el detector enganchando un armónico por un instante.
+ *
+ * Antes esto se contaba en lecturas seguidas ("tres iguales y va"), y no
+ * alcanzaba, por un motivo que no se ve a simple vista: la ventana del
+ * analizador son 2048 muestras (~46ms) y avanzamos de a un frame (~17ms), así
+ * que **las ventanas se pisan casi enteras**. Un blip de 20ms cae adentro de
+ * tres o cuatro ventanas consecutivas y junta sus tres confirmaciones solo.
+ * Tres lecturas nunca fueron 50ms de evidencia: eran el mismo instante mirado
+ * tres veces. Por eso ahora se mide el tiempo del tramo y no la cantidad de
+ * lecturas.
+ *
+ * Medido contra una grabación real del ejercicio (`npm run calibrar`): las
+ * notas inventadas se van a cero a los 50ms y se quedan en cero por más que se
+ * suba. Subir igual tiene un costo —se empiezan a comer notas de verdad— y una
+ * nota comida sale más cara que una inventada ahora que el ejercicio se
+ * re-sincroniza: la basura la absorbe la ventana, el silencio no. Por eso 50 y
+ * no 100, que fue la primera respuesta y era peor.
  */
-const CONFIRMACIONES = 3;
+const DURACION_MINIMA_MS = 50;
+
+/**
+ * Y además, al menos dos lecturas. Es para el caso raro de un browser que
+ * corra el loop muy lento: con una sola lectura, "duró 100ms" no significa
+ * nada porque nadie miró el medio.
+ */
+const LECTURAS_MINIMAS = 2;
 
 /**
  * Cuántas lecturas seguidas sin nota hacen falta para dar la nota por soltada.
@@ -122,8 +147,15 @@ export function useMicPitch({ activo, onNota }: Opciones) {
       const buf = new Float32Array(analyser.fftSize);
       /** La *clase* de la última nota contada, no su octava. Ver abajo. */
       let ultimaClase: number | null = null;
-      let candidata: number | null = null;
-      let repeticiones = 0;
+      /** El tramo que viene sonando: una corrida de lecturas de la misma clase. */
+      let tramo: {
+        clase: number;
+        desde: number;
+        lecturas: number;
+        /** La lectura más limpia del tramo, que es la que se avisa. */
+        mejor: PitchReading;
+        avisado: boolean;
+      } | null = null;
       let silencios = 0;
       let ultimoRefresco = 0;
 
@@ -136,35 +168,59 @@ export function useMicPitch({ activo, onNota }: Opciones) {
         analyser.getFloatTimeDomainData(buf);
         const r = detectPitch(buf, ctx.sampleRate);
 
+        const ahora = performance.now();
+
         if (!r) {
-          candidata = null;
-          repeticiones = 0;
           silencios++;
-          // Recién con silencio sostenido se da la nota por soltada y se
-          // permite que la misma vuelva a contar.
-          if (silencios >= SOLTAR_TRAS) ultimaClase = null;
+          // Un bache de uno o dos frames en el medio de una nota tenida no
+          // corta el tramo: el sonido decae, pasa por debajo del umbral y
+          // vuelve. Recién con silencio sostenido se da la nota por soltada y
+          // se permite que la misma vuelva a contar.
+          if (silencios >= SOLTAR_TRAS) {
+            ultimaClase = null;
+            tramo = null;
+          }
         } else {
           silencios = 0;
-          // Se recuerda la clase de nota (do, re, mi…) y no la nota con su
+          // Se agrupa por *clase* de nota (do, re, mi…) y no por nota con su
           // octava, a propósito: el detector se equivoca de octava seguido —
           // una nota real parpadea entre La3 y La4 varias veces mientras
-          // suena— y si se recordara la octava, cada parpadeo contaría como
-          // una nota nueva. Con la clase, el parpadeo es invisible. Además es
-          // lo mismo que compara el ejercicio, así que no se pierde nada.
+          // suena— y si se mirara la octava, cada parpadeo cortaría el tramo.
+          // Con la clase, el parpadeo es invisible. Además es lo mismo que
+          // compara el ejercicio, así que no se pierde nada.
           const clase = ((r.midi % 12) + 12) % 12;
-          if (r.midi === candidata) {
-            repeticiones++;
-            if (repeticiones === CONFIRMACIONES && clase !== ultimaClase) {
-              ultimaClase = clase;
-              onNotaRef.current?.(r.midi, r);
-            }
+
+          if (tramo?.clase !== clase) {
+            tramo = {
+              clase,
+              desde: ahora,
+              lecturas: 1,
+              mejor: r,
+              avisado: false,
+            };
           } else {
-            candidata = r.midi;
-            repeticiones = 1;
+            tramo.lecturas++;
+            if (r.clarity > tramo.mejor.clarity) tramo.mejor = r;
+          }
+
+          // Se avisa recién cuando el tramo duró lo suficiente, no cuando
+          // apareció. Un tramo corto muere sin avisar nada y sin tocar
+          // `ultimaClase`, y por eso "la si la" con el si cortito se colapsa
+          // solo: el si no llega a avisar, y el la que viene después es la
+          // misma clase que la última avisada, así que tampoco cuenta.
+          if (
+            !tramo.avisado &&
+            tramo.lecturas >= LECTURAS_MINIMAS &&
+            ahora - tramo.desde >= DURACION_MINIMA_MS
+          ) {
+            tramo.avisado = true;
+            if (clase !== ultimaClase) {
+              ultimaClase = clase;
+              onNotaRef.current?.(tramo.mejor.midi, tramo.mejor);
+            }
           }
         }
 
-        const ahora = performance.now();
         if (ahora - ultimoRefresco > REFRESCO_UI) {
           ultimoRefresco = ahora;
           setLectura(r);

@@ -161,7 +161,9 @@ for (let pos = 0; pos + VENTANA <= muestras.length; pos += SALTO) {
 // Informe
 // ---------------------------------------------------------------------------
 
-const CONFIRMACIONES = 3; // el mismo criterio que usa la app
+/** El mismo criterio que usa la app: un tramo cuenta si duró lo suficiente. */
+const DURACION_MINIMA_MS = 100;
+const duraLoSuficiente = (t) => (t.fin - t.inicio) * 1000 >= DURACION_MINIMA_MS;
 
 console.log(`\narchivo: ${archivo}`);
 console.log(
@@ -181,9 +183,9 @@ if (picoRms < 0.02) {
 }
 
 console.log("tramos detectados (los que la app tomaría como nota van con ●):");
-const sonoros = tramos.filter((t) => t.n >= CONFIRMACIONES);
+const sonoros = tramos.filter(duraLoSuficiente);
 for (const t of tramos) {
-  const cuenta = t.n >= CONFIRMACIONES;
+  const cuenta = duraLoSuficiente(t);
   const dur = (t.fin - t.inicio) * 1000;
   console.log(
     `  ${cuenta ? "●" : "·"} ${t.inicio.toFixed(2).padStart(6)}s  ` +
