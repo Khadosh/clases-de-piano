@@ -10,6 +10,9 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    // Para que `lib/puntaje.ts` pueda importar `./notas.ts` con extensión:
+    // Node la necesita para poder correr los módulos sin build (npm run test:notas).
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

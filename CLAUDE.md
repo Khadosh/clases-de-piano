@@ -189,14 +189,30 @@ slider cortaría y rearmaría el pulso en vez de acelerarlo.
 ## El micrófono
 
 El bloque `exercise` tiene un modo "escuchame tocar": abre el micrófono, detecta
-qué nota estás tocando y avanza sola cuando acertás. Vive en tres archivos:
+qué nota estás tocando y avanza sola cuando acertás.
 
-- `lib/pitch.ts` — el detector (método de McLeod: autocorrelación normalizada).
-  Escrito a mano, sin dependencias. **Sirve para una nota por vez.**
-- `lib/useMicPitch.ts` — el hook que abre el micrófono y avisa nota por nota.
-  Corre a 60 lecturas por segundo pero refresca React mucho menos seguido, a
-  propósito: arriba hay un teclado SVG que no conviene redibujar tan rápido.
-- El panel de la UI está al final de `components/ExerciseRunner.tsx`.
+Son cuatro capas y **conviene entenderlas separadas**, porque el error más caro
+que cometimos fue asumir que el problema estaba en la primera cuando estaba en
+la tercera:
+
+| Capa | Archivo | Qué hace |
+|---|---|---|
+| Detectar | `lib/pitch.ts` | De un búfer de audio a "esto suena a un la". Método de McLeod, sin dependencias. **Una nota por vez.** |
+| Segmentar | `lib/notas.ts` | De un chorro de lecturas a *notas*. Acá está la regla de la duración. |
+| Puntuar | `lib/puntaje.ts` | De notas a "vas bien / te comí una / eso está mal". Acá está la ventana de resync. |
+| Mostrar | `lib/useMicPitch.ts` + `components/ExerciseRunner.tsx` | El micrófono, React y la UI. |
+
+Las dos del medio **no saben nada de React ni de Web Audio**, y eso es a
+propósito: se prueban con un array escrito a mano (`npm run test:notas`, corre
+en milisegundos). Antes vivían adentro de un `useEffect` y para probar un
+cambio había que levantar el server, abrir Chromium con micrófono falso y
+esperar cuarenta segundos de audio. Es la diferencia entre poder experimentar y
+no poder.
+
+Los scripts de calibración importan **esos mismos módulos**, no una copia. Hubo
+una época en que `calibrar-mic.mjs` reescribía la lógica y un comentario pedía
+mantener las dos versiones en sincronía; ese tipo de acuerdo se rompe, y cuando
+se rompe el script sigue dando números prolijos que ya no dicen nada.
 
 Reglas que ya están resueltas y conviene no romper:
 
@@ -207,9 +223,9 @@ Reglas que ya están resueltas y conviene no romper:
   real parpadea entre La3 y La4 varias veces mientras suena. Recordando la
   octava, cada parpadeo contaba como nota nueva, y de ahí salían casi todos los
   errores (17 notas inventadas en una sola pasada del ejercicio).
-- **Una nota se da por soltada recién tras 6 lecturas seguidas sin sonido.** En
-  el medio de una nota tenida hay baches de un frame o dos, y con un solo frame
-  de silencio la misma nota volvía a contar.
+- **Una nota se da por soltada recién tras 100ms de silencio.** En el medio de
+  una nota tenida hay baches de un frame o dos, y con un solo frame de silencio
+  la misma nota volvía a contar.
 - Escuchar y reproducir son excluyentes, si no el micrófono se oye a sí mismo.
 - `echoCancellation`, `noiseSuppression` y `autoGainControl` van en `false`:
   están pensados para voz y se comen las notas que se apagan.
@@ -247,6 +263,11 @@ Reglas que ya están resueltas y conviene no romper:
   octava, la tentación es subirlo; medido contra una grabación real, subirlo
   **empeora** (a 0.97 los errores se triplican).
 
+`npm run test:notas` prueba las dos capas del medio contra tiras de lecturas
+escritas a mano: el "la si la" con el si de 20ms, el parpadeo de octava, el
+bache en el medio de una nota tenida, la nota comida que no tiene que arrastrar
+el resto. Correlo con cualquier cambio ahí; tarda milisegundos.
+
 `npm run test:pitch` prueba el detector contra tonos sintéticos con armónicos,
 de Do2 a Do6. Correlo si tocás `lib/pitch.ts`: el modo en que falla un detector
 de altura es contestar la octava de arriba, y eso se ve enseguida ahí.
@@ -270,12 +291,16 @@ Tres cosas de método que costaron y no hay que volver a aprender:
   a la decisión equivocada**, y ya pasó: por la alineación, 100ms de duración
   mínima parecía la mejor opción, y en pantalla daba 7 errores contra los 2 de
   50ms. El que se siente es el segundo.
-- **Si tocás la lógica de la app, tocá el simulacro.** `transcribir()` y
-  `simularApp()` en `calibrar-mic.mjs` tienen que ser la misma máquina que
-  `useMicPitch.ts` y `ExerciseRunner.tsx`. Si se separan, el número sigue
-  saliendo prolijo y deja de querer decir algo. (Cuando coinciden se nota: la
-  última medición dio 65 bien y 2 en rojo en el script, y exactamente 65 y 2 en
-  el browser.)
+- **El browser no sirve para comparar números.** Sirve para ver que algo anda
+  de punta a punta y que no hay errores de JS, nada más. Dos corridas del mismo
+  test con micrófono falso, mismo código y mismo server, dieron 65 bien / 3 al
+  lado y 59 / 9: el arranque del audio falso y el ritmo del
+  `requestAnimationFrame` cambian entre corridas lo suficiente como para tapar
+  cualquier diferencia que estemos buscando.
+
+  El instrumento de medición es `npm run calibrar`, que corre sobre un archivo
+  y da exactamente lo mismo siempre. Si un cambio se juzga por el browser, se
+  está midiendo el ruido. (Perseguí un "empeoró de 65/2 a 59/9" que no existía.)
 - **Una grabación no se autocorrige y vos sí.** Tocando en vivo mirás la
   pantalla y volvés a intentar la nota; una grabación sigue de largo. Por eso
   el puntaje que da un replay siempre es más feo que el real, y no hay que
