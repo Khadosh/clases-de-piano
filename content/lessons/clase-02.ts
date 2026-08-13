@@ -12,7 +12,7 @@ const lesson: Lesson = {
     "subdivisión",
     "cuatriadas",
     "séptimas",
-    "cifrado inglés",
+    "enlace de acordes",
   ],
   blocks: [
     {
@@ -107,6 +107,29 @@ const lesson: Lesson = {
       text: "*C7+5* es Do · Mi · Sol♯ · Si♭. La aumentada empujando para arriba y la séptima tirando para abajo, las dos a la vez: no hay forma de que se quede quieta.\n\n*C7sus4* es Do · Fa · Sol · Si♭. Ni alegre ni triste, y encima con la séptima pidiendo resolver. Es todo pregunta.\n\nY la *disminuida entera* tiene una gracia aparte: son tres saltos de 3 semitonos, todos iguales, así que la girás y da el mismo acorde. No tiene fundamental — o tiene cuatro, según cómo lo mires.",
     },
     {
+      kind: "section",
+      title: "Enlazar",
+      emoji: "🔗",
+      intro:
+        "Con las cuatriadas ya se puede tocar una progresión entera. Y ahí aparece el problema de verdad: tocarlas todas en estado fundamental hace saltar la mano por todo el teclado, y suena a ejercicio y no a música.",
+    },
+    {
+      kind: "prose",
+      text: "La progresión que quedó anotada es *C | Dm7 | G7 | Em7 | Am | Bm7♭5 | (E7) | Am*. Está toda en estado fundamental, que es como se escribe pero no como se toca.\n\nLa idea es: el primer acorde fija dónde está la mano, y a partir de ahí cada acorde se gira a la inversión que menos obligue a moverse. Las notas del acorde no cambian nunca — es exactamente la misma operación de la clase 1, sólo que ahora hay un motivo para elegir una inversión y no otra.",
+    },
+    {
+      kind: "secuencia",
+      title: "El ejercicio",
+      intro:
+        "Está el acorde anterior en gris para que veas de dónde venís. *No hay una única respuesta correcta*: seguido hay dos inversiones igual de buenas, así que en vez de corregirte te dice cuánto moviste y cuánto era el mínimo. El objetivo es bajar ese número.",
+      acordes: ["C", "Dm7", "G7", "Em7", "Am", "Bm7b5", "E7", "Am"],
+    },
+    {
+      kind: "prose",
+      title: "Los dos criterios no son lo mismo",
+      text: "El botón de arriba cambia qué se mide, y vale la pena hacer la progresión con los dos.\n\nQuique lo planteó sobre *el bajo*: que la nota de abajo se mueva poco. Y para piano solo es el criterio correcto, porque cuando tocás el acorde con una mano la nota más grave *es* el bajo, y el oído la sigue más que a ninguna otra: un bajo que salta suena mal aunque la mano casi no se haya movido.\n\nEl otro criterio es el enlace de manual: que se mueva poco *toda la mano*, reteniendo las notas comunes. Es el que sirve cuando alguien más hace el bajo.\n\nSobre esta progresión los dos recorridos coinciden en apenas *tres de los ocho* acordes, así que no son dos maneras de decir lo mismo. Mover el bajo cuesta 4 semitonos de bajo y 57 de mano; mover la mano cuesta 45 de mano pero 8 de bajo.\n\nY el de la mano hace algo que se escucha enseguida: encuentra una posición cómoda y no la suelta más, dejando un *Re* en el bajo de punta a punta. Eso ya no es un enlace, es un pedal. Probá los dos y vas a entender por qué Quique lo planteó sobre el bajo.",
+    },
+    {
       kind: "nomenclature",
       title: "Los cifrados nuevos",
       intro:
@@ -120,13 +143,14 @@ const lesson: Lesson = {
     "Armar las cuatro cuatriadas nuevas desde tres fundamentales distintas, diciendo la receta en voz alta antes de apoyar la mano.",
     "Dictado con las cuatriadas nuevas prendidas: el ∅ y el ° son los que más cuesta distinguir de oído.",
     "Escuchar una chacarera contando de a tres adentro de cada tiempo, y después un vals contando de a dos.",
+    "La progresión enlazada de memoria, con los dos criterios, hasta que la mano vaya sola.",
   ],
 
   openQuestions: [
     "¿La regla de las suspendidas vale también para sus2? Cargué sólo 7sus4, que es el que quedó escrito en el cuaderno.",
     "En la hoja aparecen C6 y Cm6, que no llegamos a hablar. ¿Son para la clase que viene o me los perdí?",
     "El ° del final, ¿es la disminuida de cuatro notas o la tríada disminuida a secas? Lo cargué como la de cuatro (Do · Mi♭ · Sol♭ · La), que es la que cierra la regla de las séptimas.",
-    "Quedó anotada la progresión C | Dm7 | G7 | Em7 | Am | Bm7♭5 | (E7) | Am. No la puse todavía porque el cuaderno no tiene un bloque para progresiones: ¿la armamos para la próxima?",
+    "El E7 estaba entre paréntesis en el cuaderno. Lo puse como un acorde más de la progresión, pero si el paréntesis quería decir algo (que es opcional, o que es un dominante prestado) avisame y lo anoto.",
   ],
 };
 

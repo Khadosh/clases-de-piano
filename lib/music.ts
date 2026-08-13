@@ -473,6 +473,28 @@ export interface Chord {
   quality: ChordQuality;
 }
 
+/**
+ * De un cifrado escrito ("Em7", "Bbm7b5", "C7+5") al acorde.
+ *
+ * Es lo inverso de `chordSymbol`, y existe para que en el contenido de una
+ * clase se puedan escribir progresiones como se escriben en un papel, en vez
+ * de listas de ids y números.
+ */
+export function parseCifrado(sym: string): Chord | null {
+  const m = /^([A-G])([#b]?)(.*)$/.exec(sym.trim());
+  if (!m) return null;
+  const [, letra, alteracion, sufijo] = m;
+  const i = LETRAS_EN.indexOf(letra as (typeof LETRAS_EN)[number]);
+  if (i < 0) return null;
+  const root = mod12(
+    LETRAS_PC[i] + (alteracion === "#" ? 1 : alteracion === "b" ? -1 : 0),
+  );
+  const quality =
+    CHORD_QUALITIES.find((q) => q.suffix === sufijo) ??
+    CHORD_QUALITIES.find((q) => q.aliases?.includes(sufijo));
+  return quality ? { root, quality } : null;
+}
+
 // ---------------------------------------------------------------------------
 // Inversiones
 // ---------------------------------------------------------------------------

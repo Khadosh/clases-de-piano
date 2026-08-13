@@ -45,6 +45,7 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `nomenclature` | Cifrado inglés | Tablita de ejemplos + quiz |
 | `figuras` | Las figuras y el árbol de división | Árbol que suena + tabla de las siete figuras |
 | `compases` | Simples, compuestos y la subdivisión | Máquina de compases con metrónomo y el botón de la constante |
+| `secuencia` | Enlazar una progresión girando los acordes | Teclado con el acorde anterior en gris y el puntaje de cuánto te moviste |
 
 **Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
 lee como un chorizo. El índice de arriba de la clase se arma solo a partir de
@@ -114,6 +115,30 @@ teclado de 55 a 79. Para mostrar un acorde va `rangoParaAcorde(pitches)`.
 bloque (`chord-lab` con `inversiones: true`) y no dos. Se intentó tenerlos
 separados y eran dos componentes casi idénticos. Lo que sí conviene separar es
 el *texto*: primero la receta, después "y además se puede girar".
+
+## El enlace de acordes
+
+`lib/enlace.ts`. Se da una progresión en estado fundamental y hay que ir
+girando cada acorde para moverse poco. Tres cosas que costaron:
+
+- **Son dos criterios y no uno.** `bajo` (el del profe) mira sólo la nota más
+  grave; `mano` mira todo el acorde. No son dos formas de decir lo mismo: sobre
+  la progresión de la clase 2 los recorridos óptimos coinciden en 3 de 8. Y
+  `mano` a solas se queda pegado a una posición y deja un pedal, que suena
+  inmóvil — por eso el criterio del bajo da mejores resultados en piano solo.
+- **El óptimo es el del camino entero, no el de cada paso.** Ir eligiendo lo
+  más barato en cada acorde es lo primero que uno escribe y está mal: la
+  disposición más cómoda para el acorde 2 puede dejar la mano pésima para el 3.
+  Va programación dinámica sobre todas las disposiciones.
+- **El total NO es la suma de los mínimos de cada paso.** Ese número es más
+  chico y mentiroso, porque cada mínimo se calcula desde la posición mala en la
+  que estabas: llegó a mostrar "moviste 29, el mínimo era 0" en una progresión
+  cuyo mínimo real es 4. El de cada paso sirve para el "acá se podía menos" de
+  cada acorde; abajo va el del camino entero.
+
+**No corrige, puntúa.** Muy seguido hay dos inversiones igual de buenas y decir
+"la correcta es ésta" sería mentir. Muestra cuánto moviste contra el mínimo, y
+podés empatar el óptimo por otro camino.
 
 ## El examen
 

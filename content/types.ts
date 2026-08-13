@@ -19,6 +19,7 @@ export type Block =
   | NomenclatureBlock
   | FigurasBlock
   | CompasesBlock
+  | SecuenciaBlock
   | QuoteBlock;
 
 /**
@@ -162,4 +163,16 @@ export interface CompasesBlock {
   kind: "compases";
   title: string;
   intro?: string;
+}
+
+/**
+ * Enlazar una progresión: se dan los acordes en estado fundamental y hay que
+ * ir girándolos para moverse lo menos posible.
+ */
+export interface SecuenciaBlock {
+  kind: "secuencia";
+  title: string;
+  intro?: string;
+  /** En cifrado, como se escriben en un papel: ["C", "Dm7", "G7", …]. */
+  acordes: string[];
 }

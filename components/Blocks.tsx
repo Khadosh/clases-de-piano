@@ -3,16 +3,12 @@ import ChordLab from "./ChordLab";
 import Semitonos from "./Semitonos";
 import Figuras from "./Figuras";
 import Compases from "./Compases";
+import Enlace from "./Enlace";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
 import Keyboard from "./Keyboard";
-import {
-  CHORD_QUALITIES,
-  chordPitches,
-  mod12,
-  rangoParaAcorde,
-} from "@/lib/music";
+import { chordPitches, parseCifrado, rangoParaAcorde } from "@/lib/music";
 
 /** Convierte *esto* en negrita, sin traer un parser de markdown entero. */
 export function rich(text: string) {
@@ -33,31 +29,6 @@ function Titulo({ children }: { children: React.ReactNode }) {
       {children}
     </h2>
   );
-}
-
-const LETTER_PC: Record<string, number> = {
-  C: 0,
-  D: 2,
-  E: 4,
-  F: 5,
-  G: 7,
-  A: 9,
-  B: 11,
-};
-
-/** Interpreta cifrados sueltos tipo "Emaj7" para la tablita de nomenclatura. */
-function parseSymbol(sym: string) {
-  const m = /^([A-G])([#b]?)(.*)$/.exec(sym.trim());
-  if (!m) return null;
-  const [, letter, alt, suffix] = m;
-  const pc = LETTER_PC[letter];
-  if (pc === undefined) return null;
-  const root = mod12(pc + (alt === "#" ? 1 : alt === "b" ? -1 : 0));
-  const quality =
-    CHORD_QUALITIES.find((q) => q.suffix === suffix) ??
-    CHORD_QUALITIES.find((q) => q.aliases?.includes(suffix));
-  if (!quality) return null;
-  return { root, quality };
 }
 
 /** El id de ancla de una sección, para el índice de la clase. */
@@ -198,6 +169,17 @@ export function BlockView({ block }: { block: Block }) {
         </section>
       );
 
+    case "secuencia":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Enlace acordes={block.acordes} />
+        </section>
+      );
+
     case "semitonos":
       return (
         <section>
@@ -238,7 +220,7 @@ export function BlockView({ block }: { block: Block }) {
     case "nomenclature": {
       const parsed = block.examples
         .map((sym) => {
-          const chord = parseSymbol(sym);
+          const chord = parseCifrado(sym);
           if (!chord) return null;
           const pitches = chordPitches(60 + chord.root, chord.quality);
           return { sym, chord, pitches, ...rangoParaAcorde(pitches) };
