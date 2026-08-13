@@ -21,6 +21,21 @@ no entra en ningún bloque existente, ahí sí se agrega un tipo de bloque nuevo
 Eso es todo. La home, la línea de tiempo, los contadores, la sala de práctica y
 la navegación entre clases se actualizan solas.
 
+### La sala de práctica
+
+`/practica` está agrupada **por tipo de ejercicio y no por clase**, y el
+catálogo se arma solo recorriendo `LESSONS` (ver `content/practica.ts`). Cuando
+había una sola clase la sala era un reflejo fiel de esa clase y daba igual; con
+dos ya no, porque para practicar acordes querés todos juntos y no la mitad en
+cada lado.
+
+Agregar una clase no obliga a tocar nada de eso. Lo único que hay que sumar es
+si aparece un *tipo* de bloque nuevo: una línea en `AREA_DE` diciendo a qué área
+va, y su ficha en la página. Las herramientas que no dependen de datos de una
+clase (el laboratorio, el árbol de figuras) aparecen una sola vez, con la clase
+donde se vieron primero, y el laboratorio ofrece **los acordes aprendidos hasta
+ahora** y no todos los que existen en el código.
+
 ### La fecha
 
 Es el miércoles de esa clase, en ISO (`"2026-08-12"`). La racha de la home
