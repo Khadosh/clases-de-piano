@@ -1,11 +1,18 @@
 import Link from "next/link";
-import { LESSONS, computeStats, formatDate, slugOf } from "@/content";
+import { LESSONS, computeStats, formatDate, latestLesson, slugOf } from "@/content";
 import { CHORD_QUALITIES } from "@/lib/music";
 import ProximoMiercoles from "@/components/ProximoMiercoles";
 
 export default function Home() {
   const stats = computeStats(LESSONS, CHORD_QUALITIES.length);
   const clases = [...LESSONS].reverse();
+  // El miércoles siguiente al de la última clase. Se suma en UTC para no
+  // depender del huso, igual que formatDate.
+  const proximoMiercoles = new Date(
+    Date.parse(`${latestLesson().date}T00:00:00Z`) + 7 * 24 * 3600 * 1000,
+  )
+    .toISOString()
+    .slice(0, 10);
 
   return (
     <div className="pt-10">
@@ -90,6 +97,25 @@ export default function Home() {
           Las clases
         </h2>
         <ol className="relative space-y-4 border-l-2 border-dashed border-borde pl-6">
+          {/* La que viene va arriba, no abajo: la lista arranca por la más
+              nueva, así que lo que todavía no pasó es lo primero. */}
+          <li className="relative">
+            <span className="absolute top-6 -left-[31px] flex h-4 w-4 items-center justify-center rounded-full border-2 border-dashed border-humo bg-noche" />
+            <div className="rounded-blob border border-dashed border-borde px-6 py-5">
+              <div className="flex flex-wrap items-baseline gap-x-3">
+                <span className="font-mono text-sm text-humo">
+                  Clase {String(LESSONS.length + 1).padStart(2, "0")}
+                </span>
+                <span className="text-sm text-humo">
+                  {formatDate(proximoMiercoles, { weekday: true })}
+                </span>
+              </div>
+              <p className="mt-1.5 text-humo">
+                Todavía no pasó. El miércoles se llena sola.
+              </p>
+            </div>
+          </li>
+
           {clases.map((l) => (
             <li key={l.n} className="relative">
               <span className="absolute top-6 -left-[31px] flex h-4 w-4 items-center justify-center rounded-full border-2 border-noche bg-sol" />
@@ -122,16 +148,6 @@ export default function Home() {
               </Link>
             </li>
           ))}
-
-          <li className="relative">
-            <span className="absolute top-6 -left-[31px] flex h-4 w-4 items-center justify-center rounded-full border-2 border-dashed border-humo bg-noche" />
-            <div className="rounded-blob border border-dashed border-borde px-6 py-5 text-humo">
-              <p className="font-display text-xl">Clase {LESSONS.length + 1}</p>
-              <p className="mt-1 text-sm">
-                Todavía no pasó. El miércoles se llena sola.
-              </p>
-            </div>
-          </li>
         </ol>
       </section>
     </div>
