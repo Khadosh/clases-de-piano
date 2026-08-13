@@ -121,6 +121,28 @@ es un caso aparte, porque es *el* error típico de las inversiones.
 Corrige recién cuando el acorde está completo. Ir marcando tecla por tecla
 convertiría el ejercicio en adivinar por descarte.
 
+**El teclado tiene dos tamaños: uno para mirar y otro para apretar.** El de
+mirar es fiel, con las negras angostas como en un piano. Medido en un celular,
+esa fidelidad daba teclas negras de **13 píxeles** contra los ~44 que necesita
+un dedo, así que armar acordes en el teléfono —que es donde más se usa— era
+casi imposible.
+
+Cuando el teclado se puede apretar (`paraTocar`, que por defecto se prende solo
+si hay `onKeyPress`) se agranda todo, las negras engordan de 0,62 a 0,75 del
+ancho de una blanca, y **cada tecla lleva su nombre escrito**: las blancas el
+suyo y las negras los dos, `Do♯` arriba y `Re♭` abajo. Eso último no es adorno:
+una tecla negra es ambigua y sin contexto no hay forma de elegir, así que si
+arriba elegiste Eb y el teclado dice sólo Re♯, la traducción la tenés que hacer
+vos justo cuando estás buscando la tecla.
+
+Pasá `paraTocar` a mano cuando el teclado *va a* volverse interactivo (el
+laboratorio lo hace recién al arrancar el dictado): si no, cambia de tamaño en
+el medio y salta toda la página.
+
+**Las notas que se van apretando se muestran como fichas** (`NotasPuestas`), y
+cada una se saca de un toque. Sin eso, corregir un error pedía volver a
+apuntarle a la misma tecla chiquita que ya te había salido mal.
+
 **El rango del teclado se calcula, no se elige.** Un `<Keyboard from to>` con
 números a mano se rompe callado: si una nota cae afuera no se dibuja mal, no se
 dibuja, y el ejercicio queda sin respuesta posible. Ya pasó con Bm7 en un

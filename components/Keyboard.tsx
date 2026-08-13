@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import {
+  NOTES_ES_FLAT,
   isBlack,
   mod12,
   noteName,
@@ -48,13 +49,31 @@ interface Props {
   onKeyPress?: (pitch: Pitch) => void;
   /** Escribe el nombre de la nota en todas las blancas. */
   showNoteNames?: boolean;
+  /**
+   * Teclas grandes y con nombre. Por defecto se activa solo cuando el teclado
+   * se puede apretar, pero conviene forzarlo cuando el teclado *va a* volverse
+   * interactivo: si no, cambia de tamaño en el medio y salta toda la página.
+   */
+  paraTocar?: boolean;
   className?: string;
 }
 
-const WHITE_W = 34;
-const WHITE_H = 150;
-const BLACK_W = 21;
-const BLACK_H = 94;
+/**
+ * Dos juegos de medidas: uno para mirar y otro para tocar.
+ *
+ * El teclado de mirar es fiel: las negras son angostas como en un piano de
+ * verdad. Pero medido en un celular esa fidelidad daba teclas negras de **13
+ * píxeles**, contra los ~44 que necesita un dedo. O sea que el ejercicio de
+ * armar acordes era casi imposible en el teléfono, que es donde más se usa.
+ *
+ * Así que cuando el teclado es para apretar se agranda todo y las negras
+ * engordan de 0,62 del ancho de una blanca a 0,75. Deja de ser un dibujo exacto
+ * y pasa a ser un control, que es lo que en ese momento tiene que ser.
+ */
+const MEDIDAS = {
+  mirar: { blanca: 34, negra: 21, alto: 150, altoNegra: 94, min: 26, tope: 520 },
+  tocar: { blanca: 48, negra: 36, alto: 172, altoNegra: 108, min: 38, tope: 760 },
+} as const;
 
 export default function Keyboard({
   from = 48,
@@ -62,8 +81,17 @@ export default function Keyboard({
   marks = [],
   onKeyPress,
   showNoteNames = false,
+  paraTocar,
   className = "",
 }: Props) {
+  const interactive = Boolean(onKeyPress);
+  const grande = paraTocar ?? interactive;
+  const M = grande ? MEDIDAS.tocar : MEDIDAS.mirar;
+  const WHITE_W = M.blanca;
+  const WHITE_H = M.alto;
+  const BLACK_W = M.negra;
+  const BLACK_H = M.altoNegra;
+
   const { whites, blacks, width } = useMemo(() => {
     const whites: { pitch: Pitch; x: number }[] = [];
     const blacks: { pitch: Pitch; x: number }[] = [];
@@ -81,7 +109,7 @@ export default function Keyboard({
       blacks.push({ pitch: p, x: below.x + WHITE_W - BLACK_W / 2 });
     }
     return { whites, blacks, width: x };
-  }, [from, to]);
+  }, [from, to, WHITE_W, BLACK_W]);
 
   const markFor = useMemo(() => {
     const m = new Map<Pitch, Mark>();
@@ -89,7 +117,10 @@ export default function Keyboard({
     return m;
   }, [marks]);
 
-  const interactive = Boolean(onKeyPress);
+  // Cuando se puede apretar, el nombre va escrito en la tecla. Es lo que saca
+  // el "¿cuál de estas negras era Mi♭?", que es de dónde salía la mitad de la
+  // dificultad — no de la puntería sino de tener que contar.
+  const conNombres = showNoteNames || grande;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -97,7 +128,7 @@ export default function Keyboard({
         viewBox={`0 0 ${width} ${WHITE_H + 6}`}
         // En pantallas chicas el teclado no se achica hasta ser ilegible:
         // se mantiene a un tamaño usable y el contenedor scrollea.
-        style={{ minWidth: Math.min(whites.length * 26, 520) }}
+        style={{ minWidth: Math.min(whites.length * M.min, M.tope) }}
         className={`w-full select-none ${className}`}
         role="img"
         aria-label="Teclado de piano"
@@ -136,14 +167,14 @@ export default function Keyboard({
                 {mk.label}
               </text>
             )}
-            {showNoteNames && !mk?.label && (
+            {conNombres && !mk?.label && (
               <text
                 x={x + WHITE_W / 2}
                 y={WHITE_H - 16}
                 textAnchor="middle"
-                fontSize={11}
+                fontSize={grande ? 14 : 11}
                 fontWeight={600}
-                fill="#8d8778"
+                fill={hex ? "#161225aa" : "#8d8778"}
               >
                 {noteName(pitch)}
               </text>
@@ -185,7 +216,7 @@ export default function Keyboard({
               stroke={mk?.active ? "#fff" : "#000"}
               strokeWidth={mk?.active ? 3 : 1}
             />
-            {mk?.label && (
+            {mk?.label ? (
               <text
                 x={x + BLACK_W / 2}
                 y={BLACK_H - 12}
@@ -196,6 +227,37 @@ export default function Keyboard({
               >
                 {mk.label}
               </text>
+            ) : (
+              conNombres && (
+                // Las dos escrituras, una arriba de la otra. Una tecla negra es
+                // ambigua por naturaleza y no hay contexto acá para elegir: si
+                // arriba elegiste Eb y el teclado dice sólo Re♯, tenés que hacer
+                // la traducción vos justo cuando estás buscando la tecla.
+                <>
+                  <text
+                    x={x + BLACK_W / 2}
+                    y={BLACK_H - (grande ? 22 : 10)}
+                    textAnchor="middle"
+                    fontSize={grande ? 11 : 9}
+                    fontWeight={600}
+                    fill={hex ? "#161225aa" : "#9a93a8"}
+                  >
+                    {noteName(pitch)}
+                  </text>
+                  {grande && (
+                    <text
+                      x={x + BLACK_W / 2}
+                      y={BLACK_H - 9}
+                      textAnchor="middle"
+                      fontSize={11}
+                      fontWeight={600}
+                      fill={hex ? "#16122588" : "#6f6a7d"}
+                    >
+                      {NOTES_ES_FLAT[mod12(pitch)]}
+                    </text>
+                  )}
+                </>
+              )
             )}
           </g>
         );

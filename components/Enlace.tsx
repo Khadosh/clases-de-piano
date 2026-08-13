@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
+import NotasPuestas from "./NotasPuestas";
 import {
   chordPitches,
   mod12,
@@ -278,6 +279,18 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
           <Keyboard from={45} to={84} marks={marks} onKeyPress={tocar} />
         </div>
 
+        {!terminado && (
+          <NotasPuestas
+            notas={armado}
+            faltan={
+              (actual ? chordPitches(0, actual.chord.quality).length : 0) -
+              armado.length
+            }
+            onQuitar={(p) => setArmado((prev) => prev.filter((x) => x !== p))}
+            onBorrar={() => setArmado([])}
+          />
+        )}
+
         {completo && !acerto && (
           <p className="mt-3 text-center text-sm text-brasa">
             Ésas no son las notas de {actual?.sym}. Cualquier inversión vale,
@@ -310,14 +323,6 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
           >
             👂 Escuchar el óptimo
           </button>
-          {armado.length > 0 && (
-            <button
-              onClick={() => setArmado([])}
-              className="rounded-full bg-carta-2 px-4 py-2 text-sm font-bold transition hover:bg-borde"
-            >
-              Borrar
-            </button>
-          )}
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Keyboard, { type Mark, type Tone } from "./Keyboard";
+import NotasPuestas from "./NotasPuestas";
 import {
   CHORD_QUALITIES,
   GRADOS_ACORDE,
@@ -197,51 +198,84 @@ export default function ChordLab({
 
   return (
     <div className="card overflow-hidden">
-      {/* Fundamental */}
-      <div className="flex flex-wrap gap-1.5 border-b border-borde/60 p-4">
-        {Array.from({ length: 12 }, (_, i) => raizEscrita(i)).map((nota, i) => (
-          <button
-            key={i}
-            onClick={() => {
-              salirDelDictado();
-              setRoot(i);
-            }}
-            className={`rounded-xl px-2.5 py-1.5 text-sm font-semibold transition ${
-              !dictado && root === i
-                ? "bg-sol text-noche"
-                : "bg-carta-2 text-humo hover:text-tiza"
-            }`}
-          >
-            {escribirNota(nota, "en")}
-            <span className="ml-1 text-[10px] opacity-60">
-              {escribirNota(nota)}
-            </span>
-          </button>
-        ))}
+      {/* Fundamental: acomodada como un teclado, pero con botones de dedo.
+          La forma importa —Do♯ va arriba y entre Do y Re, como en el piano— y
+          el tamaño también: son para apretar, no para mirar. */}
+      <div className="border-b border-borde/60 p-4">
+        <p className="mb-2 text-xs tracking-[0.2em] text-humo uppercase">
+          Fundamental
+        </p>
+        <div className="space-y-1.5">
+          <div className="flex gap-1.5 pl-[9%]">
+            {[1, 3, null, 6, 8, 10].map((pc, n) =>
+              pc === null ? (
+                <span key={`h${n}`} className="w-[9%] shrink-0" />
+              ) : (
+                <BotonRaiz
+                  key={pc}
+                  pc={pc}
+                  activo={!dictado && root === pc}
+                  negra
+                  onClick={() => {
+                    salirDelDictado();
+                    setRoot(pc);
+                  }}
+                />
+              ),
+            )}
+          </div>
+          <div className="flex gap-1.5">
+            {[0, 2, 4, 5, 7, 9, 11].map((pc) => (
+              <BotonRaiz
+                key={pc}
+                pc={pc}
+                activo={!dictado && root === pc}
+                onClick={() => {
+                  salirDelDictado();
+                  setRoot(pc);
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Receta */}
-      <div className="flex flex-wrap gap-1.5 border-b border-borde/60 p-4">
-        {qualities.map((q) => (
-          <button
-            key={q.id}
-            onClick={() => {
-              salirDelDictado();
-              setQid(q.id);
-              setInv((n) => Math.min(n, cantidadDeInversiones(q)));
-            }}
-            className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
-              !dictado && qid === q.id
-                ? "bg-tiza text-noche"
-                : "bg-carta-2 text-humo hover:text-tiza"
-            }`}
-          >
-            {q.name}
-            <span className="ml-1.5 font-mono text-[11px] opacity-70">
-              {stackLabel(q)}
-            </span>
-          </button>
-        ))}
+      {/* Receta, agrupada por familia. Sueltas en una tira sola eran catorce
+          fichas iguales y había que leerlas todas para encontrar una. */}
+      <div className="space-y-3 border-b border-borde/60 p-4">
+        {FAMILIAS.map(({ id, titulo }) => {
+          const delGrupo = qualities.filter((q) => q.family === id);
+          if (!delGrupo.length) return null;
+          return (
+            <div key={id}>
+              <p className="mb-1.5 text-xs tracking-[0.2em] text-humo uppercase">
+                {titulo}
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {delGrupo.map((q) => (
+                  <button
+                    key={q.id}
+                    onClick={() => {
+                      salirDelDictado();
+                      setQid(q.id);
+                      setInv((n) => Math.min(n, cantidadDeInversiones(q)));
+                    }}
+                    className={`rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                      !dictado && qid === q.id
+                        ? "bg-tiza text-noche"
+                        : "bg-carta-2 text-humo hover:text-tiza"
+                    }`}
+                  >
+                    {chordSymbol(0, q).replace(/^C/, "") || "mayor"}
+                    <span className="ml-1.5 font-mono text-[11px] opacity-70">
+                      {stackLabel(q)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Inversión */}
@@ -316,11 +350,22 @@ export default function ChordLab({
             from={45}
             to={81}
             marks={marks}
+            paraTocar={dictation}
             onKeyPress={oculto ? armarEnTeclado : undefined}
           />
         </div>
 
-        {oculto && <Correccion veredicto={veredicto} faltan={pitches.length - armado.length} onBorrar={() => setArmado([])} />}
+        {oculto && (
+          <>
+            <NotasPuestas
+              notas={armado}
+              faltan={pitches.length - armado.length}
+              onQuitar={(p) => setArmado((prev) => prev.filter((x) => x !== p))}
+              onBorrar={() => setArmado([])}
+            />
+            <Correccion veredicto={veredicto} onBorrar={() => setArmado([])} />
+          </>
+        )}
 
         {!oculto && (
           <div className="mt-4 rounded-2xl bg-noche-2 px-4 py-3">
@@ -440,11 +485,9 @@ export default function ChordLab({
  */
 function Correccion({
   veredicto,
-  faltan,
   onBorrar,
 }: {
   veredicto: "bien" | "mal" | "bajo" | null;
-  faltan: number;
   onBorrar: () => void;
 }) {
   if (veredicto === "bien") {
@@ -493,11 +536,46 @@ function Correccion({
     );
   }
 
+  // Sin veredicto no hay nada que decir: lo que falta ya lo dice NotasPuestas.
+  return null;
+}
+
+/** El orden en que se leen: primero las de tres notas, después las de cuatro. */
+const FAMILIAS = [
+  { id: "triada", titulo: "Tríadas" },
+  { id: "suspendido", titulo: "Suspendidos" },
+  { id: "septima", titulo: "Cuatriadas" },
+] as const;
+
+/**
+ * Una fundamental. Va con el cifrado grande y el nombre en castellano abajo:
+ * el cifrado es lo que hay que aprender a leer, el castellano es la muleta.
+ */
+function BotonRaiz({
+  pc,
+  activo,
+  negra = false,
+  onClick,
+}: {
+  pc: number;
+  activo: boolean;
+  negra?: boolean;
+  onClick: () => void;
+}) {
+  const nota = raizEscrita(pc);
   return (
-    <p className="mt-4 text-center text-sm text-humo">
-      {faltan > 0
-        ? `Tocá las teclas del acorde — faltan ${faltan}.`
-        : "Sacá alguna: te pasaste de notas."}
-    </p>
+    <button
+      onClick={onClick}
+      className={`min-w-0 flex-1 rounded-xl px-1 py-2.5 transition ${
+        activo
+          ? "bg-sol text-noche"
+          : negra
+            ? "bg-noche-2 text-humo hover:text-tiza"
+            : "bg-carta-2 text-humo hover:text-tiza"
+      }`}
+    >
+      <span className="block text-sm font-bold">{escribirNota(nota, "en")}</span>
+      <span className="block text-[10px] opacity-70">{escribirNota(nota)}</span>
+    </button>
   );
 }

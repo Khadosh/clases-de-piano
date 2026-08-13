@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
+import NotasPuestas from "./NotasPuestas";
 import { corregirAcorde } from "@/lib/music";
 import { generarExamen, type OpcionesExamen, type Pregunta } from "@/lib/examen";
 import { playChord, playNote, wakeAudio } from "@/lib/audio";
@@ -214,11 +215,12 @@ export default function Examen(opciones: OpcionesExamen) {
               />
             </div>
             {!resuelta && (
-              <p className="mt-3 text-center text-sm text-humo">
-                {pregunta.pitches.length - armado.length > 0
-                  ? `Faltan ${pregunta.pitches.length - armado.length} notas.`
-                  : "Sacá alguna: te pasaste."}
-              </p>
+              <NotasPuestas
+                notas={armado}
+                faltan={pregunta.pitches.length - armado.length}
+                onQuitar={(p) => setArmado((prev) => prev.filter((x) => x !== p))}
+                onBorrar={() => setArmado([])}
+              />
             )}
           </>
         )}
