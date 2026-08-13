@@ -133,12 +133,16 @@ un dedo, así que armar acordes en el teléfono —que es donde más se usa— e
 casi imposible.
 
 Cuando el teclado se puede apretar (`paraTocar`, que por defecto se prende solo
-si hay `onKeyPress`) se agranda todo, las negras engordan de 0,62 a 0,75 del
-ancho de una blanca, y **cada tecla lleva su nombre escrito**: las blancas el
-suyo y las negras los dos, `Do♯` arriba y `Re♭` abajo. Eso último no es adorno:
-una tecla negra es ambigua y sin contexto no hay forma de elegir, así que si
-arriba elegiste Eb y el teclado dice sólo Re♯, la traducción la tenés que hacer
-vos justo cuando estás buscando la tecla.
+si hay `onKeyPress`) se agranda todo y las negras engordan de 0,62 a 0,75 del
+ancho de una blanca.
+
+**Los nombres NO van escritos en las teclas.** Se probó ponerlos en todas —las
+blancas el suyo, las negras las dos escrituras— y mete mucho ruido para lo que
+aporta: son cuarenta etiquetas prendidas todo el tiempo para resolver una duda
+que aparece de a una. La orientación ya la dan los `Do3` de cada octava, y el
+nombre de lo que apretaste lo dicen las fichas de `NotasPuestas`, que es
+justo cuando hace falta. `showNoteNames` sigue existiendo para el teclado libre,
+que es donde el ejercicio *es* leer las teclas.
 
 Pasá `paraTocar` a mano cuando el teclado *va a* volverse interactivo (el
 laboratorio lo hace recién al arrancar el dictado): si no, cambia de tamaño en

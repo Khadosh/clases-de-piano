@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import {
-  NOTES_ES_FLAT,
   isBlack,
   mod12,
   noteName,
@@ -117,10 +116,11 @@ export default function Keyboard({
     return m;
   }, [marks]);
 
-  // Cuando se puede apretar, el nombre va escrito en la tecla. Es lo que saca
-  // el "¿cuál de estas negras era Mi♭?", que es de dónde salía la mitad de la
-  // dificultad — no de la puntería sino de tener que contar.
-  const conNombres = showNoteNames || grande;
+  // Los nombres van sólo si los piden. Se probó escribirlos en todas las teclas
+  // cuando el teclado es para apretar y mete mucho ruido para lo que aporta: la
+  // orientación ya la dan los "Do3" de las octavas, y el nombre de lo que
+  // apretaste lo dicen las fichas de NotasPuestas, que es cuando hace falta.
+  const conNombres = showNoteNames;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -216,7 +216,7 @@ export default function Keyboard({
               stroke={mk?.active ? "#fff" : "#000"}
               strokeWidth={mk?.active ? 3 : 1}
             />
-            {mk?.label ? (
+            {mk?.label && (
               <text
                 x={x + BLACK_W / 2}
                 y={BLACK_H - 12}
@@ -227,37 +227,6 @@ export default function Keyboard({
               >
                 {mk.label}
               </text>
-            ) : (
-              conNombres && (
-                // Las dos escrituras, una arriba de la otra. Una tecla negra es
-                // ambigua por naturaleza y no hay contexto acá para elegir: si
-                // arriba elegiste Eb y el teclado dice sólo Re♯, tenés que hacer
-                // la traducción vos justo cuando estás buscando la tecla.
-                <>
-                  <text
-                    x={x + BLACK_W / 2}
-                    y={BLACK_H - (grande ? 22 : 10)}
-                    textAnchor="middle"
-                    fontSize={grande ? 11 : 9}
-                    fontWeight={600}
-                    fill={hex ? "#161225aa" : "#9a93a8"}
-                  >
-                    {noteName(pitch)}
-                  </text>
-                  {grande && (
-                    <text
-                      x={x + BLACK_W / 2}
-                      y={BLACK_H - 9}
-                      textAnchor="middle"
-                      fontSize={11}
-                      fontWeight={600}
-                      fill={hex ? "#16122588" : "#6f6a7d"}
-                    >
-                      {NOTES_ES_FLAT[mod12(pitch)]}
-                    </text>
-                  )}
-                </>
-              )
             )}
           </g>
         );
