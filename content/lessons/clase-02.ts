@@ -18,7 +18,7 @@ const lesson: Lesson = {
     {
       kind: "prose",
       title: "Segundo miércoles",
-      text: "La clase se partió en dos mitades que no se parecen en nada. Primero *el tiempo*: qué son las figuras, de dónde salen los dos números del compás y por qué hay músicas que se cuentan de a dos y otras de a tres. Después volvimos a los acordes, pero agregando una nota más arriba.\n\nLo del tiempo es lo primero que en este cuaderno no se podía escribir todavía: hasta ahora la app sabía qué notas suenan y nunca cuánto duran.",
+      text: "La clase se partió en dos mitades que no se parecen en nada. Primero *el tiempo*: qué son las figuras, de dónde salen los dos números del compás y por qué hay músicas que se cuentan de a dos y otras de a tres. Después volvimos a los acordes, pero agregando una nota más arriba.",
     },
 
     // -----------------------------------------------------------------------
@@ -51,7 +51,7 @@ const lesson: Lesson = {
     {
       kind: "prose",
       title: "La fórmula",
-      text: "Arriba, la cantidad de tiempos que tiene el compás. Abajo, la cantidad de veces en que se divide la redonda — o sea, *cuál* de las figuras del árbol es la que vale un tiempo.\n\nAsí que el 4 de 3/4 no es \"cuatro\" de nada: es *la negra*, porque la negra es la figura que entra cuatro veces en una redonda. Con eso se lee cualquier compás sin memorizar ninguna tabla.",
+      text: "Arriba, la cantidad de tiempos que tiene el compás. Abajo, la cantidad de veces en que se divide la redonda — o sea, *cuál* de las figuras del árbol es la que vale un tiempo.\n\nAsí que el 4 de 3/4 no es \"cuatro\" de nada: es *la negra*, porque la negra es la figura que entra cuatro veces en una redonda. Con eso se lee cualquier compás sin memorizar ninguna tabla: en 3/2 el de abajo es *la blanca*, en 3/8 es *la corchea*.\n\nY hay una segunda lectura, que es la que se usa tocando: los dos números dicen *cuánto entra*. Un 3/4 son tres negras de presupuesto y las gastás como quieras — tres negras, o una blanca y una negra, o una negra y cuatro corcheas. Un 3/2 son tres blancas, así que ahí entra una redonda y una blanca. La figura no tiene por qué coincidir con el tiempo; lo único que no se puede es pasarse.",
     },
     {
       kind: "compases",
@@ -61,8 +61,13 @@ const lesson: Lesson = {
     },
     {
       kind: "prose",
-      title: "Lo que cambia es dónde caen los golpes",
-      text: "3/4 y 6/8 tienen las *mismas seis corcheas*. No se parecen en nada igual, porque en 3/4 los golpes caen cada dos y en 6/8 cada tres. Eso es la subdivisión: binaria si cada tiempo se parte en dos, ternaria si se parte en tres.\n\nY ahí está lo bueno: en un compás compuesto el pulso lleva *puntillo*. En 6/8 no se cuentan seis tiempos, se cuentan dos negras con puntillo. El número de abajo dice en qué se subdivide, no qué se cuenta.",
+      title: "En un compuesto el pulso lleva puntillo",
+      text: "Es lo que más cuesta y no se ve en el número: en 6/8 no se cuentan seis tiempos, se cuentan *dos negras con puntillo*. El número de abajo dice en qué se subdivide, no qué se cuenta. Por eso la subdivisión es binaria cuando cada tiempo se parte en dos y ternaria cuando se parte en tres.",
+    },
+    {
+      kind: "prose",
+      title: "Mismo total, distinto acento",
+      text: "Dos compases pueden durar exactamente lo mismo y no ser el mismo compás. *2/4 y 4/8* tienen la misma cantidad de música —cuatro corcheas— pero en 2/4 se cuentan dos tiempos y el golpe cae cada dos corcheas, y en 4/8 se cuentan cuatro y cae en cada una. Mismo total, otro esqueleto.\n\n*3/4 y 6/8* son el mismo caso: las mismas seis corcheas, agrupadas de a dos o de a tres.\n\nY ojo con confundir esto con la constante, que es otra cosa: la constante conserva *los tiempos*, no la duración. 2/4 y 6/8 son los dos de dos tiempos, pero el de 6/8 tiene más escrito adentro, porque cada tiempo se partió en tres en vez de en dos.",
     },
     {
       kind: "prose",

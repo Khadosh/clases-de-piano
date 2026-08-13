@@ -23,6 +23,11 @@ import {
   subdivisionDe,
   tiemposDe,
   tienePlica,
+  duracionDeCompas,
+  duracionDeRelleno,
+  rellenosDe,
+  hermanosDe,
+  compasTexto,
 } from "../lib/ritmo.ts";
 
 let pasaron = 0;
@@ -172,6 +177,108 @@ comprobar(
   "3/4 y 6/8 tienen la misma cantidad de corcheas (por eso se confunden)",
   [patronDe(c(3, 4)).length, patronDe(c(6, 8)).length],
   [6, 6],
+);
+
+console.log("\ncuánto entra en un compás");
+
+comprobar(
+  "3/4 dura tres negras; 3/2, tres blancas",
+  [duracionDeCompas(c(3, 4)), duracionDeCompas(c(3, 2))],
+  [0.75, 1.5],
+);
+
+comprobar(
+  "todos los rellenos de 3/4 llenan el compás justo, ni más ni menos",
+  rellenosDe(c(3, 4)).map((r) => duracionDeRelleno(r)),
+  [0.75, 0.75, 0.75],
+);
+
+comprobar(
+  "en 3/4 se puede poner una blanca y una negra",
+  rellenosDe(c(3, 4))[1].puestas.map((p) => p.figura.id),
+  ["blanca", "negra"],
+);
+
+comprobar(
+  "en 3/2 se puede poner una redonda y una blanca",
+  rellenosDe(c(3, 2))[1].puestas.map((p) => p.figura.id),
+  ["redonda", "blanca"],
+);
+
+comprobar(
+  "y en un compuesto las figuras van con puntillo",
+  rellenosDe(c(6, 8))[0].puestas.map((p) => `${p.figura.id}${p.conPuntillo ? "." : ""}`),
+  ["negra.", "negra."],
+);
+
+comprobar(
+  "los rellenos de un compuesto también llenan justo",
+  rellenosDe(c(9, 8)).map(duracionDeRelleno),
+  [1.125, 1.125, 1.125],
+);
+
+console.log("\nmismo total, distinto acento");
+
+comprobar(
+  "2/4 y 4/8 duran exactamente lo mismo",
+  duracionDeCompas(c(2, 4)) === duracionDeCompas(c(4, 8)),
+  true,
+);
+
+comprobar(
+  "pero 2/4 tiene dos tiempos y 4/8 tiene cuatro",
+  [tiemposDe(c(2, 4)), tiemposDe(c(4, 8))],
+  [2, 4],
+);
+
+comprobar(
+  "y por eso los golpes caen en otro lado",
+  [
+    patronDe(c(2, 4)).filter((a) => a !== "debil").length,
+    patronDe(c(4, 8)).filter((a) => a !== "debil").length,
+  ],
+  [2, 4],
+);
+
+comprobar(
+  "el hermano de 2/4 es 4/8",
+  hermanosDe(c(2, 4)).map(compasTexto),
+  ["4/8"],
+);
+
+comprobar(
+  "3/4 y 6/8 son hermanos: es el MISMO fenómeno que 2/4 y 4/8",
+  hermanosDe(c(3, 4)).map(compasTexto),
+  ["6/8"],
+);
+
+comprobar(
+  "el hermano de 4/4 es 2/2, y NO 12/8",
+  hermanosDe(c(4, 4)).map(compasTexto),
+  ["2/2"],
+);
+
+// Las dos relaciones son distintas y es fácil confundirlas: la constante
+// conserva los TIEMPOS, el hermano conserva la DURACIÓN.
+comprobar(
+  "la constante NO conserva la duración: 2/4 dura 0.5 y 6/8 dura 0.75",
+  [duracionDeCompas(c(2, 4)), duracionDeCompas(aCompuesto(c(2, 4)))],
+  [0.5, 0.75],
+);
+
+comprobar(
+  "lo que conserva es la cantidad de tiempos: los dos son de dos",
+  [tiemposDe(c(2, 4)), tiemposDe(aCompuesto(c(2, 4)))],
+  [2, 2],
+);
+
+comprobar(
+  "el hermano es al revés: misma duración, distinta cantidad de tiempos",
+  [
+    duracionDeCompas(c(3, 4)) === duracionDeCompas(c(6, 8)),
+    tiemposDe(c(3, 4)) !== tiemposDe(c(6, 8)),
+  ],
+  [true, true],
 );
 
 console.log(`\n${pasaron} bien, ${fallaron} mal\n`);

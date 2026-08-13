@@ -139,3 +139,123 @@ export function patronDe(c: Compas): Acento[] {
 
 /** "3/4", para mostrar. */
 export const compasTexto = (c: Compas) => `${c.numerador}/${c.denominador}`;
+
+// ---------------------------------------------------------------------------
+// Cuánto entra en un compás
+// ---------------------------------------------------------------------------
+
+/**
+ * Lo que dura un compás, medido en redondas.
+ *
+ * Es la otra cara del compás y la que más se olvida: los dos números no dicen
+ * sólo cómo se cuenta, dicen **cuánto entra**. Un 3/4 son tres negras de
+ * presupuesto y las gastás como quieras — tres negras, o una blanca y una
+ * negra, o una negra y cuatro corcheas. Todas llenan el mismo compás.
+ */
+export const duracionDeCompas = (c: Compas) => c.numerador / c.denominador;
+
+/** Una figura puesta en un compás, con su puntillo si lo lleva. */
+export interface Puesta {
+  figura: Figura;
+  conPuntillo?: boolean;
+}
+
+export interface Relleno {
+  nombre: string;
+  puestas: Puesta[];
+}
+
+const puesta = (divide: number, conPuntillo = false): Puesta | null => {
+  const figura = figuraQueDivide(divide);
+  return figura ? { figura, conPuntillo } : null;
+};
+
+/**
+ * Tres maneras distintas de llenar el mismo compás.
+ *
+ * No son todas las que hay —son infinitas— sino tres formas *características*:
+ * una figura por tiempo, una figura que se come dos tiempos, y un tiempo
+ * partido al medio. Con esas tres se entiende que el compás es un presupuesto y
+ * no una grilla.
+ */
+export function rellenosDe(c: Compas): Relleno[] {
+  const compuesto = esCompuesto(c);
+  const tiempos = tiemposDe(c);
+  // En un compuesto el pulso lleva puntillo, así que todo se cuenta en pulsos
+  // con puntillo y no en la figura del denominador.
+  const divPulso = compuesto ? c.denominador / 2 : c.denominador;
+  const unPulso = puesta(divPulso, compuesto);
+  if (!unPulso) return [];
+
+  const out: Relleno[] = [];
+
+  out.push({
+    nombre: `${tiempos} ${tiempos === 1 ? "tiempo" : "tiempos"}`,
+    puestas: Array.from({ length: tiempos }, () => unPulso),
+  });
+
+  // Una figura que vale dos tiempos: la del doble de duración.
+  if (tiempos >= 2) {
+    const doble = puesta(divPulso / 2, compuesto);
+    if (doble) {
+      out.push({
+        nombre: "una que vale dos",
+        puestas: [
+          doble,
+          ...Array.from({ length: tiempos - 2 }, () => unPulso),
+        ],
+      });
+    }
+  }
+
+  // Un tiempo partido en sus subdivisiones.
+  const parte = puesta(compuesto ? c.denominador : c.denominador * 2);
+  if (parte) {
+    out.push({
+      nombre: "un tiempo partido",
+      puestas: [
+        ...Array.from({ length: tiempos - 1 }, () => unPulso),
+        ...Array.from({ length: partesPorTiempo(c) }, () => parte),
+      ],
+    });
+  }
+
+  return out;
+}
+
+/** Lo que dura un relleno, para poder comprobar que llena justo el compás. */
+export const duracionDeRelleno = (r: Relleno) =>
+  r.puestas.reduce((s, p) => s + duracionDe(p.figura, p.conPuntillo), 0);
+
+/**
+ * Compases con el mismo total pero distinto acento.
+ *
+ * Acá está lo que más cuesta: 2/4 y 4/8 duran **exactamente lo mismo** y no son
+ * lo mismo. En 2/4 se cuentan dos tiempos y el golpe cae cada dos corcheas; en
+ * 4/8 se cuentan cuatro y cae en cada una. Misma cantidad de música, otro
+ * esqueleto.
+ *
+ * Es el mismo fenómeno que 3/4 contra 6/8, y por eso conviene verlos juntos:
+ * no son dos rarezas sueltas, es una sola idea.
+ */
+const USUALES: Compas[] = [
+  { numerador: 2, denominador: 2 },
+  { numerador: 3, denominador: 2 },
+  { numerador: 2, denominador: 4 },
+  { numerador: 3, denominador: 4 },
+  { numerador: 4, denominador: 4 },
+  { numerador: 6, denominador: 4 },
+  { numerador: 3, denominador: 8 },
+  { numerador: 4, denominador: 8 },
+  { numerador: 6, denominador: 8 },
+  { numerador: 9, denominador: 8 },
+  { numerador: 12, denominador: 8 },
+];
+
+export function hermanosDe(c: Compas): Compas[] {
+  return USUALES.filter(
+    (o) =>
+      duracionDeCompas(o) === duracionDeCompas(c) &&
+      compasTexto(o) !== compasTexto(c),
+  );
+}

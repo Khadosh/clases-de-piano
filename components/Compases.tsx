@@ -1,10 +1,15 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import FiguraSVG from "./FiguraSVG";
 import {
   aCompuesto,
+  figuraQueDivide,
   aSimple,
+  duracionDe,
+  duracionDeCompas,
+  hermanosDe,
+  rellenosDe,
   compasTexto,
   esCompuesto,
   figuraDeSubdivision,
@@ -15,7 +20,7 @@ import {
   tiemposDe,
   type Compas,
 } from "@/lib/ritmo";
-import { playClick, wakeAudio } from "@/lib/audio";
+import { getAudioContext, playClick, wakeAudio } from "@/lib/audio";
 import { useMetronomo } from "@/lib/useMetronomo";
 
 /**
@@ -31,7 +36,7 @@ const SIMPLES: Compas[] = [
   { numerador: 2, denominador: 4 },
   { numerador: 3, denominador: 4 },
   { numerador: 4, denominador: 4 },
-  { numerador: 3, denominador: 8 },
+  { numerador: 3, denominador: 2 },
 ];
 
 export default function Compases() {
@@ -39,11 +44,21 @@ export default function Compases() {
   const [sonando, setSonando] = useState(false);
   const [paso, setPaso] = useState(-1);
   const [pulso, setPulso] = useState(80);
+  const [rellenoSonando, setRellenoSonando] = useState<string | null>(null);
+  const [golpeRelleno, setGolpeRelleno] = useState(-1);
+  const timers = useRef<number[]>([]);
 
   const patron = useMemo(() => patronDe(compas), [compas]);
+  const rellenos = useMemo(() => rellenosDe(compas), [compas]);
+  const hermanos = useMemo(() => hermanosDe(compas), [compas]);
   const compuesto = esCompuesto(compas);
   const { figura: figuraPulso, conPuntillo } = pulsoDe(compas);
   const subdiv = figuraDeSubdivision(compas);
+  // La figura que NOMBRA el denominador, que no es la misma que la de la
+  // subdivisión: en 3/4 el 4 es la negra y la subdivisión es la corchea. Decía
+  // "la redonda se divide 4 veces: la corchea", que es justo el error que este
+  // bloque tiene que sacar de la cabeza.
+  const figuraDelNumero = figuraQueDivide(compas.denominador);
   const porTiempo = partesPorTiempo(compas);
 
   // El metrónomo cuenta subdivisiones, no tiempos: por eso el bpm que se le
@@ -63,10 +78,67 @@ export default function Compases() {
     setPaso(-1);
   }, []);
 
+  const pararRelleno = useCallback(() => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setRellenoSonando(null);
+    setGolpeRelleno(-1);
+  }, []);
+
   const elegir = (c: Compas) => {
+    pararRelleno();
     setCompas(c);
     setPaso(-1);
   };
+
+  /**
+   * Toca un relleno con el pulso marcado por debajo.
+   *
+   * Los dos a la vez es el punto: si sólo sonaran las figuras, una blanca en
+   * 3/4 sería un golpe suelto y no se entendería que ocupa dos tiempos. Con el
+   * pulso abajo se oye que el compás sigue latiendo igual mientras la figura
+   * dura.
+   */
+  const tocarRelleno = useCallback(
+    (r: (typeof rellenos)[number]) => {
+      if (rellenoSonando === r.nombre) return pararRelleno();
+      pararRelleno();
+      wakeAudio();
+      const ac = getAudioContext();
+      if (!ac) return;
+      const segundosPorTiempo = 60 / pulso;
+      // Una redonda dura tantos tiempos como partes tenga el compás.
+      const segundosPorRedonda =
+        segundosPorTiempo * (duracionDeCompas(compas) === 0 ? 1 : tiemposDe(compas) / duracionDeCompas(compas));
+      const t0 = ac.currentTime + 0.08;
+
+      setRellenoSonando(r.nombre);
+      // El pulso, flojito.
+      for (let t = 0; t < tiemposDe(compas); t++) {
+        playClick(t === 0 ? "medio" : "debil", t0 + t * segundosPorTiempo);
+      }
+      // Y las figuras, fuerte, cada una donde empieza.
+      let acumulado = 0;
+      r.puestas.forEach((p, n) => {
+        const cuando = t0 + acumulado * segundosPorRedonda;
+        playClick("fuerte", cuando);
+        timers.current.push(
+          window.setTimeout(
+            () => setGolpeRelleno(n),
+            (cuando - ac.currentTime) * 1000,
+          ),
+        );
+        acumulado += duracionDe(p.figura, p.conPuntillo);
+      });
+      timers.current.push(
+        window.setTimeout(
+          pararRelleno,
+          (acumulado * segundosPorRedonda + 0.4) * 1000,
+        ),
+      );
+    },
+    [compas, pulso, rellenoSonando, pararRelleno],
+  );
 
   return (
     <div className="space-y-4">
@@ -138,7 +210,7 @@ export default function Compases() {
               <span className="text-humo">
                 → la redonda se divide {compas.denominador}{" "}
                 {compas.denominador === 1 ? "vez" : "veces"}: la{" "}
-                {subdiv?.nombre}
+                {figuraDelNumero?.nombre}
               </span>
             </p>
             <p className="flex flex-wrap items-center gap-2 pt-1">
@@ -205,6 +277,81 @@ export default function Compases() {
             })}
           </div>
         </div>
+
+        {/* Qué entra en el compás. Es la otra cara de los dos números y la que
+            más se olvida: no dicen sólo cómo se cuenta, dicen cuánto entra. */}
+        <div className="mt-5 rounded-2xl border border-borde/60 p-4">
+          <p className="mb-1 text-xs tracking-[0.2em] text-humo uppercase">
+            Qué entra en un compás
+          </p>
+          <p className="mb-3 text-sm text-humo">
+            {compasTexto(compas)} son{" "}
+            <strong className="text-tiza">
+              {tiemposDe(compas)}{" "}
+              {figuraPulso?.[tiemposDe(compas) === 1 ? "nombre" : "plural"]}
+              {conPuntillo && " con puntillo"}
+            </strong>{" "}
+            de presupuesto, y lo gastás como quieras. Cualquiera de estas tres
+            llena el mismo compás:
+          </p>
+          <div className="space-y-2">
+            {rellenos.map((r) => (
+              <button
+                key={r.nombre}
+                onClick={() => tocarRelleno(r)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
+                  rellenoSonando === r.nombre ? "bg-carta-2" : "hover:bg-carta-2/60"
+                }`}
+              >
+                <span className="w-4 shrink-0 text-sm">
+                  {rellenoSonando === r.nombre ? "■" : "▶"}
+                </span>
+                <span className="flex flex-1 items-end gap-1">
+                  {r.puestas.map((p, n) => (
+                    <FiguraSVG
+                      key={n}
+                      figura={p.figura}
+                      conPuntillo={p.conPuntillo}
+                      alto={34}
+                      color={
+                        rellenoSonando === r.nombre && golpeRelleno === n
+                          ? "#ffcb3d"
+                          : "#f7f4ee"
+                      }
+                    />
+                  ))}
+                </span>
+                <span className="shrink-0 text-xs text-humo">{r.nombre}</span>
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-xs text-humo">
+            Debajo va el pulso marcado, para escuchar que una figura larga se
+            come dos tiempos y el compás sigue durando lo mismo.
+          </p>
+        </div>
+
+        {/* Mismo total, otro acento */}
+        {hermanos.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl border border-uva/30 bg-uva/5 p-4">
+            <p className="min-w-0 flex-1 text-sm text-humo">
+              <strong className="text-tiza">Mismo total, otro acento.</strong>{" "}
+              {hermanos.map(compasTexto).join(" y ")} dura{hermanos.length > 1 ? "n" : ""}{" "}
+              exactamente lo mismo que {compasTexto(compas)} — la misma cantidad
+              de música. Lo que cambia es{" "}
+              <em>dónde caen los golpes</em>, y con eso cambia todo.
+            </p>
+            {hermanos.map((h) => (
+              <button
+                key={compasTexto(h)}
+                onClick={() => elegir(h)}
+                className="rounded-full bg-carta-2 px-4 py-2 font-mono text-sm font-bold transition hover:bg-borde"
+              >
+                → {compasTexto(h)}
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button

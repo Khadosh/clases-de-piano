@@ -66,6 +66,11 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 lee como un chorizo. El índice de arriba de la clase se arma solo a partir de
 ellas, así que dividir es gratis.
 
+**El contenido de una clase habla de piano, no de la app.** Nada de "esto es lo
+primero que el cuaderno no podía representar" ni "ahora la app también sabe X".
+Al que lee le importa la música; cómo está hecho el sitio no suma nada y saca
+de la lectura. Eso va en los comentarios del código o acá.
+
 **Las citas son citas.** El bloque `quote` lleva el nombre del profe abajo, así
 que ahí va sólo lo que dijo de verdad. Si el concepto está bien pero la frase
 es una reconstrucción, va como `prose` sin atribuir a nadie. Ya pasó una vez de
@@ -208,6 +213,20 @@ Con eso no hay tabla de casos en ningún lado:
   pasos que hay desde la negra. Si aparece una figura nueva se dibuja sin tocar
   el componente. Los símbolos de Unicode (𝅘𝅥𝅮) no se usan: casi ninguna fuente
   los trae y en el celular salen cuadraditos.
+- Los dos números tienen **dos lecturas** y las dos hacen falta. Cómo se cuenta
+  (3/4 son tres tiempos de negra) y **cuánto entra** (3/4 son tres negras de
+  presupuesto, que podés gastar en una blanca y una negra). La segunda es la
+  que se usa tocando y es la que se olvida.
+- **La figura del denominador no es la de la subdivisión.** En 3/4 el 4 es *la
+  negra*, y la corchea es en lo que se parte cada tiempo. Ya se mostró mal una
+  vez ("la redonda se divide 4 veces: la corchea"), y es un error que enseña
+  justo lo contrario de lo que el bloque quiere enseñar.
+- **Ojo con confundir dos relaciones distintas entre compases**, porque las dos
+  involucran a 6/8 y se mezclan solas:
+  - La *constante* ×3/2 conserva **los tiempos**: 2/4 y 6/8 son los dos de dos
+    tiempos, pero el compuesto tiene más duración escrita adentro.
+  - Los *hermanos* (`hermanosDe`) conservan **la duración**: 3/4 y 6/8 duran lo
+    mismo, 2/4 y 4/8 también, y lo que cambia es dónde caen los golpes.
 - Un compás es **compuesto** si el numerador es múltiplo de 3 y no menor que 6.
   Sale de multiplicar un simple por la constante del profe: numerador ×3,
   denominador ×2. Por eso 3/8 *no* es compuesto — es un simple de tres tiempos.
