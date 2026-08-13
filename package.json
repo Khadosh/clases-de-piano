@@ -11,7 +11,8 @@
     "test:pitch": "node --experimental-strip-types scripts/probar-pitch.mjs",
     "escuchar": "node --experimental-strip-types scripts/escuchar-grabacion.mjs",
     "calibrar": "node --experimental-strip-types scripts/calibrar-mic.mjs",
-    "test:notas": "node --experimental-strip-types scripts/probar-notas.mjs"
+    "test:notas": "node --experimental-strip-types scripts/probar-notas.mjs",
+    "test:ritmo": "node --experimental-strip-types scripts/probar-ritmo.mjs"
   },
   "dependencies": {
     "next": "^16.3.0",

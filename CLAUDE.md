@@ -43,6 +43,8 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `exercise` | El ejercicio de posiciones que se desplaza | Reproductor con variantes, metrónomo, teclado animado y micrófono |
 | `hands` | Un reparto de notas entre las dos manos | Teclado con las dos manos en colores + intercambio automático |
 | `nomenclature` | Cifrado inglés | Tablita de ejemplos + quiz |
+| `figuras` | Las figuras y el árbol de división | Árbol que suena + tabla de las siete figuras |
+| `compases` | Simples, compuestos y la subdivisión | Máquina de compases con metrónomo y el botón de la constante |
 
 **Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
 lee como un chorizo. El índice de arriba de la clase se arma solo a partir de
@@ -129,6 +131,35 @@ Dos decisiones:
 
 Si en una clase aparece un tipo de pregunta nuevo, va en `lib/examen.ts` como
 una fábrica más y se suma al pozo. No hace falta tocar el componente.
+
+## El ritmo
+
+`lib/ritmo.ts`, y sale todo de una sola idea, que es como lo explica el profe:
+**una figura se define por en cuántas partes divide a la redonda**. La negra es
+4 porque la redonda entra cuatro veces. Ese mismo número es el denominador del
+compás, así que el 4 de 3/4 no es "cuatro" de nada: es *la negra*.
+
+Con eso no hay tabla de casos en ningún lado:
+
+- Las figuras se **dibujan** solas (`components/FiguraSVG.tsx`): cabeza llena de
+  la negra para abajo, plica de la blanca para abajo, y las banderas son los
+  pasos que hay desde la negra. Si aparece una figura nueva se dibuja sin tocar
+  el componente. Los símbolos de Unicode (𝅘𝅥𝅮) no se usan: casi ninguna fuente
+  los trae y en el celular salen cuadraditos.
+- Un compás es **compuesto** si el numerador es múltiplo de 3 y no menor que 6.
+  Sale de multiplicar un simple por la constante del profe: numerador ×3,
+  denominador ×2. Por eso 3/8 *no* es compuesto — es un simple de tres tiempos.
+- **En un compuesto el pulso lleva puntillo.** Es lo que más cuesta y no se ve
+  en el número: en 6/8 no se cuentan seis tiempos, se cuentan dos negras con
+  puntillo. El denominador dice en qué se subdivide, no qué se cuenta.
+
+`npm run test:ritmo` prueba todo eso contra casos escritos a mano, incluido el
+que importa: 3/4 y 6/8 tienen las mismas seis corcheas y distinto lugar de los
+golpes.
+
+El metrónomo de `Compases` reusa `useMetronomo`, que cuenta subdivisiones y no
+tiempos: por eso el bpm que se le pasa es el pulso por las partes de cada
+tiempo.
 
 ## El ejercicio de posiciones
 

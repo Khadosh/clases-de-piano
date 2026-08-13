@@ -1,6 +1,8 @@
 import type { Block } from "@/content/types";
 import ChordLab from "./ChordLab";
 import Semitonos from "./Semitonos";
+import Figuras from "./Figuras";
+import Compases from "./Compases";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -171,6 +173,28 @@ export function BlockView({ block }: { block: Block }) {
             dictation={block.dictation}
             inversiones={block.inversiones}
           />
+        </section>
+      );
+
+    case "figuras":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Figuras />
+        </section>
+      );
+
+    case "compases":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Compases />
         </section>
       );
 

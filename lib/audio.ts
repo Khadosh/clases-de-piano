@@ -172,6 +172,45 @@ export function playChord(pitches: Pitch[], duration = 1.6, cuando?: number) {
   pitches.forEach((p, i) => playNote(p, duration, t + i * 0.012));
 }
 
+/**
+ * El click del metrónomo. Tres alturas, para los tres acentos del compás.
+ *
+ * Va con oscilador y no con los samples de piano a propósito: un piano tiene
+ * ataque lento y cola larga, y para marcar dónde cae un golpe hace falta lo
+ * contrario — algo corto y seco. Además tiene que poder sonar *encima* de lo
+ * que estés tocando sin taparlo.
+ *
+ * `cuando` es del reloj del audio, igual que en `playNote`: el pulso se agenda,
+ * no se dispara cuando llega el timer.
+ */
+export function playClick(
+  acento: "fuerte" | "medio" | "debil" = "medio",
+  cuando?: number,
+) {
+  const ac = getAudioContext();
+  if (!ac) return;
+  const t = Math.max(cuando ?? 0, ac.currentTime);
+  const { hz, vol } =
+    acento === "fuerte"
+      ? { hz: 1600, vol: 0.5 }
+      : acento === "medio"
+        ? { hz: 1050, vol: 0.32 }
+        : { hz: 780, vol: 0.14 };
+
+  const osc = ac.createOscillator();
+  osc.type = "square";
+  osc.frequency.value = hz;
+  const env = ac.createGain();
+  // 35ms y se terminó: si el click dura más, se pisa con el siguiente cuando el
+  // tempo sube y deja de servir para contar.
+  env.gain.setValueAtTime(0.0001, t);
+  env.gain.exponentialRampToValueAtTime(vol, t + 0.002);
+  env.gain.exponentialRampToValueAtTime(0.0001, t + 0.035);
+  osc.connect(env).connect(ac.destination);
+  osc.start(t);
+  osc.stop(t + 0.06);
+}
+
 /** Arpegio: útil para escuchar la fórmula del acorde nota por nota. */
 export function playArpeggio(pitches: Pitch[], step = 0.16) {
   const ac = getAudioContext();

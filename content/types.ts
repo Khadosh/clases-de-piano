@@ -17,6 +17,8 @@ export type Block =
   | ExerciseBlock
   | HandsBlock
   | NomenclatureBlock
+  | FigurasBlock
+  | CompasesBlock
   | QuoteBlock;
 
 /**
@@ -141,3 +143,23 @@ export interface Lesson {
 }
 
 export const slugOf = (l: Lesson) => `clase-${String(l.n).padStart(2, "0")}`;
+
+/**
+ * El árbol de las figuras: la redonda partiéndose al medio hasta la semifusa.
+ * No lleva datos porque las figuras no son de una clase, son las que hay.
+ */
+export interface FigurasBlock {
+  kind: "figuras";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * La máquina de compases: simples, compuestos, y el botón que convierte uno en
+ * otro para escuchar la diferencia.
+ */
+export interface CompasesBlock {
+  kind: "compases";
+  title: string;
+  intro?: string;
+}

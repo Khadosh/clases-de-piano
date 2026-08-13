@@ -1,12 +1,13 @@
 import type { Lesson } from "@/content/types";
 import { slugOf } from "@/content/types";
 import clase01 from "@/content/lessons/clase-01";
+import clase02 from "@/content/lessons/clase-02";
 
 /**
  * El índice de clases. Para agregar una clase nueva: crear el archivo en
  * content/lessons/ y sumarlo acá. Nada más.
  */
-export const LESSONS: Lesson[] = [clase01].sort((a, b) => a.n - b.n);
+export const LESSONS: Lesson[] = [clase01, clase02].sort((a, b) => a.n - b.n);
 
 export const lessonBySlug = (slug: string) =>
   LESSONS.find((l) => slugOf(l) === slug);
@@ -36,14 +37,18 @@ export function temarioDe(lesson: Lesson) {
   const qualityIds = new Set<string>();
   let inversiones = false;
   let semitonos = false;
+  let figuras = false;
+  let compases = false;
   for (const b of lesson.blocks) {
     if (b.kind === "chord-lab") {
       b.qualities.forEach((q) => qualityIds.add(q));
       if (b.inversiones) inversiones = true;
     }
     if (b.kind === "semitonos") semitonos = true;
+    if (b.kind === "figuras") figuras = true;
+    if (b.kind === "compases") compases = true;
   }
-  return { qualityIds: [...qualityIds], inversiones, semitonos };
+  return { qualityIds: [...qualityIds], inversiones, semitonos, figuras, compases };
 }
 
 export interface Stats {

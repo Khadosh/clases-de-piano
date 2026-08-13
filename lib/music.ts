@@ -345,6 +345,55 @@ export const CHORD_QUALITIES: ChordQuality[] = [
     tone: "uva",
     learnedIn: 1,
   },
+  // --- Clase 2: las cuatriadas que faltaban -------------------------------
+  // La regla del profe es qué séptima admite cada tríada. La aumentada y las
+  // suspendidas sólo aceptan la menor; la disminuida acepta dos, y la de
+  // arriba de todo ya no es una séptima menor sino disminuida.
+  {
+    id: "aug7",
+    name: "Aumentada con séptima menor",
+    suffix: "7+5",
+    aliases: ["7#5", "+7", "aug7"],
+    family: "septima",
+    stack: [4, 4, 2],
+    vibe: "La aumentada empujando y la séptima empujando para el mismo lado. No se queda quieta ni un segundo.",
+    tone: "brasa",
+    learnedIn: 2,
+  },
+  {
+    id: "7sus4",
+    name: "Suspendida con séptima menor",
+    suffix: "7sus4",
+    aliases: ["sus4/7", "7sus"],
+    family: "suspendido",
+    stack: [5, 2, 3],
+    grados: [0, 3, 4, 6], // 1-4-5-7: no apila terceras
+    vibe: "Ni alegre ni triste y encima pide resolver. Es todo pregunta.",
+    tone: "menta",
+    learnedIn: 2,
+  },
+  {
+    id: "m7b5",
+    name: "Semidisminuida",
+    suffix: "m7b5",
+    aliases: ["ø", "m7-5", "min7b5", "Ø"],
+    family: "septima",
+    stack: [3, 3, 4],
+    vibe: "Disminuida abajo pero se abre arriba. Es la que aparece en el séptimo grado y avisa que algo se viene.",
+    tone: "uva",
+    learnedIn: 2,
+  },
+  {
+    id: "dim7",
+    name: "Disminuida con séptima disminuida",
+    suffix: "dim7",
+    aliases: ["°", "o7", "°7"],
+    family: "septima",
+    stack: [3, 3, 3],
+    vibe: "Tres saltos chicos iguales. Tan pareja que no tiene fundamental: girala y da el mismo acorde.",
+    tone: "uva",
+    learnedIn: 2,
+  },
 ];
 
 export const qualityById = (id: string) =>

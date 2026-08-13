@@ -19,6 +19,16 @@ import {
   type ChordQuality,
   type Pitch,
 } from "./music";
+import {
+  FIGURAS,
+  aCompuesto,
+  compasTexto,
+  esCompuesto,
+  partesPorTiempo,
+  subdivisionDe,
+  tiemposDe,
+  type Compas,
+} from "./ritmo";
 
 /**
  * Las preguntas del examen de cada clase.
@@ -201,6 +211,79 @@ function preguntaInversion(pozo: ChordQuality[]): Pregunta {
   );
 }
 
+/** ¿Cuántas veces entra esta figura en una redonda? */
+function preguntaFigura(): Pregunta {
+  const f = pickRandom(FIGURAS.filter((x) => x.divide > 1));
+  const otras = FIGURAS.filter((x) => x.divide !== f.divide).map((x) =>
+    String(x.divide),
+  );
+  return conOpciones(
+    `¿Cuántas veces entra una ${f.nombre} en una redonda?`,
+    String(f.divide),
+    shuffle(otras).slice(0, 3),
+    `${f.divide}. Y por eso el ${f.divide} de un compás quiere decir "la ${f.nombre}": el número de abajo no cuenta nada, dice en cuántas partes se corta la redonda.`,
+  );
+}
+
+/** Simple o compuesto, y qué se cuenta en cada uno. */
+function preguntaCompas(): Pregunta {
+  const compases: Compas[] = [
+    { numerador: 2, denominador: 4 },
+    { numerador: 3, denominador: 4 },
+    { numerador: 4, denominador: 4 },
+    { numerador: 6, denominador: 8 },
+    { numerador: 9, denominador: 8 },
+    { numerador: 12, denominador: 8 },
+  ];
+  const c = pickRandom(compases);
+  // Dos formas de preguntar lo mismo, para que no se aprenda la lista de
+  // memoria: cuántos tiempos se cuentan, o en cuánto se parte cada uno.
+  if (Math.random() < 0.5) {
+    return conOpciones(
+      `En ${compasTexto(c)}, ¿cuántos tiempos se cuentan?`,
+      String(tiemposDe(c)),
+      shuffle(
+        [1, 2, 3, 4, 6, 9, 12]
+          .filter((n) => n !== tiemposDe(c))
+          .map(String),
+      ).slice(0, 3),
+      esCompuesto(c)
+        ? `${tiemposDe(c)}. Es compuesto: el ${c.numerador} son corcheas escritas, y se agrupan de a tres. El pulso es la negra con puntillo, no la corchea.`
+        : `${tiemposDe(c)}, que es justo lo que dice el numerador. En los simples es directo; en los compuestos no.`,
+    );
+  }
+  return conOpciones(
+    `En ${compasTexto(c)}, ¿en cuántas partes se divide cada tiempo?`,
+    String(partesPorTiempo(c)),
+    shuffle(["1", "2", "3", "4"].filter((n) => n !== String(partesPorTiempo(c)))).slice(0, 3),
+    `En ${compasTexto(c)} la subdivisión es ${subdivisionDe(c)}: cada tiempo se parte en ${partesPorTiempo(c)}.`,
+  );
+}
+
+/** La constante del profe: de simple a compuesto. */
+function preguntaConstante(): Pregunta {
+  const simple = pickRandom<Compas>([
+    { numerador: 2, denominador: 4 },
+    { numerador: 3, denominador: 4 },
+    { numerador: 4, denominador: 4 },
+  ]);
+  const correcto = compasTexto(aCompuesto(simple));
+  const trampas = [
+    // Las trampas son los errores plausibles: multiplicar los dos por lo
+    // mismo, o sólo uno de los dos.
+    `${simple.numerador * 3}/${simple.denominador}`,
+    `${simple.numerador * 2}/${simple.denominador * 2}`,
+    `${simple.numerador}/${simple.denominador * 2}`,
+  ].filter((t) => t !== correcto);
+  return conOpciones(
+    `¿En qué compás compuesto se convierte ${compasTexto(simple)}?`,
+    correcto,
+    trampas.slice(0, 3),
+    `Se multiplica por 3/2: el numerador por 3 y el denominador por 2. ${compasTexto(simple)} → ${correcto}.`,
+    compasTexto(simple),
+  );
+}
+
 // ---------------------------------------------------------------------------
 
 export interface OpcionesExamen {
@@ -210,6 +293,10 @@ export interface OpcionesExamen {
   inversiones: boolean;
   /** ¿La clase vio lo de los semitonos? */
   semitonos: boolean;
+  /** ¿Vio las figuras y el árbol de división? */
+  figuras?: boolean;
+  /** ¿Vio compases simples y compuestos? */
+  compases?: boolean;
   cantidad?: number;
 }
 
@@ -222,6 +309,8 @@ export function generarExamen({
   qualityIds,
   inversiones,
   semitonos,
+  figuras,
+  compases,
   cantidad = 8,
 }: OpcionesExamen): Pregunta[] {
   const pozo = qualityIds
@@ -239,6 +328,11 @@ export function generarExamen({
   if (inversiones) {
     fabricas.push(() => preguntaInversion(pozo));
     fabricas.push(() => preguntaArmar(pozo, true));
+  }
+  if (figuras) fabricas.push(preguntaFigura);
+  if (compases) {
+    fabricas.push(preguntaCompas);
+    fabricas.push(preguntaConstante);
   }
 
   const preguntas: Pregunta[] = [];
