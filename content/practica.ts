@@ -69,6 +69,10 @@ export const AREAS: Area[] = [
 export type HerramientaSuelta =
   | "laboratorio"
   | "identificador"
+  | "oido"
+  | "contrarreloj"
+  | "grados"
+  | "escalas"
   | "figuras"
   | "compases"
   | "semitonos";
@@ -112,6 +116,30 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     bajada:
       "El revés del dictado: tocás teclas y te dice cómo se llama eso. Sirve para encontrar inversiones sin buscarlas.",
   },
+  oido: {
+    titulo: "Sacarlo de oído",
+    emoji: "👂",
+    bajada:
+      "Suena un acorde y no se muestra nada: hay que darse cuenta de qué es y armarlo. Es el único que entrena el oído en vez de la memoria de la receta, y el que más pide tener el piano al lado.",
+  },
+  contrarreloj: {
+    titulo: "Dictado contrarreloj",
+    emoji: "⚡",
+    bajada:
+      "El dictado del profe con reloj y racha. Los que te salen mal vuelven a aparecer más seguido, así que el ejercicio se te va acomodando solo a lo que te falta.",
+  },
+  grados: {
+    titulo: "Progresiones por grados",
+    emoji: "🔢",
+    bajada:
+      "II – V – I en Fa, y salen los acordes. En un tema nadie piensa \"Sol séptima\", piensa \"el quinto\": por eso la misma vuelta se muda de tono sin volver a aprenderla.",
+  },
+  escalas: {
+    titulo: "Las escalas",
+    emoji: "🪜",
+    bajada:
+      "Mayor, menor natural, armónica y melódica, de la tónica a la octava. Cada una es una receta de tonos y semitonos, igual que los acordes — y de ahí sale por qué las blancas desde Do dan la mayor.",
+  },
   figuras: {
     titulo: "El árbol de las figuras",
     emoji: "🌳",
@@ -138,6 +166,10 @@ const AREA_DE: Record<string, AreaId> = {
   hands: "manos",
   "chord-lab": "acordes",
   secuencia: "acordes",
+  oido: "acordes",
+  contrarreloj: "acordes",
+  grados: "acordes",
+  escalas: "manos",
   figuras: "tiempo",
   compases: "tiempo",
   nomenclature: "lectura",
@@ -248,9 +280,13 @@ export function catalogo(): Entrada[] {
           break;
         case "chord-lab":
           sumarSuelta("laboratorio", lesson);
-          // El identificador es el revés del dictado: aparece con el primer
-          // laboratorio aunque no sea un bloque de ninguna clase.
+          // Éstos no son bloques de ninguna clase: son la sala practicando lo
+          // que la clase enseñó. Aparecen con el primer laboratorio porque es
+          // desde ahí que hay acordes que pedir.
           sumarSuelta("identificador", lesson);
+          sumarSuelta("oido", lesson);
+          sumarSuelta("contrarreloj", lesson);
+          sumarSuelta("grados", lesson);
           break;
         case "figuras":
           sumarSuelta("figuras", lesson);
@@ -260,6 +296,8 @@ export function catalogo(): Entrada[] {
           break;
         case "semitonos":
           sumarSuelta("semitonos", lesson);
+          // Una escala es la misma idea de los semitonos estirada a la octava.
+          sumarSuelta("escalas", lesson);
           break;
       }
     }

@@ -73,6 +73,50 @@ Las reglas de armar viven ahí y son las mismas en todos:
 lo mismo que no pasar `armado`: la caja tiene que seguir puesta igual, porque es
 con lo que el MIDI decide a qué ejercicio mandarle la nota.
 
+### Los ejercicios que no salen de una clase
+
+La sala tiene cuatro que no son bloque de ninguna clase: son la sala
+practicando lo que la clase enseñó. Entran por `sumarSuelta()` colgados del
+bloque que los habilita — el que necesita acordes cuelga del primer `chord-lab`,
+las escalas del bloque de semitonos — así que aparecen recién cuando hay con qué.
+
+| Cuál | Qué agrega |
+|---|---|
+| **Sacarlo de oído** | Suena el acorde y no se muestra nada. Es el único que entrena el oído y no la memoria de la receta. |
+| **Dictado contrarreloj** | El dictado del profe con reloj, racha, y los que fallás volviendo más seguido. |
+| **Progresiones por grados** | "ii – V – I en Fa" y salen los acordes. `lib/grados.ts`. |
+| **Las escalas** | Mayor, menor natural, armónica y melódica, tocadas de la tónica a la octava. `lib/escalas.ts`. |
+
+De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
+con dos enunciados, porque son la misma ronda: se propone algo, lo armás, se
+corrige. Lo único que cambia es si lo ves o lo escuchás.
+
+**Las escalas no traen digitación, y es a propósito.** La digitación no se
+deduce de la receta —es una tabla por tonalidad y por mano— y ponerla mal
+enseñaría algo peor que no ponerla. Está dicho en la página y queda para
+preguntarle al profe.
+
+`npm run test:grados` prueba las dos tablas nuevas contra casos que se pueden
+verificar en cualquier libro: la tonalidad de Do sin alteraciones, la de Sol con
+un fa♯ y nada más, la ii-V-I de Fa dando Gm7 · C7 · Fmaj7, que toda escala suma
+12 semitonos, y que las recetas escritas a mano (`"T T s T T T s"`) coinciden con
+los saltos calculados. **Esa última es la que importa**: es teoría que la app
+afirma y que Quique todavía no dio, así que no puede quedar sólo escrita.
+
+### Lo que se acuerda entre sesiones
+
+`lib/memoria.ts`, en `localStorage`. Rompe a medias la regla de que el puntaje
+se pierde al recargar, y la diferencia es toda: **no se guarda un puntaje, se
+guarda qué preguntar**. No hay boletín ni porcentaje histórico ni racha de días;
+hay una cuenta de aciertos y errores que sirve para una sola cosa, que es que lo
+que te sale mal vuelva a aparecer más seguido. Un boletín te haría sentir
+observado; esto te hace practicar lo que te falta. Se borra de un botón.
+
+La cuenta es **por calidad de acorde y no por acorde entero**: lo que se olvida
+es la receta del m7♭5, no que era sobre Fa♯. Y lo que nunca practicaste pesa más
+que lo que te sale siempre pero menos que lo que venís errando — primero los
+agujeros, después los huecos.
+
 ### Las pistas
 
 `components/Pistas.tsx`. La alternativa era el botón de ver la respuesta a
@@ -583,8 +627,9 @@ acá, porque el que no ve nada asume que está roto.
   están *adentro* del repo justamente para no depender de nadie. Ver abajo.
 - **Todo estático**: no hay base de datos ni CMS. Cada clase es un commit, cada
   commit es un deploy. Ese es el "incremental" del proyecto.
-- El puntaje del quiz vive en memoria y se pierde al recargar. Es a propósito:
-  es un juguete de práctica, no un boletín.
+- **El puntaje se pierde al recargar.** Es a propósito: es un juguete de
+  práctica, no un boletín. Lo único que sobrevive es `lib/memoria.ts`, que no
+  guarda puntaje sino qué preguntarte (ver arriba).
 
 ## Comandos
 
@@ -592,4 +637,9 @@ acá, porque el que no ve nada asume que está roto.
 npm run dev        # desarrollo
 npm run build      # build de producción (falla si hay error de tipos)
 npm run typecheck  # sólo tipos
+npm run test:grados  # los grados de una tonalidad y las escalas
+npm run test:ritmo   # figuras y compases
+npm run test:enlace  # el enlace de acordes
+npm run test:notas   # segmentación y puntaje del micrófono
+npm run test:pitch   # el detector de altura
 ```

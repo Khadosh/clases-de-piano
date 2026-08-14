@@ -1,6 +1,9 @@
 import type { Entrada } from "@/content/practica";
 import { acordesAprendidos } from "@/content/practica";
 import ChordLab from "./ChordLab";
+import Dictado from "./Dictado";
+import Escalas from "./Escalas";
+import Grados from "./Grados";
 import Compases from "./Compases";
 import Enlace from "./Enlace";
 import ExerciseRunner from "./ExerciseRunner";
@@ -33,6 +36,14 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <ChordLab qualityIds={acordes} dictation inversiones />;
         case "identificador":
           return <TecladoLibre />;
+        case "oido":
+          return <Dictado qualityIds={acordes} modo="oido" />;
+        case "contrarreloj":
+          return <Dictado qualityIds={acordes} modo="cifrado" reloj />;
+        case "grados":
+          return <Grados />;
+        case "escalas":
+          return <Escalas />;
         case "figuras":
           return <Figuras />;
         case "compases":
