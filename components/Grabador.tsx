@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { getAudioContext } from "@/lib/audio";
 import { aWav, unir } from "@/lib/wav";
 import { noteNameWithOctave } from "@/lib/music";
+import { useMidi } from "@/lib/useMidi";
+import Midi from "./Midi";
 
 /**
  * Graba el micrófono y, si hay un teclado MIDI conectado, lo que tocaste de
@@ -32,8 +34,6 @@ type Estado = "listo" | "grabando" | "terminado";
 export default function Grabador() {
   const [estado, setEstado] = useState<Estado>("listo");
   const [error, setError] = useState<string | null>(null);
-  const [entradas, setEntradas] = useState<string[]>([]);
-  const [midiSoportado, setMidiSoportado] = useState<boolean | null>(null);
   const [notas, setNotas] = useState<NotaMidi[]>([]);
   const [segundos, setSegundos] = useState(0);
   const [nivel, setNivel] = useState(0);
@@ -54,51 +54,20 @@ export default function Grabador() {
 
   // ---- MIDI ---------------------------------------------------------------
 
-  useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.requestMIDIAccess) {
-      setMidiSoportado(false);
-      return;
-    }
-    let vivo = true;
-    navigator
-      .requestMIDIAccess()
-      .then((acceso) => {
-        if (!vivo) return;
-        setMidiSoportado(true);
-
-        const conectar = () => {
-          const nombres: string[] = [];
-          acceso.inputs.forEach((entrada) => {
-            nombres.push(entrada.name ?? "sin nombre");
-            entrada.onmidimessage = (e: MIDIMessageEvent) => {
-              if (!grabandoRef.current || !e.data) return;
-              const [status, midi, velocity] = e.data;
-              // 0x90 con velocity > 0 es "tecla apretada". Los note-off (0x80,
-              // o 0x90 con velocity 0) no interesan: lo que se compara contra
-              // el detector es el ataque.
-              if ((status & 0xf0) !== 0x90 || velocity === 0) return;
-              // `e.timeStamp` está en la misma escala que `performance.now()`,
-              // que es la que usamos para marcar el inicio de la grabación. Por
-              // eso las dos cosas quedan en el mismo reloj sin hacer nada.
-              const t = Math.round((e.timeStamp || performance.now()) - inicioRef.current);
-              const nota = { t, midi, velocity };
-              notasRef.current.push(nota);
-              setNotas((prev) => [...prev, nota]);
-            };
-          });
-          setEntradas(nombres);
-        };
-
-        conectar();
-        acceso.onstatechange = conectar;
-      })
-      .catch(() => {
-        if (vivo) setMidiSoportado(false);
-      });
-    return () => {
-      vivo = false;
-    };
-  }, []);
+  // Sólo los ataques: lo que se compara contra el detector es cuándo empezó
+  // cada nota, así que los note-off no se anotan (`useMidi` los avisa aparte y
+  // acá no se pide).
+  const { estado: estadoMidi, dispositivos } = useMidi({
+    onNota: ({ midi, velocity, t }) => {
+      if (!grabandoRef.current) return;
+      // `t` viene en la escala de `performance.now()`, la misma con la que se
+      // marcó el inicio. Por eso las dos cosas quedan en el mismo reloj sin
+      // hacer nada: ésa es toda la razón de que esta página exista.
+      const nota = { t: Math.round(t - inicioRef.current), midi, velocity };
+      notasRef.current.push(nota);
+      setNotas((prev) => [...prev, nota]);
+    },
+  });
 
   // ---- Grabar -------------------------------------------------------------
 
@@ -272,45 +241,20 @@ export default function Grabador() {
         {error && <p className="mt-3 text-sm text-brasa">{error}</p>}
       </div>
 
-      {/* Estado del MIDI */}
-      <div className="card p-5 text-sm">
-        {midiSoportado === false ? (
-          <div className="text-humo">
-            <p>
-              <strong className="text-tiza">
-                Este navegador no me deja leer MIDI.
-              </strong>{" "}
-              Suele ser por una de tres: es Safari (no lo soporta), la página no
-              está en <code>https</code> ni en <code>localhost</code>, o el
-              navegador bloqueó el permiso.
-            </p>
-            <p className="mt-2">
-              Se puede grabar sólo el audio igual: es lo que veníamos haciendo, y
-              alcanza para todo salvo para saber si el error fue del detector o
-              de los dedos.
-            </p>
-          </div>
-        ) : entradas.length === 0 ? (
-          <div className="text-humo">
-            <p className="mb-2">
-              <strong className="text-tiza">No veo ningún teclado.</strong> Si es
-              por Bluetooth, primero hay que emparejarlo en el sistema:
-            </p>
-            <ul className="ml-4 list-disc space-y-1">
-              <li>
-                <strong>Mac:</strong> Configuración de Audio MIDI → Ventana →
-                Mostrar estudio MIDI → el ícono de Bluetooth → Conectar.
-              </li>
-              <li>
-                <strong>Windows:</strong> Configuración → Bluetooth → agregar
-                dispositivo. Si no aparece acá igual, andá por cable USB.
-              </li>
-            </ul>
-            <p className="mt-2">Se conecta solo cuando aparezca: no hace falta recargar.</p>
-          </div>
-        ) : (
-          <p className="text-menta">
-            ✓ Conectado: <span className="font-mono">{entradas.join(", ")}</span>
+      {/* Estado del MIDI. Las instrucciones son las mismas que en los
+          ejercicios: una sola copia, que además es la que se mantiene. */}
+      <div className="card px-5 py-3 text-sm">
+        <Midi
+          estado={estadoMidi}
+          dispositivos={dispositivos}
+          pista="— se va a grabar lo que toques"
+          invitacion="¿Tenés un teclado? Conectalo y la grabación sabe qué tocaste"
+          cierre="Con el teclado conectado, la grabación guarda además qué nota tocaste y en qué milisegundo. Eso es lo que después le saca el supuesto a la calibración."
+        />
+        {estadoMidi !== "conectado" && estadoMidi !== "buscando" && (
+          <p className="mt-2 text-humo">
+            Sin MIDI se puede grabar igual, sólo el audio: alcanza para todo
+            salvo para saber si el error fue del detector o de los dedos.
           </p>
         )}
       </div>

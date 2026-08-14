@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Keyboard, { type Mark, type Tone } from "./Keyboard";
 import NotasPuestas from "./NotasPuestas";
+import Midi from "./Midi";
 import {
   CHORD_QUALITIES,
   GRADOS_ACORDE,
@@ -24,6 +25,7 @@ import {
   type ChordQuality,
 } from "@/lib/music";
 import { playArpeggio, playChord, playNote, wakeAudio } from "@/lib/audio";
+import { useMidi } from "@/lib/useMidi";
 
 /**
  * El laboratorio de acordes.
@@ -184,6 +186,24 @@ export default function ChordLab({
     setAcertado(false);
   };
 
+  /**
+   * Una tecla del piano de verdad. **Suma, no alterna**: apretar dos veces la
+   * misma tecla mientras armás un acorde es normal, y si la segunda la sacara
+   * no habría forma de tocar nada. Para sacar están las fichas.
+   *
+   * Tampoco se borra al soltar: el veredicto tiene que quedar en pantalla
+   * después de levantar la mano.
+   */
+  const caja = useRef<HTMLDivElement>(null);
+  const { estado: estadoMidi, dispositivos } = useMidi({
+    caja,
+    onNota: ({ midi }) => {
+      if (!dictado || revelado) return;
+      wakeAudio();
+      setArmado((prev) => (prev.includes(midi) ? prev : [...prev, midi].sort((a, b) => a - b)));
+    },
+  });
+
   /** En el dictado el teclado se toca: es el piano de repuesto. */
   const armarEnTeclado = (p: number) => {
     if (!dictado || revelado) return;
@@ -197,7 +217,7 @@ export default function ChordLab({
   };
 
   return (
-    <div className="card overflow-hidden">
+    <div ref={caja} className="card overflow-hidden">
       {/* Fundamental: acomodada como un teclado, pero con botones de dedo.
           La forma importa —Do♯ va arriba y entre Do y Re, como en el piano— y
           el tamaño también: son para apretar, no para mirar. */}
@@ -364,6 +384,7 @@ export default function ChordLab({
               onBorrar={() => setArmado([])}
             />
             <Correccion veredicto={veredicto} onBorrar={() => setArmado([])} />
+            <Midi estado={estadoMidi} dispositivos={dispositivos} />
           </>
         )}
 

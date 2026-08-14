@@ -1,11 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
 import NotasPuestas from "./NotasPuestas";
+import Midi from "./Midi";
 import { corregirAcorde } from "@/lib/music";
 import { generarExamen, type OpcionesExamen, type Pregunta } from "@/lib/examen";
 import { playChord, playNote, wakeAudio } from "@/lib/audio";
+import { useMidi } from "@/lib/useMidi";
 
 /**
  * El examen de la clase.
@@ -35,6 +37,21 @@ export default function Examen(opciones: OpcionesExamen) {
 
   const pregunta = preguntas?.[i];
   const terminado = Boolean(preguntas && i >= preguntas.length);
+
+  // Ojo: acá arriba y no más abajo. Este componente tiene returns tempranos
+  // (sin examen, examen terminado) y un hook después de un return se saltea en
+  // algunos renders, que es exactamente lo que React no permite.
+  const caja = useRef<HTMLDivElement>(null);
+  const { estado: estadoMidi, dispositivos } = useMidi({
+    caja,
+    onNota: ({ midi }) => {
+      if (resuelta || pregunta?.tipo !== "armar") return;
+      wakeAudio();
+      setArmado((prev) =>
+        prev.includes(midi) ? prev : [...prev, midi].sort((a, b) => a - b),
+      );
+    },
+  });
 
   // Las de armar se corrigen solas al completar el acorde, como el dictado.
   const veredicto =
@@ -155,7 +172,7 @@ export default function Examen(opciones: OpcionesExamen) {
       : elegida === pregunta.correcta;
 
   return (
-    <div className="card overflow-hidden">
+    <div ref={caja} className="card overflow-hidden">
       {/* Progreso */}
       <div className="flex items-center gap-3 border-b border-borde/60 px-5 py-3">
         <span className="text-xs tracking-[0.2em] text-humo uppercase">
@@ -214,6 +231,7 @@ export default function Examen(opciones: OpcionesExamen) {
                 onKeyPress={resuelta ? undefined : tocarTecla}
               />
             </div>
+            {!resuelta && <Midi estado={estadoMidi} dispositivos={dispositivos} />}
             {!resuelta && (
               <NotasPuestas
                 notas={armado}

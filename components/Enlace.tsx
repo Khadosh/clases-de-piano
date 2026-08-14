@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
 import NotasPuestas from "./NotasPuestas";
+import Midi from "./Midi";
 import {
   chordPitches,
   mod12,
@@ -22,6 +23,7 @@ import {
   type Criterio,
 } from "@/lib/enlace";
 import { playChord, playNote, wakeAudio } from "@/lib/audio";
+import { useMidi } from "@/lib/useMidi";
 
 /**
  * Enlazar una progresión: te la damos toda en estado fundamental y vos vas
@@ -126,6 +128,16 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
     setArmado([]);
   }, [completo, acerto, actual, previa, armado, criterio]);
 
+  const caja = useRef<HTMLDivElement>(null);
+  const { estado: estadoMidi, dispositivos } = useMidi({
+    caja,
+    onNota: ({ midi }) => {
+      if (terminado || mostrando) return;
+      wakeAudio();
+      setArmado((prev) => (prev.includes(midi) ? prev : [...prev, midi].sort((a, b) => a - b)));
+    },
+  });
+
   const tocar = (p: number) => {
     if (terminado || mostrando) return;
     wakeAudio();
@@ -181,7 +193,7 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
   const unidad = criterio === "bajo" ? "el bajo" : "la mano";
 
   return (
-    <div className="card overflow-hidden">
+    <div ref={caja} className="card overflow-hidden">
       {/* Criterio */}
       <div className="flex flex-wrap items-center gap-2 border-b border-borde/60 p-4">
         <span className="text-xs tracking-[0.2em] text-humo uppercase">
@@ -278,6 +290,8 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
         <div className="rounded-2xl bg-noche-2 p-3">
           <Keyboard from={45} to={84} marks={marks} onKeyPress={tocar} />
         </div>
+
+        {!terminado && <Midi estado={estadoMidi} dispositivos={dispositivos} />}
 
         {!terminado && (
           <NotasPuestas

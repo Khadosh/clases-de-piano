@@ -448,6 +448,53 @@ grabaciones.
 **Los acordes no se pueden escuchar todavía.** Detectar varias notas a la vez es
 otro problema (análisis espectral, no autocorrelación) y no está hecho.
 
+## El teclado MIDI
+
+`lib/useMidi.ts` y `components/Midi.tsx`. Si hay un teclado conectado, los
+ejercicios de armar acordes se responden tocándolos de verdad. Es la respuesta
+al problema que el micrófono *no* resuelve: acordes. Ahí no hay que detectar
+nada, el teclado dice qué notas son.
+
+Está en el laboratorio, en el enlace, en las de armar del examen y en `/grabar`.
+Se enchufa igual en todos: el hook para las notas, el componente para el estado
+y las instrucciones. Las teclas de la pantalla siguen andando; se puede mezclar.
+
+- **Hay una sola conexión y vive a nivel módulo.** No es una optimización: la
+  API del browser tiene un solo `onmidimessage` *por entrada*, así que si cada
+  componente se suscribiera por su cuenta, el último en montarse pisaría a todos
+  los demás y sólo uno —cuál, depende del orden de los efectos— recibiría las
+  notas. Y `requestMIDIAccess` dispara un permiso, que tampoco puede salir tres
+  veces en la misma página.
+- **La nota va al ejercicio que estás mirando**, o sea al visible cuyo centro
+  está más cerca del centro de la ventana (`destinatario()`). En `/practica` hay
+  tres montados a la vez: sin esto, contestar el dictado le arma el acorde
+  también al enlace de más abajo, que después aparece con notas puestas que
+  nadie tocó ahí.
+- **Suma, no alterna.** Apretar dos veces la misma tecla mientras armás un
+  acorde es normal; si la segunda la sacara no habría forma de tocar nada. Para
+  sacar están las fichas de `NotasPuestas`. Tampoco se borra al soltar: el
+  veredicto tiene que quedar en pantalla después de levantar la mano.
+- Un note-on con velocity 0 es un note-off disfrazado. Lo mandan muchos
+  teclados, y sin contemplarlo soltar una tecla cuenta como volver a apretarla.
+- El teclado se engancha solo cuando aparece (`onstatechange`): emparejar por
+  Bluetooth lleva un rato y nadie quiere tener que recargar la página.
+
+**Las instrucciones son la mitad del trabajo.** Conectar por Bluetooth no es
+obvio en ningún sistema y es donde la gente abandona — en Mac no alcanza con
+emparejarlo desde Preferencias del Sistema, hay que ir a Configuración de Audio
+MIDI, y en Windows anda a veces. Por eso el componente trae las tres fichas
+(USB, Bluetooth en Mac, Bluetooth en Windows), abre la que corresponde al
+sistema que adivina del user-agent sin esconder las otras, y en las dos de
+Bluetooth dice cuándo conviene rendirse y usar el cable. Los textos de arriba y
+del pie son props (`pista`, `invitacion`, `cierre`) porque no es lo mismo
+"tocá el acorde" que "se va a grabar lo que toques"; las instrucciones son una
+sola copia.
+
+Hace falta Chrome o Edge —Safari no lo soporta, Firefox lo trae apagado— y
+`https` o `localhost`. Los tres estados feos (sin soporte, sin teclado, permiso
+denegado) tienen su cartel: quedarse sin decir nada es lo peor que puede pasar
+acá, porque el que no ve nada asume que está roto.
+
 ## Convenciones
 
 - **Todo en castellano rioplatense**, incluidos los nombres de variables de
