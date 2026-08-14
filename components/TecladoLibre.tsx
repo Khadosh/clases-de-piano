@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import Keyboard, { type Mark } from "./Keyboard";
+import Piano from "./Piano";
+import { type Mark } from "./Keyboard";
 import {
   CHORD_QUALITIES,
   chordSymbol,
@@ -11,22 +11,19 @@ import {
   mod12,
   noteName,
 } from "@/lib/music";
-import { playNote, wakeAudio } from "@/lib/audio";
+import { useArmado } from "@/lib/useArmado";
 
 /**
  * Tocás teclas y te dice si lo que armaste tiene nombre. Es el revés del
  * dictado: en vez de leer un cifrado, lo escribís con los dedos.
+ *
+ * Es el que más gana con el teclado MIDI: acá no hay respuesta que adivinar, se
+ * trata de tocar cosas y ver cómo se llaman, y eso con el piano de verdad
+ * adelante es otra cosa que clickeando teclas de trece píxeles.
  */
 export default function TecladoLibre() {
-  const [held, setHeld] = useState<number[]>([]);
-
-  const toggle = (p: number) => {
-    wakeAudio();
-    setHeld((prev) =>
-      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b),
-    );
-    if (!held.includes(p)) playNote(p, 0.9);
-  };
+  const armado = useArmado();
+  const held = armado.notas;
 
   const marks: Mark[] = held.map((p) => ({ pitch: p, tone: "sol" }));
   const nombre = identificar(held);
@@ -34,36 +31,35 @@ export default function TecladoLibre() {
   return (
     <div className="card overflow-hidden">
       <div className="p-5">
-        <div className="rounded-2xl bg-noche-2 p-3">
-          <Keyboard from={48} to={84} marks={marks} onKeyPress={toggle} showNoteNames />
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <p className="font-display text-2xl font-bold">
-            {nombre ? (
-              <span className="text-sol">{nombre}</span>
-            ) : held.length ? (
-              <span className="text-humo">
-                {held.map((p) => noteName(p)).join(" · ")}
-              </span>
-            ) : (
-              <span className="text-humo">Tocá algunas teclas…</span>
-            )}
-          </p>
-          {held.length > 0 && (
-            <button
-              onClick={() => setHeld([])}
-              className="ml-auto rounded-full bg-carta-2 px-4 py-2 text-sm font-bold transition hover:bg-borde"
-            >
-              Limpiar
-            </button>
+        <Piano
+          from={48}
+          to={84}
+          marks={marks}
+          armado={armado}
+          pista="— tocá lo que quieras y mirá cómo se llama"
+          invitacion="¿Tenés un teclado? Conectalo y probá acordes en el piano de verdad"
+          cierre="Con el teclado conectado, tocás cualquier cosa y la app le busca el nombre. Es la forma más rápida de encontrar una inversión sin ir a buscarla."
+        >
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <p className="font-display text-2xl font-bold">
+              {nombre ? (
+                <span className="text-sol">{nombre}</span>
+              ) : held.length ? (
+                <span className="text-humo">
+                  {held.map((p) => noteName(p)).join(" · ")}
+                </span>
+              ) : (
+                <span className="text-humo">Tocá algunas teclas…</span>
+              )}
+            </p>
+          </div>
+          {held.length > 0 && !nombre && (
+            <p className="mt-2 text-sm text-humo">
+              Todavía no coincide con ninguna receta conocida. Puede ser una
+              inversión, o algo que el profe todavía no nos contó.
+            </p>
           )}
-        </div>
-        {held.length > 0 && !nombre && (
-          <p className="mt-2 text-sm text-humo">
-            Todavía no coincide con ninguna receta conocida. Puede ser una
-            inversión, o algo que el profe todavía no nos contó.
-          </p>
-        )}
+        </Piano>
       </div>
     </div>
   );

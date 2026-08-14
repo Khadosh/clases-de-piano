@@ -29,12 +29,64 @@ había una sola clase la sala era un reflejo fiel de esa clase y daba igual; con
 dos ya no, porque para practicar acordes querés todos juntos y no la mitad en
 cada lado.
 
+**Un ejercicio por página.** `/practica` es sólo el índice y cada ejercicio vive
+en `/practica/<slug>`. Antes estaban todos montados uno abajo del otro, que
+sirve para hojear y no para practicar: cada uno pide otra cosa —uno el piano,
+otro la cabeza, otro el metrónomo— y tenerlos todos a la vez no ayuda a
+ninguno. Encima con tres pianos en pantalla el MIDI tenía que adivinar a cuál le
+estabas hablando.
+
+El `slug` **tiene que ser estable**: es la dirección que queda abierta en el
+teléfono arriba del piano. Por eso el número de clase se agrega sólo cuando hay
+dos del mismo tipo y no siempre — si no, publicar la clase 3 cambiaría la
+dirección de todo lo de la 1. El orden del catálogo es el de las áreas (el de
+una rutina), que es también el orden del "siguiente" del pie: ordenarlo por
+clase hacía que el siguiente saltara de área en área.
+
 Agregar una clase no obliga a tocar nada de eso. Lo único que hay que sumar es
 si aparece un *tipo* de bloque nuevo: una línea en `AREA_DE` diciendo a qué área
-va, y su ficha en la página. Las herramientas que no dependen de datos de una
-clase (el laboratorio, el árbol de figuras) aparecen una sola vez, con la clase
-donde se vieron primero, y el laboratorio ofrece **los acordes aprendidos hasta
-ahora** y no todos los que existen en el código.
+va, su título y bajada en `catalogo()`, y una rama en
+`components/EjercicioDePractica.tsx`. Las herramientas que no dependen de datos
+de una clase (el laboratorio, el árbol de figuras) aparecen una sola vez, con la
+clase donde se vieron primero, y el laboratorio ofrece **los acordes aprendidos
+hasta ahora** y no todos los que existen en el código.
+
+### El piano de los ejercicios
+
+Hay **un solo piano** y es `components/Piano.tsx`: el teclado, las fichas de lo
+que apretaste y el estado del MIDI, en ese orden. El estado de las notas lo
+lleva `lib/useArmado.ts`. Antes cada ejercicio tenía su copia de las mismas tres
+piezas y eran cuatro pianos apenas distintos —uno ponía las fichas arriba del
+veredicto y otro abajo, uno agrandaba las teclas y otro no—, y ninguna de esas
+diferencias era una decisión: era el orden en que se fueron escribiendo.
+
+Las reglas de armar viven ahí y son las mismas en todos:
+
+- **La pantalla alterna, el piano suma.** Clickear una tecla puesta la saca,
+  porque en la pantalla no hay otra forma de deshacer; en el piano de verdad
+  apretar dos veces la misma tecla mientras armás es normal, así que si la
+  segunda la sacara no habría manera de tocar nada.
+- **Soltar no borra**, y **la tecla de la pantalla suena y la del piano no**
+  (el piano ya sonó).
+
+`respondiendo` es la diferencia entre mostrar un acorde y pedirlo. Ojo que no es
+lo mismo que no pasar `armado`: la caja tiene que seguir puesta igual, porque es
+con lo que el MIDI decide a qué ejercicio mandarle la nota.
+
+### Las pistas
+
+`components/Pistas.tsx`. La alternativa era el botón de ver la respuesta a
+secas, y ahí el que se traba tiene dos opciones: adivinar o rendirse.
+
+- **Van en escalera y de a una.** En el dictado: la receta en semitonos (que es
+  lo que se olvida), después una nota, y las notas enteras al final.
+- **Se cuentan y se dice.** Acertar con tres pistas no es lo mismo que acertar
+  sin ninguna, y esconderlo sería mentir un poquito.
+- **Donde ya hay un "ver resuelto" bueno, las pistas apuntan a otra cosa.** En
+  el enlace el botón de escuchar el óptimo ya existe, así que las pistas son
+  sobre cómo se piensa: qué notas se quedan quietas, y cuánto se podía mover —
+  sin decir con qué inversión, que muy seguido son dos y elegir una sería
+  mentir.
 
 ### La fecha
 
@@ -141,8 +193,9 @@ blancas el suyo, las negras las dos escrituras— y mete mucho ruido para lo que
 aporta: son cuarenta etiquetas prendidas todo el tiempo para resolver una duda
 que aparece de a una. La orientación ya la dan los `Do3` de cada octava, y el
 nombre de lo que apretaste lo dicen las fichas de `NotasPuestas`, que es
-justo cuando hace falta. `showNoteNames` sigue existiendo para el teclado libre,
-que es donde el ejercicio *es* leer las teclas.
+justo cuando hace falta. `showNoteNames` sigue existiendo, pero ya no lo usa nadie:
+el teclado libre también pasó a mostrar fichas, que dicen lo mismo y sólo de lo
+que apretaste.
 
 Pasá `paraTocar` a mano cuando el teclado *va a* volverse interactivo (el
 laboratorio lo hace recién al arrancar el dictado): si no, cambia de tamaño en
@@ -447,6 +500,14 @@ grabaciones.
 
 **Los acordes no se pueden escuchar todavía.** Detectar varias notas a la vez es
 otro problema (análisis espectral, no autocorrelación) y no está hecho.
+
+**Con un teclado MIDI enchufado el micrófono no se usa.** El ejercicio de
+posiciones lo detecta solo y cambia el botón de "escuchame tocar" a "seguime en
+el piano"; el micrófono queda como la opción de abajo, para probarlo y para
+cuando no hay teclado. Ahí la `ventanaResync` **pasa a 0**, y eso no es un
+detalle: la ventana existe para tapar las notas que el micrófono se come, y el
+teclado no se come ninguna, así que dejarla puesta sólo serviría para dejar
+pasar un error de verdad.
 
 ## El teclado MIDI
 

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
+import Midi from "./Midi";
 import {
   buildExercise,
   buildExerciseCompleto,
@@ -14,6 +15,7 @@ import {
 import { playNote, wakeAudio } from "@/lib/audio";
 import { useMetronomo } from "@/lib/useMetronomo";
 import { useMicPitch, type EstadoMic } from "@/lib/useMicPitch";
+import { useMidi } from "@/lib/useMidi";
 import { evaluarNota } from "@/lib/puntaje";
 import type { PitchReading } from "@/lib/pitch";
 
@@ -57,14 +59,18 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   const [bpm, setBpm] = useState(72);
   const [i, setI] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [escuchando, setEscuchando] = useState(false);
+  const [siguiendo, setSiguiendo] = useState(false);
+  /** Forzar el micrófono aunque haya teclado, para probarlo. */
+  const [forzarMic, setForzarMic] = useState(false);
   const [puntaje, setPuntaje] = useState({ bien: 0, mal: 0 });
   const [ultimoError, setUltimoError] = useState<number | null>(null);
+  const [ultimaTocada, setUltimaTocada] = useState<number | null>(null);
   const [completo, setCompleto] = useState(false);
   const v = variants[vi];
 
   // El micrófono sólo distingue una nota por vez: con las dos manos juntas
-  // sonando en simultáneo no hay nada que hacer.
+  // sonando en simultáneo no hay nada que hacer. El MIDI sí podría, pero el
+  // ejercicio se sigue nota por nota, así que por ahora es igual.
   const micPosible = v.hand !== "ambas";
 
   const { izq, der } = useMemo(() => {
@@ -82,6 +88,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
     setI(0);
     setPuntaje({ bien: 0, mal: 0 });
     setUltimoError(null);
+    setUltimaTocada(null);
     setCompleto(false);
   }, []);
 
@@ -89,7 +96,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   useEffect(() => {
     reiniciar();
     setPlaying(false);
-    setEscuchando(false);
+    setSiguiendo(false);
   }, [vi, reiniciar]);
 
   const izqRef = useRef(izq);
@@ -127,9 +134,20 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
     [izq, der],
   );
 
-  const onNota = useCallback(
-    (midi: number) => {
-      const v = evaluarNota([mod12(midi)], esperadoRef.current, iRef.current);
+  /**
+   * Una nota tocada, venga de donde venga.
+   *
+   * `ventanaResync` es la diferencia entre las dos entradas y no es un detalle:
+   * la ventana existe para tapar las notas que el micrófono se come, y sin ella
+   * una sola nota perdida hacía que todo lo que seguía saliera en rojo. El
+   * teclado MIDI no se come nada — dice exactamente qué apretaste — así que ahí
+   * la ventana sólo serviría para dejar pasar un error de verdad.
+   */
+  const contar = useCallback(
+    (midi: number, ventanaResync?: number) => {
+      const v = evaluarNota([mod12(midi)], esperadoRef.current, iRef.current, {
+        ventanaResync,
+      });
       if (v.tipo === "avanza") avanzar(v.cuantas);
       else if (v.tipo === "mal") {
         setUltimoError(midi);
@@ -140,16 +158,39 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
     [avanzar],
   );
 
-  const { estado: estadoMic, lectura } = useMicPitch({
-    activo: escuchando && micPosible,
-    onNota,
+  const caja = useRef<HTMLDivElement>(null);
+  // El guardia va por ref porque quién manda depende de `estadoMidi`, que sale
+  // de esta misma llamada: adentro del callback todavía no se puede leer.
+  const midiMandaRef = useRef(false);
+  const { estado: estadoMidi, dispositivos } = useMidi({
+    caja,
+    onNota: ({ midi }) => {
+      if (!midiMandaRef.current) return;
+      setUltimaTocada(midi);
+      contar(midi, 0);
+    },
   });
 
-  // Escuchar y reproducir solo son incompatibles: el micrófono se escucharía a
-  // sí mismo por los parlantes.
+  // Con el teclado enchufado no hace falta escuchar nada: sabemos qué tocaste.
+  // El micrófono sigue estando por si se lo quiere probar, y es el único camino
+  // cuando no hay teclado.
+  const hayTeclado = estadoMidi === "conectado";
+  const porMidi = hayTeclado && !forzarMic;
+  midiMandaRef.current = siguiendo && porMidi;
+
+  const { estado: estadoMic, lectura } = useMicPitch({
+    activo: siguiendo && !porMidi && micPosible,
+    // Sin ventana explícita: el micrófono se queda con la de por defecto, que
+    // es la que existe justamente para él.
+    onNota: (midi) => contar(midi),
+  });
+
+  // El micrófono y reproducir solo son incompatibles: se escucharía a sí mismo
+  // por los parlantes. Con MIDI eso no pasa, pero tocar encima de la app tampoco
+  // es lo que el ejercicio pide, así que se corta igual.
   useEffect(() => {
-    if (escuchando) setPlaying(false);
-  }, [escuchando]);
+    if (siguiendo) setPlaying(false);
+  }, [siguiendo]);
 
   useMetronomo({
     activo: playing,
@@ -190,7 +231,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
   pushHand(der, "der", BASE_DER);
 
   // Mientras escucha, la nota equivocada se pinta donde caiga en el teclado.
-  if (escuchando && ultimoError !== null) {
+  if (siguiendo && ultimoError !== null) {
     const dentro = [ultimoError - 12, ultimoError, ultimoError + 12].find(
       (p) => p >= 45 && p <= 84,
     );
@@ -211,7 +252,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
       : null;
 
   return (
-    <div className="card overflow-hidden">
+    <div ref={caja} className="card overflow-hidden">
       <div className="flex flex-wrap gap-1.5 border-b border-borde/60 p-4">
         {variants.map((variant, idx) => (
           <button
@@ -234,6 +275,16 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
         <div className="rounded-2xl bg-noche-2 p-3">
           <Keyboard from={45} to={84} marks={marks} />
         </div>
+
+        {micPosible && !siguiendo && (
+          <Midi
+            estado={estadoMidi}
+            dispositivos={dispositivos}
+            pista="— dale a Seguime en el piano y tocá"
+            invitacion="¿Tenés un teclado? Conectalo y seguí el ejercicio sin micrófono"
+            cierre="Con el teclado conectado, el ejercicio avanza cuando tocás la nota que va — sin micrófono, sin permisos y sin equivocarse de octava."
+          />
+        )}
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
@@ -272,20 +323,24 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
             → Una nota
           </button>
 
-          {micPosible && (
+          {(micPosible || hayTeclado) && (
             <button
               onClick={() => {
                 wakeAudio();
-                setEscuchando((e) => !e);
-                if (!escuchando) reiniciar();
+                setSiguiendo((e) => !e);
+                if (!siguiendo) reiniciar();
               }}
               className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-                escuchando
+                siguiendo
                   ? "bg-brasa text-noche"
                   : "bg-uva text-noche hover:brightness-110"
               }`}
             >
-              {escuchando ? "⏹ Dejar de escuchar" : "🎤 Escuchame tocar"}
+              {siguiendo
+                ? "⏹ Parar"
+                : porMidi
+                  ? "🎹 Seguime en el piano"
+                  : "🎤 Escuchame tocar"}
             </button>
           )}
 
@@ -302,17 +357,33 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
           </label>
         </div>
 
-        {escuchando && (
-          <MicPanel
-            estado={estadoMic}
-            lectura={lectura}
-            esperado={esperado}
-            puntaje={puntaje}
-            ultimoError={ultimoError}
-            completo={completo}
-            restantes={total - i}
-            onReiniciar={reiniciar}
-          />
+        {siguiendo && (
+          <>
+            <PanelDeSeguir
+              porMidi={porMidi}
+              estado={estadoMic}
+              lectura={lectura}
+              ultimaTocada={ultimaTocada}
+              esperado={esperado}
+              puntaje={puntaje}
+              ultimoError={ultimoError}
+              completo={completo}
+              restantes={total - i}
+              onReiniciar={reiniciar}
+            />
+            {hayTeclado && micPosible && (
+              <label className="mt-3 flex cursor-pointer items-center gap-2 text-sm text-humo">
+                <input
+                  type="checkbox"
+                  checked={forzarMic}
+                  onChange={(e) => setForzarMic(e.target.checked)}
+                  className="accent-uva"
+                />
+                Usar el micrófono igual (para probarlo: con el teclado enchufado
+                no hace falta)
+              </label>
+            )}
+          </>
         )}
 
         <div className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-noche-2 px-4 py-3 text-sm">
@@ -376,10 +447,19 @@ const MENSAJES: Record<EstadoMic, string> = {
   error: "No se pudo abrir el micrófono. ¿Lo está usando otro programa?",
 };
 
-/** El panel que aparece abajo del teclado cuando el ejercicio te está escuchando. */
-function MicPanel({
+/**
+ * El panel que aparece abajo del teclado mientras el ejercicio te sigue.
+ *
+ * Sirve para las dos entradas y la diferencia se nota poco a propósito: lo que
+ * importa es siempre lo mismo —cuál va ahora y cómo venís—, y sólo cambia la
+ * columna del medio. Con el micrófono hay que mostrar el vúmetro y los cents,
+ * porque ahí no se sabe si está entrando algo; con el teclado eso no existe.
+ */
+function PanelDeSeguir({
+  porMidi,
   estado,
   lectura,
+  ultimaTocada,
   esperado,
   puntaje,
   ultimoError,
@@ -387,8 +467,10 @@ function MicPanel({
   restantes,
   onReiniciar,
 }: {
+  porMidi: boolean;
   estado: EstadoMic;
   lectura: PitchReading | null;
+  ultimaTocada: number | null;
   esperado: ExerciseStep;
   puntaje: { bien: number; mal: number };
   ultimoError: number | null;
@@ -396,7 +478,7 @@ function MicPanel({
   restantes: number;
   onReiniciar: () => void;
 }) {
-  const mensaje = MENSAJES[estado];
+  const mensaje = porMidi ? "" : MENSAJES[estado];
   const total = puntaje.bien + puntaje.mal;
   const limpio = total > 0 ? Math.round((puntaje.bien / total) * 100) : null;
 
@@ -446,14 +528,20 @@ function MicPanel({
 
         <div className="min-w-32">
           <p className="text-xs tracking-[0.2em] text-humo uppercase">
-            Te escucho
+            {porMidi ? "Tocaste" : "Te escucho"}
           </p>
           <p
             className={`font-display text-3xl font-black ${
               ultimoError !== null ? "text-brasa" : "text-tiza"
             }`}
           >
-            {lectura ? (
+            {porMidi ? (
+              ultimaTocada !== null ? (
+                noteName(ultimaTocada)
+              ) : (
+                <span className="text-humo">—</span>
+              )
+            ) : lectura ? (
               <>
                 {noteName(lectura.midi)}
                 <span className="ml-2 font-mono text-xs font-normal text-humo">
@@ -467,15 +555,18 @@ function MicPanel({
           </p>
         </div>
 
-        {/* Vúmetro: sirve para saber si el micrófono te está llegando. */}
-        <div className="h-2 w-24 overflow-hidden rounded-full bg-carta-2">
-          <div
-            className="h-full rounded-full bg-menta transition-[width] duration-75"
-            style={{
-              width: `${Math.min(100, Math.round((lectura?.rms ?? 0) * 400))}%`,
-            }}
-          />
-        </div>
+        {/* Vúmetro: sirve para saber si el micrófono te está llegando. Con el
+            teclado no hay nada que dudar, así que no va. */}
+        {!porMidi && (
+          <div className="h-2 w-24 overflow-hidden rounded-full bg-carta-2">
+            <div
+              className="h-full rounded-full bg-menta transition-[width] duration-75"
+              style={{
+                width: `${Math.min(100, Math.round((lectura?.rms ?? 0) * 400))}%`,
+              }}
+            />
+          </div>
+        )}
 
         <div className="ml-auto text-right text-sm">
           <p className="font-mono">
@@ -490,6 +581,8 @@ function MicPanel({
       <p className="mt-3 text-xs text-humo">
         Tocá tranquilo, no hay reloj: la nota avanza cuando la acertás. La
         octava no importa, sí la nota.
+        {porMidi &&
+          " Va por el teclado MIDI, así que lo que se marca mal está mal de verdad."}
       </p>
     </div>
   );

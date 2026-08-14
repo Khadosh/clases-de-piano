@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Keyboard, { type Mark, type Tone } from "./Keyboard";
-import NotasPuestas from "./NotasPuestas";
-import Midi from "./Midi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { type Mark, type Tone } from "./Keyboard";
+import Piano from "./Piano";
+import Pistas, { type Pista } from "./Pistas";
 import {
   CHORD_QUALITIES,
   GRADOS_ACORDE,
@@ -24,8 +24,8 @@ import {
   stackLabel,
   type ChordQuality,
 } from "@/lib/music";
-import { playArpeggio, playChord, playNote, wakeAudio } from "@/lib/audio";
-import { useMidi } from "@/lib/useMidi";
+import { playArpeggio, playChord, wakeAudio } from "@/lib/audio";
+import { useArmado } from "@/lib/useArmado";
 
 /**
  * El laboratorio de acordes.
@@ -70,10 +70,10 @@ export default function ChordLab({
   const [revelado, setRevelado] = useState(false);
   const [ronda, setRonda] = useState(0);
   const [dictarInversiones, setDictarInversiones] = useState(false);
-  /** Las teclas que fuiste apretando para armar el acorde del dictado. */
-  const [armado, setArmado] = useState<number[]>([]);
   const [acertado, setAcertado] = useState(false);
   const [puntaje, setPuntaje] = useState({ bien: 0, rondas: 0 });
+  /** Cuántas pistas pediste en esta ronda. Se cuentan: hay puntaje limpio. */
+  const [pistas, setPistas] = useState(0);
 
   const elegido = qualityById(qid) ?? qualities[0];
   const mostrado = dictado ?? {
@@ -93,9 +93,12 @@ export default function ChordLab({
 
   const oculto = Boolean(dictado) && !revelado;
 
+  const armado = useArmado({ activo: oculto });
+  const puestas = armado.notas;
+
   const veredicto = useMemo(
-    () => (dictado ? corregirAcorde(armado, pitches) : null),
-    [dictado, armado, pitches],
+    () => (dictado ? corregirAcorde(puestas, pitches) : null),
+    [dictado, puestas, pitches],
   );
 
   // Se anota el acierto una sola vez por ronda, la primera que sale bien.
@@ -108,9 +111,9 @@ export default function ChordLab({
   }, [veredicto, acertado, mostrado.root, mostrado.quality, inversion]);
 
   /** Mientras armás en el teclado, cada tecla se pinta según cómo viene. */
-  const marcasArmado: Mark[] = armado.map((p) => {
+  const marcasArmado: Mark[] = puestas.map((p) => {
     const enElAcorde = pitches.some((o) => mod12(o) === mod12(p));
-    const esElBajo = p === Math.min(...armado);
+    const esElBajo = p === Math.min(...puestas);
     // Recién cuando está completo se dice si estuvo bien: mientras tanto sólo
     // se muestran las teclas puestas, sin ir corrigiendo tecla por tecla.
     if (!veredicto) return { pitch: p, tone: "luna" as const };
@@ -174,50 +177,71 @@ export default function ChordLab({
           : 0,
     });
     setRevelado(false);
-    setArmado([]);
+    armado.borrar();
     setAcertado(false);
+    setPistas(0);
     setPuntaje((p) => ({ ...p, rondas: p.rondas + 1 }));
     setRonda((n) => n + 1);
   };
 
   const salirDelDictado = () => {
     setDictado(null);
-    setArmado([]);
+    armado.borrar();
     setAcertado(false);
+    setPistas(0);
   };
 
   /**
-   * Una tecla del piano de verdad. **Suma, no alterna**: apretar dos veces la
-   * misma tecla mientras armás un acorde es normal, y si la segunda la sacara
-   * no habría forma de tocar nada. Para sacar están las fichas.
+   * Las pistas del dictado, de menos a más.
    *
-   * Tampoco se borra al soltar: el veredicto tiene que quedar en pantalla
-   * después de levantar la mano.
+   * La escalera importa: la receta sola alcanza casi siempre, porque lo que se
+   * olvida es cuántos semitonos van, no cómo se cuenta. Recién si con eso no
+   * sale se dice una nota, y las notas enteras van últimas — eso ya es la
+   * respuesta escrita, sólo que sin verla en el teclado.
    */
-  const caja = useRef<HTMLDivElement>(null);
-  const { estado: estadoMidi, dispositivos } = useMidi({
-    caja,
-    onNota: ({ midi }) => {
-      if (!dictado || revelado) return;
-      wakeAudio();
-      setArmado((prev) => (prev.includes(midi) ? prev : [...prev, midi].sort((a, b) => a - b)));
+  const escritas = notasDeInversion(mostrado.root, mostrado.quality, inversion);
+  const listaDePistas: Pista[] = [
+    {
+      que: "la receta",
+      contenido: (
+        <>
+          desde la fundamental, <strong>{stackLabel(mostrado.quality)}</strong>{" "}
+          semitonos. {mostrado.quality.vibe}
+        </>
+      ),
     },
-  });
-
-  /** En el dictado el teclado se toca: es el piano de repuesto. */
-  const armarEnTeclado = (p: number) => {
-    if (!dictado || revelado) return;
-    wakeAudio();
-    if (!armado.includes(p)) playNote(p, 0.9);
-    setArmado((prev) =>
-      prev.includes(p)
-        ? prev.filter((x) => x !== p)
-        : [...prev, p].sort((a, b) => a - b),
-    );
-  };
+    inversion > 0
+      ? {
+          que: "el bajo",
+          contenido: (
+            <>
+              abajo de todo va <strong>{escritas[0]}</strong>, la{" "}
+              {grados[0] === "3"
+                ? "tercera"
+                : grados[0] === "5"
+                  ? "quinta"
+                  : "séptima"}
+              . La fundamental sigue estando, pero arriba.
+            </>
+          ),
+        }
+      : {
+          que: "la segunda nota",
+          contenido: (
+            <>
+              contando {mostrado.quality.stack[0]} semitonos desde{" "}
+              {escritas[0]} llegás a <strong>{escritas[1]}</strong>.
+            </>
+          ),
+        },
+    {
+      que: "las notas",
+      contenido: <strong className="font-mono">{escritas.join(" · ")}</strong>,
+    },
+  ];
 
   return (
-    <div ref={caja} className="card overflow-hidden">
+    <div className="card overflow-hidden">
       {/* Fundamental: acomodada como un teclado, pero con botones de dedo.
           La forma importa —Do♯ va arriba y entre Do y Re, como en el piano— y
           el tamaño también: son para apretar, no para mirar. */}
@@ -365,28 +389,28 @@ export default function ChordLab({
           </div>
         )}
 
-        <div className="rounded-2xl bg-noche-2 p-3">
-          <Keyboard
-            from={45}
-            to={81}
-            marks={marks}
-            paraTocar={dictation}
-            onKeyPress={oculto ? armarEnTeclado : undefined}
+        <Piano
+          from={45}
+          to={81}
+          marks={marks}
+          armado={armado}
+          respondiendo={oculto}
+          faltan={pitches.length - puestas.length}
+          paraTocar={dictation}
+        >
+          <Correccion
+            veredicto={veredicto}
+            pistas={pistas}
+            onBorrar={armado.borrar}
           />
-        </div>
-
-        {oculto && (
-          <>
-            <NotasPuestas
-              notas={armado}
-              faltan={pitches.length - armado.length}
-              onQuitar={(p) => setArmado((prev) => prev.filter((x) => x !== p))}
-              onBorrar={() => setArmado([])}
+          {!acertado && (
+            <Pistas
+              lista={listaDePistas}
+              dadas={pistas}
+              onPedir={() => setPistas((n) => n + 1)}
             />
-            <Correccion veredicto={veredicto} onBorrar={() => setArmado([])} />
-            <Midi estado={estadoMidi} dispositivos={dispositivos} />
-          </>
-        )}
+          )}
+        </Piano>
 
         {!oculto && (
           <div className="mt-4 rounded-2xl bg-noche-2 px-4 py-3">
@@ -506,17 +530,23 @@ export default function ChordLab({
  */
 function Correccion({
   veredicto,
+  pistas,
   onBorrar,
 }: {
   veredicto: "bien" | "mal" | "bajo" | null;
+  pistas: number;
   onBorrar: () => void;
 }) {
   if (veredicto === "bien") {
     return (
       <div className="mt-4 rounded-2xl border border-menta/40 bg-menta/10 px-4 py-3">
-        <p className="font-display text-xl font-bold text-menta">¡Ahí está! 🎉</p>
+        <p className="font-display text-xl font-bold text-menta">
+          {pistas === 0 ? "¡Ahí está! 🎉" : "Ahí está 👍"}
+        </p>
         <p className="mt-0.5 text-sm text-humo">
-          Dale a Dictado para que te tire otro.
+          {pistas === 0
+            ? "Sin pistas. Dale a Dictado para que te tire otro."
+            : `Con ${pistas === 1 ? "una pista" : `${pistas} pistas`}. Anotalo: ése es el que hay que repetir.`}
         </p>
       </div>
     );

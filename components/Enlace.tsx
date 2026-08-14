@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Keyboard, { type Mark } from "./Keyboard";
-import NotasPuestas from "./NotasPuestas";
-import Midi from "./Midi";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { type Mark } from "./Keyboard";
+import Piano from "./Piano";
+import Pistas, { type Pista } from "./Pistas";
 import {
   chordPitches,
   mod12,
@@ -14,16 +14,16 @@ import {
 import {
   bajoDe,
   esElAcorde,
-  mejorMovimiento,
   notasComunes,
+  mejorMovimiento,
   recorridoOptimo,
   saltoDelBajo,
   totalDelRecorrido,
   viajeDeLaMano,
   type Criterio,
 } from "@/lib/enlace";
-import { playChord, playNote, wakeAudio } from "@/lib/audio";
-import { useMidi } from "@/lib/useMidi";
+import { playChord, wakeAudio } from "@/lib/audio";
+import { useArmado } from "@/lib/useArmado";
 
 /**
  * Enlazar una progresión: te la damos toda en estado fundamental y vos vas
@@ -56,8 +56,9 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
 
   const [criterio, setCriterio] = useState<Criterio>("bajo");
   const [pasos, setPasos] = useState<Paso[]>([]);
-  const [armado, setArmado] = useState<number[]>([]);
   const [mostrando, setMostrando] = useState(false);
+  /** Cuántas pistas pediste en este acorde. Se borran al pasar al siguiente. */
+  const [pistas, setPistas] = useState(0);
 
   // El primero se regala: es el que fija la tonalidad y la posición de la mano.
   const primero = useMemo(
@@ -87,65 +88,54 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
     [progresion, criterio],
   );
 
+  const i = pasos.length; // cuál toca ahora
+  const terminado = i >= progresion.length;
+
+  const armado = useArmado({ activo: !terminado && !mostrando });
+  const puestas = armado.notas;
+
   const reiniciar = useCallback(() => {
     setPasos([{ pitches: primero, costoTuyo: 0, costoMinimo: 0 }]);
-    setArmado([]);
+    armado.borrar();
     setMostrando(false);
+    setPistas(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primero]);
 
   useEffect(() => {
     reiniciar();
   }, [reiniciar, criterio]);
 
-  const i = pasos.length; // cuál toca ahora
-  const terminado = i >= progresion.length;
   const actual = terminado ? null : progresion[i];
   const previa = pasos[pasos.length - 1]?.pitches ?? primero;
 
   // Se corrige recién cuando el acorde está completo, igual que el dictado.
   const completo =
     actual !== null &&
-    armado.length === chordPitches(0, actual.chord.quality).length;
-  const acerto = completo && actual !== null && esElAcorde(armado, actual.chord);
+    puestas.length === chordPitches(0, actual.chord.quality).length;
+  const acerto = completo && actual !== null && esElAcorde(puestas, actual.chord);
 
   useEffect(() => {
     if (!completo || !acerto || !actual) return;
     const min = mejorMovimiento(previa, actual.chord, criterio);
     const tuyo =
       criterio === "bajo"
-        ? saltoDelBajo(previa, armado)
-        : viajeDeLaMano(previa, armado);
+        ? saltoDelBajo(previa, puestas)
+        : viajeDeLaMano(previa, puestas);
     const minimo =
       criterio === "bajo"
         ? saltoDelBajo(previa, min.disposicion.pitches)
         : viajeDeLaMano(previa, min.disposicion.pitches);
     wakeAudio();
-    playChord([...armado].sort((a, b) => a - b));
+    playChord([...puestas].sort((a, b) => a - b));
     setPasos((p) => [
       ...p,
-      { pitches: [...armado].sort((a, b) => a - b), costoTuyo: tuyo, costoMinimo: minimo },
+      { pitches: [...puestas].sort((a, b) => a - b), costoTuyo: tuyo, costoMinimo: minimo },
     ]);
-    setArmado([]);
-  }, [completo, acerto, actual, previa, armado, criterio]);
-
-  const caja = useRef<HTMLDivElement>(null);
-  const { estado: estadoMidi, dispositivos } = useMidi({
-    caja,
-    onNota: ({ midi }) => {
-      if (terminado || mostrando) return;
-      wakeAudio();
-      setArmado((prev) => (prev.includes(midi) ? prev : [...prev, midi].sort((a, b) => a - b)));
-    },
-  });
-
-  const tocar = (p: number) => {
-    if (terminado || mostrando) return;
-    wakeAudio();
-    if (!armado.includes(p)) playNote(p, 0.9);
-    setArmado((prev) =>
-      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p].sort((a, b) => a - b),
-    );
-  };
+    armado.borrar();
+    setPistas(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [completo, acerto, actual, previa, puestas, criterio]);
 
   /** Toca el mejor recorrido posible, para escucharlo. */
   const mostrarOptimo = useCallback(() => {
@@ -161,7 +151,8 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
     optimo.forEach((ps, n) => setTimeout(() => playChord(ps, 1.1), n * 900));
     setTimeout(() => setMostrando(false), optimo.length * 900 + 400);
     setPasos([{ pitches: primero, costoTuyo: 0, costoMinimo: 0 }]);
-    setArmado([]);
+    armado.borrar();
+    setPistas(0);
     // Se dejan puestos como referencia, sin puntaje: es una demostración.
     optimo.slice(1).forEach((ps, n) =>
       setTimeout(
@@ -173,6 +164,7 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
         (n + 1) * 900,
       ),
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primero, progresion, criterio]);
 
   if (!progresion.length) return null;
@@ -183,7 +175,7 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
         // Lo que venías tocando queda como fantasma: es contra eso que se mide
         // cuánto te moviste, así que tiene que estar a la vista.
         ...previa.map((p) => ({ pitch: p, tone: "niebla" as const, ghost: true })),
-        ...armado.map((p) => ({
+        ...puestas.map((p) => ({
           pitch: p,
           tone: (completo && !acerto ? "brasa" : "luna") as Mark["tone"],
         })),
@@ -192,8 +184,63 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
   const totalTuyo = pasos.reduce((s, p) => s + p.costoTuyo, 0);
   const unidad = criterio === "bajo" ? "el bajo" : "la mano";
 
+  /**
+   * Las pistas del enlace, que no son la respuesta.
+   *
+   * Acá el "ver resuelto" ya existe y es el botón de escuchar el óptimo, así
+   * que las pistas apuntan a otra cosa: a cómo se piensa. La primera es la
+   * técnica de verdad —las notas que ya están abajo de los dedos se quedan
+   * quietas— y la segunda dice cuánto se podía mover sin decir con qué
+   * inversión, que muy seguido son dos y decir una sería mentir.
+   */
+  const clasesDeAhora = new Set(
+    actual
+      ? chordPitches(actual.chord.root, actual.chord.quality).map(mod12)
+      : [],
+  );
+  const comunes = [...new Set(previa.map(mod12))].filter((pc) =>
+    clasesDeAhora.has(pc),
+  );
+  const minimoDeAca = actual
+    ? mejorMovimiento(previa, actual.chord, criterio)
+    : null;
+  const listaDePistas: Pista[] = terminado
+    ? []
+    : [
+        {
+          que: "las que se quedan",
+          contenido: comunes.length
+            ? (
+                <>
+                  <strong className="font-mono">
+                    {comunes.map((pc) => noteName(pc)).join(" · ")}
+                  </strong>{" "}
+                  {comunes.length === 1 ? "ya está sonando" : "ya están sonando"}
+                  : {comunes.length === 1 ? "dejala" : "dejalas"} donde{" "}
+                  {comunes.length === 1 ? "está" : "están"} y acomodá el resto
+                  alrededor.
+                </>
+              )
+            : "no hay ninguna nota en común con el acorde anterior. Acá se mueve todo, así que se trata de moverlo poco.",
+        },
+        {
+          que: "cuánto se podía",
+          contenido: minimoDeAca ? (
+            <>
+              desde donde estás, lo menos que se puede mover {unidad} son{" "}
+              <strong>
+                {criterio === "bajo"
+                  ? saltoDelBajo(previa, minimoDeAca.disposicion.pitches)
+                  : viajeDeLaMano(previa, minimoDeAca.disposicion.pitches)}
+              </strong>{" "}
+              semitonos. Puede haber más de una inversión que lo consiga.
+            </>
+          ) : null,
+        },
+      ];
+
   return (
-    <div ref={caja} className="card overflow-hidden">
+    <div className="card overflow-hidden">
       {/* Criterio */}
       <div className="flex flex-wrap items-center gap-2 border-b border-borde/60 p-4">
         <span className="text-xs tracking-[0.2em] text-humo uppercase">
@@ -287,30 +334,30 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
           </div>
         )}
 
-        <div className="rounded-2xl bg-noche-2 p-3">
-          <Keyboard from={45} to={84} marks={marks} onKeyPress={tocar} />
-        </div>
-
-        {!terminado && <Midi estado={estadoMidi} dispositivos={dispositivos} />}
-
-        {!terminado && (
-          <NotasPuestas
-            notas={armado}
-            faltan={
-              (actual ? chordPitches(0, actual.chord.quality).length : 0) -
-              armado.length
-            }
-            onQuitar={(p) => setArmado((prev) => prev.filter((x) => x !== p))}
-            onBorrar={() => setArmado([])}
+        <Piano
+          from={45}
+          to={84}
+          marks={marks}
+          armado={armado}
+          respondiendo={!terminado}
+          faltan={
+            (actual ? chordPitches(0, actual.chord.quality).length : 0) -
+            puestas.length
+          }
+          pista="— tocá la inversión en el piano"
+        >
+          {completo && !acerto && (
+            <p className="mt-3 text-center text-sm text-brasa">
+              Ésas no son las notas de {actual?.sym}. Cualquier inversión vale,
+              pero tienen que ser sus notas.
+            </p>
+          )}
+          <Pistas
+            lista={listaDePistas}
+            dadas={pistas}
+            onPedir={() => setPistas((n) => n + 1)}
           />
-        )}
-
-        {completo && !acerto && (
-          <p className="mt-3 text-center text-sm text-brasa">
-            Ésas no son las notas de {actual?.sym}. Cualquier inversión vale,
-            pero tienen que ser sus notas.
-          </p>
-        )}
+        </Piano>
 
         {pasos.length > 1 && (
           <div className="mt-4 rounded-2xl bg-noche-2 px-4 py-3 text-sm">

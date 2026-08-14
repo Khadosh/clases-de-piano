@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import Keyboard, { type Mark } from "./Keyboard";
-import NotasPuestas from "./NotasPuestas";
-import Midi from "./Midi";
+import { useCallback, useEffect, useState } from "react";
+import { type Mark } from "./Keyboard";
+import Piano from "./Piano";
 import { corregirAcorde } from "@/lib/music";
 import { generarExamen, type OpcionesExamen, type Pregunta } from "@/lib/examen";
-import { playChord, playNote, wakeAudio } from "@/lib/audio";
-import { useMidi } from "@/lib/useMidi";
+import { playChord, wakeAudio } from "@/lib/audio";
+import { useArmado } from "@/lib/useArmado";
 
 /**
  * El examen de la clase.
@@ -21,19 +20,8 @@ export default function Examen(opciones: OpcionesExamen) {
   const [preguntas, setPreguntas] = useState<Pregunta[] | null>(null);
   const [i, setI] = useState(0);
   const [elegida, setElegida] = useState<number | null>(null);
-  const [armado, setArmado] = useState<number[]>([]);
   const [resuelta, setResuelta] = useState(false);
   const [bien, setBien] = useState(0);
-
-  const arrancar = useCallback(() => {
-    setPreguntas(generarExamen(opciones));
-    setI(0);
-    setElegida(null);
-    setArmado([]);
-    setResuelta(false);
-    setBien(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opciones.qualityIds.join(","), opciones.inversiones, opciones.semitonos]);
 
   const pregunta = preguntas?.[i];
   const terminado = Boolean(preguntas && i >= preguntas.length);
@@ -41,22 +29,25 @@ export default function Examen(opciones: OpcionesExamen) {
   // Ojo: acá arriba y no más abajo. Este componente tiene returns tempranos
   // (sin examen, examen terminado) y un hook después de un return se saltea en
   // algunos renders, que es exactamente lo que React no permite.
-  const caja = useRef<HTMLDivElement>(null);
-  const { estado: estadoMidi, dispositivos } = useMidi({
-    caja,
-    onNota: ({ midi }) => {
-      if (resuelta || pregunta?.tipo !== "armar") return;
-      wakeAudio();
-      setArmado((prev) =>
-        prev.includes(midi) ? prev : [...prev, midi].sort((a, b) => a - b),
-      );
-    },
+  const armado = useArmado({
+    activo: !resuelta && pregunta?.tipo === "armar",
   });
+  const puestas = armado.notas;
+
+  const arrancar = useCallback(() => {
+    setPreguntas(generarExamen(opciones));
+    setI(0);
+    setElegida(null);
+    armado.borrar();
+    setResuelta(false);
+    setBien(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opciones.qualityIds.join(","), opciones.inversiones, opciones.semitonos]);
 
   // Las de armar se corrigen solas al completar el acorde, como el dictado.
   const veredicto =
     pregunta?.tipo === "armar"
-      ? corregirAcorde(armado, pregunta.pitches)
+      ? corregirAcorde(puestas, pregunta.pitches)
       : null;
 
   useEffect(() => {
@@ -127,7 +118,7 @@ export default function Examen(opciones: OpcionesExamen) {
   const siguiente = () => {
     setI((n) => n + 1);
     setElegida(null);
-    setArmado([]);
+    armado.borrar();
     setResuelta(false);
   };
 
@@ -136,17 +127,6 @@ export default function Examen(opciones: OpcionesExamen) {
     setElegida(idx);
     setResuelta(true);
     if (idx === pregunta.correcta) setBien((n) => n + 1);
-  };
-
-  const tocarTecla = (p: number) => {
-    if (resuelta) return;
-    wakeAudio();
-    if (!armado.includes(p)) playNote(p, 0.9);
-    setArmado((prev) =>
-      prev.includes(p)
-        ? prev.filter((x) => x !== p)
-        : [...prev, p].sort((a, b) => a - b),
-    );
   };
 
   const marks: Mark[] =
@@ -161,7 +141,7 @@ export default function Examen(opciones: OpcionesExamen) {
           }))
         : // Mientras armás, todas iguales: corregir tecla por tecla convertiría
           // el examen en adivinar por descarte.
-          armado.map((p) => ({
+          puestas.map((p) => ({
             pitch: p,
             tone: veredicto === "bien" ? ("menta" as const) : ("luna" as const),
           }));
@@ -172,7 +152,7 @@ export default function Examen(opciones: OpcionesExamen) {
       : elegida === pregunta.correcta;
 
   return (
-    <div ref={caja} className="card overflow-hidden">
+    <div className="card overflow-hidden">
       {/* Progreso */}
       <div className="flex items-center gap-3 border-b border-borde/60 px-5 py-3">
         <span className="text-xs tracking-[0.2em] text-humo uppercase">
@@ -222,25 +202,14 @@ export default function Examen(opciones: OpcionesExamen) {
             })}
           </div>
         ) : (
-          <>
-            <div className="rounded-2xl bg-noche-2 p-3">
-              <Keyboard
-                from={45}
-                to={81}
-                marks={marks}
-                onKeyPress={resuelta ? undefined : tocarTecla}
-              />
-            </div>
-            {!resuelta && <Midi estado={estadoMidi} dispositivos={dispositivos} />}
-            {!resuelta && (
-              <NotasPuestas
-                notas={armado}
-                faltan={pregunta.pitches.length - armado.length}
-                onQuitar={(p) => setArmado((prev) => prev.filter((x) => x !== p))}
-                onBorrar={() => setArmado([])}
-              />
-            )}
-          </>
+          <Piano
+            from={45}
+            to={81}
+            marks={marks}
+            armado={armado}
+            respondiendo={!resuelta}
+            faltan={pregunta.pitches.length - puestas.length}
+          />
         )}
 
         {resuelta && (
