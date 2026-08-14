@@ -479,16 +479,30 @@ y las instrucciones. Las teclas de la pantalla siguen andando; se puede mezclar.
 - El teclado se engancha solo cuando aparece (`onstatechange`): emparejar por
   Bluetooth lleva un rato y nadie quiere tener que recargar la página.
 
-**Las instrucciones son la mitad del trabajo.** Conectar por Bluetooth no es
-obvio en ningún sistema y es donde la gente abandona — en Mac no alcanza con
-emparejarlo desde Preferencias del Sistema, hay que ir a Configuración de Audio
-MIDI, y en Windows anda a veces. Por eso el componente trae las tres fichas
-(USB, Bluetooth en Mac, Bluetooth en Windows), abre la que corresponde al
-sistema que adivina del user-agent sin esconder las otras, y en las dos de
-Bluetooth dice cuándo conviene rendirse y usar el cable. Los textos de arriba y
-del pie son props (`pista`, `invitacion`, `cierre`) porque no es lo mismo
-"tocá el acorde" que "se va a grabar lo que toques"; las instrucciones son una
-sola copia.
+**Las instrucciones son la mitad del trabajo**, y no son las mismas en cada
+sistema. Por eso el componente trae las tres fichas (USB, Bluetooth en Mac,
+Bluetooth en Windows), abre la que corresponde al sistema que adivina del
+user-agent sin esconder las otras. Los textos de arriba y del pie son props
+(`pista`, `invitacion`, `cierre`) porque no es lo mismo "tocá el acorde" que
+"se va a grabar lo que toques"; las instrucciones son una sola copia.
+
+Lo que hay que decir en cada una, que costó averiguar:
+
+- **En Mac el Bluetooth anda, pero no se conecta desde donde uno busca.** No
+  alcanza con emparejarlo en Preferencias del Sistema: va por Configuración de
+  Audio MIDI → Ventana → Mostrar estudio MIDI → el ícono de Bluetooth.
+- **En Windows el Bluetooth no anda y hay que decirlo así.** Chrome ahí lee los
+  teclados por la API MIDI vieja del sistema, que no ve dispositivos Bluetooth:
+  se puede emparejar perfecto y no aparece nunca. La ficha no dice "probá y si
+  no andá por cable", dice que no se puede. Mandar a alguien a pelear con un
+  emparejamiento que no puede funcionar es peor que no ofrecerlo.
+- **Casi todos los pianos tienen Bluetooth *Audio* además de Bluetooth MIDI**, y
+  el que Windows engancha desde Configuración es el de audio — el piano como
+  parlante. Aparece como emparejado, parece que funcionó, y no tiene nada que
+  ver. Está anotado porque es exactamente lo que pasó la primera vez que se
+  probó.
+- **El puerto USB es de a uno en Windows.** Con la app del piano abierta, el
+  navegador se queda sin nada.
 
 Hace falta Chrome o Edge —Safari no lo soporta, Firefox lo trae apagado— y
 `https` o `localhost`. Los tres estados feos (sin soporte, sin teclado, permiso

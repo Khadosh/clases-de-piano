@@ -85,8 +85,15 @@ export default function Midi({
               <Instruccion titulo="Por cable USB" abiertaPorDefecto>
                 Enchufalo y listo, en los dos sistemas. No hace falta instalar
                 nada: el teclado se anuncia solo y el navegador lo ve enseguida.
-                Si tenés apuro o el Bluetooth se hace el difícil,{" "}
-                <strong className="text-tiza">éste es el camino seguro</strong>.
+                Del lado del piano va el puerto que dice{" "}
+                <strong className="text-tiza">COMPUTER</strong> o{" "}
+                <strong className="text-tiza">TO HOST</strong>, no el de memoria
+                USB.
+                <p className="mt-2">
+                  En Windows el puerto es de a uno: si tenés abierta la app del
+                  piano o algún programa de música, cerralos o el navegador se
+                  queda sin nada.
+                </p>
               </Instruccion>
 
               <Instruccion titulo="Por Bluetooth en Mac" abiertaPorDefecto={mac}>
@@ -112,18 +119,19 @@ export default function Midi({
               </Instruccion>
 
               <Instruccion titulo="Por Bluetooth en Windows" abiertaPorDefecto={!mac}>
-                <ol className="ml-4 list-decimal space-y-1">
-                  <li>Prendé el Bluetooth del teclado.</li>
-                  <li>
-                    <strong className="text-tiza">Configuración → Bluetooth y dispositivos → Agregar dispositivo → Bluetooth</strong>.
-                  </li>
-                  <li>Elegí el teclado de la lista y emparejalo.</li>
-                </ol>
+                <p>
+                  <strong className="text-tiza">No se puede: andá por cable.</strong>{" "}
+                  En Windows, Chrome lee los teclados por la API MIDI vieja del
+                  sistema, y ésa no ve los dispositivos Bluetooth. Podés
+                  emparejarlo perfecto y no va a aparecer nunca acá.
+                </p>
                 <p className="mt-2">
-                  Aviso: en Windows el MIDI por Bluetooth es caprichoso y muchos
-                  programas de escritorio directamente no lo ven. Chrome sí, pero
-                  si después de emparejarlo acá no aparece,{" "}
-                  <strong className="text-tiza">no pelees: usá el cable USB</strong>.
+                  Ojo con lo que sí se empareja: casi todos los pianos tienen{" "}
+                  <strong className="text-tiza">Bluetooth Audio</strong> además de
+                  Bluetooth MIDI, y es el que Windows engancha desde Configuración.
+                  Ése sirve para mandarle música al piano y que suene por sus
+                  parlantes — no para que el piano te cuente qué tocaste. Si
+                  aparece como si fuera un parlante, es ese.
                 </p>
               </Instruccion>
 
