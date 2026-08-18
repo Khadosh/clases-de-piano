@@ -41,6 +41,13 @@ export interface Pieza {
   hasta: string;
   /** Lo que habría que chequear. Se muestra al pie, sin culpa. */
   revisar?: string;
+  /**
+   * El MusicXML del que se importó, si existe, servido desde `public/`. Con él
+   * la página ofrece la edición completa (OSMD): todo lo que nuestro modelo
+   * todavía no representa — ligaduras, matices, digitación, las voces que el
+   * importador deja afuera.
+   */
+  fuente?: string;
 }
 
 /** Atajos para que las piezas se lean como música y no como JSON. */
@@ -146,6 +153,7 @@ export const PIEZAS: Pieza[] = [
   },
   {
     slug: "claro-de-luna",
+    fuente: "/fuentes/claro-de-luna.mxl",
     titulo: "Claro de luna",
     compositor: "Beethoven",
     anio: "1801",
@@ -673,6 +681,7 @@ export const PIEZAS: Pieza[] = [
 
   {
     slug: "canon-en-re",
+    fuente: "/fuentes/canon-en-re.mxl",
     titulo: "Canon en Re",
     compositor: "Pachelbel",
     anio: "c. 1690",
@@ -705,6 +714,7 @@ export const PIEZAS: Pieza[] = [
 
   {
     slug: "minueto-en-sol",
+    fuente: "/fuentes/minueto-en-sol.mxl",
     titulo: "Minueto en Sol",
     compositor: "Christian Petzold",
     anio: "c. 1725",
@@ -743,6 +753,7 @@ export const PIEZAS: Pieza[] = [
 
   {
     slug: "para-elisa",
+    fuente: "/fuentes/para-elisa.mxl",
     titulo: "Para Elisa",
     compositor: "Beethoven",
     anio: "1810",

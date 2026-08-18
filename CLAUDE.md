@@ -361,6 +361,33 @@ instante quedaban con la duración más larga de todas, y en la Oda a la alegrí
 las negras de la derecha sonaban un compás entero como la redonda de la
 izquierda. Son dos vistas de lo mismo y tienen que vivir separadas.
 
+### La edición completa
+
+Las piezas importadas declaran `fuente` (su `.mxl`, servido desde
+`public/fuentes/`) y con eso la página ofrece el toggle **"edición completa"**:
+el mismo archivo renderizado por OpenSheetMusicDisplay (BSD-3, dependencia de
+npm — nada de CDN). No reemplaza nuestro pentagrama, lo complementa: muestra
+todo lo que nuestro modelo todavía no representa —ligaduras, matices,
+digitación, las voces que el importador deja afuera— y es el chequeo honesto de
+qué pierde la transcripción. Lo que *suena* sigue siendo siempre nuestra
+transcripción.
+
+Dos decisiones: **se carga tarde** (~340 KB comprimidos, seis veces Tone; el
+`import()` corre recién al abrir la vista) y **con nuestros colores**, no con el
+`darkMode` de OSMD, que pinta el fondo negro puro y quedaba un rectángulo
+desentonado adentro de la carta.
+
+### Practicar un pedazo
+
+El reproductor tiene un recorte de compases (desde/hasta, ambos inclusive) que
+manda sobre las tres cosas: lo que se dibuja (el pentagrama recorta **sin
+renumerar** — el compás 5 sigue siendo el 5), lo que suena, y dónde termina el
+seguimiento. Con recorte aparece **"en loop"**: el pasaje que no sale se repite
+hasta que salga sin volver a apuntarle al botón. Además los controles quedan
+pegados al pie de la ventana mientras la partitura sigue para abajo, y el
+renglón que está sonando se trae solo a la vista (sólo cuando *cambia* el
+renglón, para no pelearle el scroll al que está mirando otra cosa).
+
 ### Importar de MusicXML
 
 `npm run importar -- archivo.mxl --slug x --hasta N`. MusicXML (`.musicxml`, y

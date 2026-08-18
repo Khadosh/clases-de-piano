@@ -102,6 +102,7 @@ export default function Pentagrama({
   sonando,
   onCompas,
   apagada,
+  rango,
 }: {
   derecha: Voces;
   izquierda: Voces;
@@ -113,6 +114,8 @@ export default function Pentagrama({
   onCompas?: (compas: number) => void;
   /** La mano que no se está tocando ahora: se dibuja al fondo, sin borrarse. */
   apagada?: "derecha" | "izquierda";
+  /** Sólo estos compases (ambos inclusive), para practicar un pedazo. */
+  rango?: { desde: number; hasta: number };
 }) {
   const caja = useRef<HTMLDivElement>(null);
   // Arranca sin medir a propósito. Cuántos compases entran por renglón depende
@@ -133,9 +136,38 @@ export default function Pentagrama({
   const armadura = armaduraDe(tonalidad);
 
   const { sistemas, totalCompases } = useMemo(
-    () => disponer({ derecha, izquierda, compas, armadura, ancho: ancho ?? 760 }),
-    [derecha, izquierda, compas, armadura, ancho],
+    () =>
+      disponer({ derecha, izquierda, compas, armadura, ancho: ancho ?? 760, rango }),
+    [derecha, izquierda, compas, armadura, ancho, rango],
   );
+
+  // **El renglón que suena se trae solo a la vista.** En una pieza larga, a los
+  // pocos compases la música se va de la pantalla y había que perseguirla con
+  // la mano. Se desplaza sólo cuando cambia el renglón, así el scroll del que
+  // está mirando otra cosa no pelea con el nuestro a cada frame.
+  const svgs = useRef<(SVGSVGElement | null)[]>([]);
+  const ultimoSistema = useRef<number | null>(null);
+  const compasActual =
+    sonando == null
+      ? null
+      : Math.floor(sonando / duracionDeCompas(compas) + HOLGURA);
+  const sistemaActual =
+    compasActual == null
+      ? null
+      : sistemas.findIndex((s) => s.desde <= compasActual && compasActual <= s.hasta);
+  useEffect(() => {
+    if (sistemaActual == null || sistemaActual < 0) {
+      ultimoSistema.current = null;
+      return;
+    }
+    if (sistemaActual === ultimoSistema.current) return;
+    ultimoSistema.current = sistemaActual;
+    svgs.current[sistemaActual]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+      inline: "nearest",
+    });
+  }, [sistemaActual]);
 
   return (
     <div ref={caja} className="w-full">
@@ -146,6 +178,9 @@ export default function Pentagrama({
         sistemas.map((s, i) => (
         <svg
           key={i}
+          ref={(el) => {
+            svgs.current[i] = el;
+          }}
           viewBox={`0 ${s.arribaDeTodo} ${s.ancho} ${s.abajoDeTodo - s.arribaDeTodo}`}
           // **Todos los renglones a la misma escala.** Con width al 100% cada
           // svg se estiraba por su cuenta, y el último renglón —que suele tener
@@ -621,21 +656,34 @@ function disponer({
   compas,
   armadura,
   ancho,
+  rango,
 }: {
   derecha: Voces;
   izquierda: Voces;
   compas: Compas;
   armadura: number;
   ancho: number;
+  rango?: { desde: number; hasta: number };
 }) {
-  // Cada pentagrama con sus voces ya ubicadas en el tiempo.
+  // Cada pentagrama con sus voces ya ubicadas en el tiempo. Con un rango, las
+  // voces se recortan a esos compases **sin renumerar**: el compás 5 sigue
+  // siendo el 5 — es la dirección con la que se salta ahí y la que se muestra.
+  const dentroDelRango = (n: NotaUbicada) =>
+    !rango || (n.compas >= rango.desde && n.compas <= rango.hasta);
   const pentagramas: { clave: Clave; voces: NotaUbicada[][] }[] = [
-    { clave: "sol", voces: vocesDe(derecha).map((v) => ubicar(v, compas)) },
-    { clave: "fa", voces: vocesDe(izquierda).map((v) => ubicar(v, compas)) },
+    {
+      clave: "sol",
+      voces: vocesDe(derecha).map((v) => ubicar(v, compas).filter(dentroDelRango)),
+    },
+    {
+      clave: "fa",
+      voces: vocesDe(izquierda).map((v) => ubicar(v, compas).filter(dentroDelRango)),
+    },
   ];
   const todas = pentagramas.flatMap((p) => p.voces.flat());
 
   const totalCompases = Math.max(...todas.map((n) => n.compas), 0) + 1;
+  const primerCompas = rango?.desde ?? 0;
 
   // Cada compás pide el ancho que necesita: uno con doce corcheas no puede
   // ocupar lo mismo que uno con cuatro negras. Las dos voces caen en los mismos
@@ -657,7 +705,7 @@ function disponer({
   const grupos: number[][] = [];
   let actual: number[] = [];
   let usado = 0;
-  for (let c = 0; c < totalCompases; c++) {
+  for (let c = primerCompas; c < totalCompases; c++) {
     const w = anchoDe(c);
     if (actual.length && usado + w > disponible) {
       grupos.push(actual);
