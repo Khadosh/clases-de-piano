@@ -413,8 +413,16 @@ modelo es más pobre que MusicXML y conviene saber qué se perdió:
   que no reconocemos se saltea igual.
 - **Sin compases incompletos.** La anacrusa se rellena con silencios, así que los
   números de compás quedan corridos uno respecto de la edición.
-- **Las ligaduras que cruzan la barra no se juntan.** Unir la nota le suma
-  duración a un compás y se la saca al siguiente, y los dos dejan de cerrar.
+- **Las ligaduras existen y son `ligada: true` en el evento que continúa.**
+  Una ligada no se vuelve a atacar —alarga a la anterior al sonar, no cuenta
+  como instante nuevo para el que te sigue— y se dibuja con su arco, del lado
+  contrario a la plica. El importador las marca en dos casos: la ligadura del
+  archivo que cruza la barra (juntarla rompería la cuenta de los dos
+  compases, así que se parte ahí y se liga), y **la duración que no es
+  ninguna figura**, que se parte en figuras ligadas de mayor a menor — la
+  nota de 7 semicorcheas del tenor del preludio es negra con puntillo ligada
+  a semicorchea, igual que en Breitkopf. Antes esa nota directamente se
+  salteaba, y el preludio importado perdía el tenor entero.
 - **Los silencios de relleno también se cortan en cada barra**, por lo mismo:
   una redonda de silencio arrancada a mitad de compás se come la barra. Vale
   para los huecos del medio y para el relleno del final.

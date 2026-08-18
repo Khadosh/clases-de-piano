@@ -183,6 +183,34 @@ function aFigura(duracion, divisions) {
   return null;
 }
 
+/**
+ * Una duración que no es ninguna figura, partida en varias **ligadas**.
+ *
+ * Es como lo escribe cualquier edición: la nota de 7 semicorcheas del tenor
+ * del preludio de Bach es una negra con puntillo ligada a una semicorchea. De
+ * la más larga a la más corta, que es el orden en que se escribe una nota que
+ * arranca en el tiempo. Devuelve null si aun así queda un resto (un tresillo
+ * partido, por ejemplo): ahí sí no hay nada que hacer.
+ */
+function partirDuracion(duracion, divisions) {
+  const opciones = [];
+  for (const divide of [1, 2, 4, 8, 16, 32]) {
+    opciones.push({ divide, puntillo: true, unidad: (1 / divide) * 1.5 });
+    opciones.push({ divide, puntillo: false, unidad: 1 / divide });
+  }
+  opciones.sort((a, b) => b.unidad - a.unidad);
+  let falta = duracion / (divisions * 4);
+  const pedazos = [];
+  for (const o of opciones) {
+    while (falta >= o.unidad - 1e-6) {
+      pedazos.push({ divide: o.divide, puntillo: o.puntillo });
+      falta -= o.unidad;
+    }
+  }
+  if (falta > 1e-6) return null;
+  return pedazos.length > 1 ? pedazos : null;
+}
+
 // ---------------------------------------------------------------------------
 // El recorrido
 // ---------------------------------------------------------------------------
@@ -430,18 +458,18 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
     // **No se juntan las que cruzan la barra de compás.** Una ligadura que pasa
     // de un compás al otro, unida en una sola nota, le suma duración a un compás
     // y se la saca al siguiente: los dos dejan de cerrar la cuenta. Se las deja
-    // separadas y se vuelve a atacar la nota, que es una mentira chica y visible.
+    // separadas, marcando la segunda con `ligada`: suena como una sola y lleva
+    // su arco, pero cada compás cierra su cuenta.
     const cruzaBarra =
       largoCompas > 0 &&
       Math.floor((previa?.t ?? 0) / largoCompas + 1e-9) !==
         Math.floor(((previa?.t ?? 0) + (previa?.duracion ?? 0) + nota.duracion - 1e-9) / largoCompas);
-    if (
+    const mismaTecla =
       nota.ligadaAtras &&
       previa?.ligadaAdelante &&
-      !cruzaBarra &&
       previa.midis.length === nota.midis.length &&
-      previa.midis.every((m, i) => m === nota.midis[i])
-    ) {
+      previa.midis.every((m, i) => m === nota.midis[i]);
+    if (mismaTecla && !cruzaBarra) {
       previa.duracion += nota.duracion;
       previa.ligadaAdelante = nota.ligadaAdelante;
       // La figura escrita ya no vale: la nota resultante es más larga, así que
@@ -449,7 +477,7 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
       previa.escrita = null;
       continue;
     }
-    juntadas.push({ ...nota, midis: [...nota.midis] });
+    juntadas.push({ ...nota, midis: [...nota.midis], ligada: Boolean(mismaTecla && cruzaBarra) });
   }
 
   // **Arranca en cero, no en la primera nota.** Si una mano entra tarde —lo
@@ -491,18 +519,26 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
       continue;
     }
     // Se prefiere la figura tal como está escrita; la deducida de la duración
-    // es el plan B, para silencios de relleno y archivos sin <type>.
+    // es el plan B, para silencios de relleno y archivos sin <type>. Y si
+    // tampoco: se parte en varias figuras ligadas, que es lo que hace una
+    // edición con la nota de 7 semicorcheas del tenor del preludio.
     const figura = nota.escrita ?? aFigura(nota.duracion, divisions);
-    if (!figura) {
+    const pedazos = figura ? [figura] : partirDuracion(nota.duracion, divisions);
+    if (!pedazos) {
       avisos.push(
-        `En la mano ${nombre}, compás ${nota.compas}: una duración de ${nota.duracion} divisiones no es ninguna figura. Se salteó.`,
+        `En la mano ${nombre}, compás ${nota.compas}: una duración de ${nota.duracion} divisiones no es ninguna figura ni suma de figuras. Se salteó.`,
       );
       continue;
     }
-    const limpia = { midis: nota.midis, divide: figura.divide };
-    if (figura.puntillo) limpia.puntillo = true;
-    if (figura.irregular) limpia.irregular = figura.irregular;
-    fila.push(limpia);
+    pedazos.forEach((p, i) => {
+      const limpia = { midis: nota.midis, divide: p.divide };
+      if (p.puntillo) limpia.puntillo = true;
+      if (p.irregular) limpia.irregular = p.irregular;
+      // El primer pedazo hereda la ligadura que la nota traiga de atrás (la
+      // que cruza la barra); los demás vienen ligados al anterior por partirse.
+      if (i > 0 || nota.ligada) limpia.ligada = true;
+      fila.push(limpia);
+    });
     cursor += nota.duracion;
   }
   return fila;
@@ -602,6 +638,7 @@ function principal() {
     // dejaban de durar lo mismo. Lo agarró el test, no el ojo.
     const partes = [];
     if (e.puntillo) partes.push("puntillo: true");
+    if (e.ligada) partes.push("ligada: true");
     if (e.irregular) {
       partes.push(
         e.irregular.en === 3 && e.irregular.de === 2

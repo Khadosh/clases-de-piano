@@ -78,10 +78,40 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
     const por = new Map<number, Momento>();
     for (const [mano, fila] of filas) {
       if (manos !== "ambas" && manos !== mano) continue;
+      // **Una ligada no se vuelve a atacar: alarga a la anterior.** Es todo lo
+      // que una ligadura significa para el sonido. Vale también para el que te
+      // sigue: la continuación no es un instante nuevo, no hay que tocarla.
+      let anteriores = new Map<number, NotaSuelta>();
       for (const n of fila) {
-        if (n.midis.length === 0) continue;
+        if (n.midis.length === 0) {
+          anteriores = new Map();
+          continue;
+        }
         const duracion = duracionDeEvento(n);
-        for (const midi of n.midis) notas.push({ t: n.t, midi, duracion });
+        if (n.ligada) {
+          const seguidas = new Map<number, NotaSuelta>();
+          for (const midi of n.midis) {
+            const previa = anteriores.get(midi);
+            if (previa) {
+              previa.duracion += duracion;
+              seguidas.set(midi, previa);
+            } else {
+              // Una ligada sin nota anterior es un error de datos: mejor que
+              // suene a que desaparezca en silencio.
+              const suelta = { t: n.t, midi, duracion };
+              notas.push(suelta);
+              seguidas.set(midi, suelta);
+            }
+          }
+          anteriores = seguidas;
+          continue;
+        }
+        anteriores = new Map();
+        for (const midi of n.midis) {
+          const suelta = { t: n.t, midi, duracion };
+          notas.push(suelta);
+          anteriores.set(midi, suelta);
+        }
         const clave = Math.round(n.t * 1e6);
         const previo = por.get(clave);
         if (previo) previo.midis.push(...n.midis);

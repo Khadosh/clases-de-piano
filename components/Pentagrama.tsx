@@ -307,6 +307,35 @@ function Sistema({
         />
       ))}
 
+      {/* Las ligaduras: un arco de la nota a su continuación, del lado
+          contrario a la plica. Si la anterior quedó en el renglón de arriba,
+          un arquito entrando desde la izquierda — las dos mitades del arco
+          partido de las ediciones. */}
+      {s.notas
+        .filter((n) => n.ligada && n.midis.length > 0)
+        .map((n) => {
+          const previa = s.notas.find(
+            (p) => p.clave === n.clave && p.voz === n.voz && p.indice === n.indice - 1,
+          );
+          return n.cabezas.map((c, j) => {
+            const y = c.y + (n.arriba ? 6 : -6);
+            const x1 = previa ? previa.x + 7 : n.x - 24;
+            const x2 = n.x - 7;
+            const comba = y + (n.arriba ? 4 : -4);
+            return (
+              <path
+                key={`lig-${n.clave}-${n.voz}-${n.indice}-${j}`}
+                d={`M ${x1} ${y} Q ${(x1 + x2) / 2} ${comba} ${x2} ${y}`}
+                fill="none"
+                stroke="#f2efe6"
+                strokeWidth={1.4}
+                strokeLinecap="round"
+                opacity={n.clave === claveApagada ? 0.25 : 0.9}
+              />
+            );
+          });
+        })}
+
       {s.barrados.map((b, i) => (
         <g key={i} opacity={b.clave === claveApagada ? 0.25 : 1}>
           {Array.from({ length: b.lineas }, (_, k) => (
