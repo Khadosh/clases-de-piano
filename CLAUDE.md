@@ -306,7 +306,11 @@ tablas de casos.
   haber alterado pide becuadro.
 - **Se barra por tiempo.** Las figuras con bandera seguidas dentro del mismo
   tiempo van con barra, que es para lo que existe el barrado: que se vea de un
-  golpe dónde cae el pulso. Sin eso, doce corcheas son doce banderitas.
+  golpe dónde cae el pulso. Sin eso, doce corcheas son doce banderitas. Y **el
+  grupo barrado comparte una sola dirección de plica**, votada por el promedio
+  de sus alturas: cada nota a su gusto dejaba la barra enganchada de los dos
+  lados cuando el grupo cruzaba el medio del pentagrama. En un compás a dos
+  voces no se vota — la dirección la puso la voz.
 - **Cuántos compases entran por renglón depende del ancho**, así que hay que
   medirlo y el servidor no lo sabe. Por eso el pentagrama no dibuja nada hasta
   haber medido: si dibujara con un ancho supuesto, el cliente armaría otros

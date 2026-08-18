@@ -68,7 +68,8 @@ const silencio = (divide: number, extra: Partial<Evento> = {}): Evento => ({
 // contar números MIDI. Do central = Do4 = 60.
 const Sol2 = 43, Si2 = 47;
 const Do3 = 48, Re3 = 50, Mi3 = 52, Sol3 = 55, La3 = 57, Si3 = 59;
-const Do4 = 60, Re4 = 62, Mi4 = 64, Fa4 = 65, Sol4 = 67, La4 = 69;
+const Re2 = 38;
+const Do4 = 60, Re4 = 62, Mi4 = 64, Fa4 = 65, Sol4 = 67, La4 = 69, Si4 = 71;
 const Do5 = 72, Re5 = 74, Mi5 = 76, Fa5 = 77;
 
 // Las del Claro de luna, en Do♯ menor.
@@ -109,6 +110,60 @@ export const PIEZAS: Pieza[] = [
       n([Si2, Sol3], 1),
       n([Do3, Mi3], 1),
       n([Sol2, Re3], 2), n([Do3, Sol3], 2),
+    ],
+  },
+
+  {
+    slug: "oda-a-la-alegria-en-sol",
+    fuente: "/fuentes/oda-a-la-alegria-en-sol.mxl",
+    titulo: "Oda a la alegría, entera y en Sol",
+    compositor: "Beethoven",
+    anio: "1824",
+    compas: { numerador: 4, denominador: 4 },
+    tonalidad: { tonica: 7, modo: "mayor" },
+    bpm: 120,
+    dificultad: 2,
+    sobre:
+      "El mismo tema de la otra Oda, pero completo: trae la vuelta del medio que la versión de ocho compases saltea, y está en Sol —con su fa sostenido en la armadura—. La izquierda ya no son dos acordes: son tríadas enteras y unos bajos que caminan solos. Compará las dos y se escucha qué le faltaba a la corta.",
+    hasta: "Entera: el tema dos veces, la vuelta del medio y el cierre.",
+    revisar:
+      "Importada de un MusicXML sin pérdidas, así que las notas son las del archivo. El tempo del archivo dice 140; acá arranca en 120, que para leer alcanza y sobra.",
+    derecha: [
+      // El tema. En Sol arranca en Si, la tercera — igual que en Do arrancaba en Mi.
+      n(Si4, 4), n(Si4, 4), n(Do5, 4), n(Re5, 4),
+      n(Re5, 4), n(Do5, 4), n(Si4, 4), n(La4, 4),
+      n(Sol4, 4), n(Sol4, 4), n(La4, 4), n(Si4, 4),
+      n(Si4, 4, { puntillo: true }), n(La4, 8), n(La4, 2),
+      n(Si4, 4), n(Si4, 4), n(Do5, 4), n(Re5, 4),
+      n(Re5, 4), n(Do5, 4), n(Si4, 4), n(La4, 4),
+      n(Sol4, 4), n(Sol4, 4), n(La4, 4), n(Si4, 4),
+      n(La4, 4, { puntillo: true }), n(Sol4, 8), n(Sol4, 2),
+      // La vuelta del medio, la que la versión corta no tiene.
+      n(La4, 4), n(La4, 4), n(Si4, 4), n(Sol4, 4),
+      n(La4, 4), n(Si4, 8), n(Do5, 8), n(Si4, 4), n(Sol4, 4),
+      n(La4, 4), n(Si4, 8), n(Do5, 8), n(Si4, 4), n(La4, 4),
+      n(Sol4, 4), n(La4, 4), n(Re4, 2),
+      // Y el tema por última vez, cerrando en Sol.
+      n(Si4, 4), n(Si4, 4), n(Do5, 4), n(Re5, 4),
+      n(Re5, 4), n(Do5, 4), n(Si4, 4), n(La4, 4),
+      n(Sol4, 4), n(Sol4, 4), n(La4, 4), n(Si4, 4),
+      n(La4, 4, { puntillo: true }), n(Sol4, 8), n(Sol4, 2),
+      n(Sol4, 1),
+    ],
+    izquierda: [
+      // Tríadas de Sol y de Re con séptima, tenidas.
+      n([Sol3, Si3, Re4], 1), n([Fas3, La3, Re4], 1), n([Sol3, Si3, Re4], 1),
+      n([Sol3, Si3, Re4], 2), n([Fas3, La3, Re4], 2),
+      n([Sol3, Si3, Re4], 1), n([Fas3, La3, Re4], 1), n([Sol3, Si3, Re4], 1),
+      n([Fas3, La3, Re4], 2), n([Sol3, Si3, Re4], 2),
+      // En la vuelta del medio el bajo baja hasta el Re grave y camina.
+      n(Re2, 2), n([Re3, Sol3, Si3], 2),
+      n(Re2, 2), n([Re3, Sol3, Si3], 2),
+      n(Re2, 2), n([Re3, Sol3, Si3], 2),
+      n(Dos3, 2), n([Re3, Fas3, La3], 2),
+      n([Sol3, Si3, Re4], 1), n([Fas3, La3, Re4], 1), n([Sol3, Si3, Re4], 1),
+      n([Fas3, La3, Re4], 2), n([Sol3, Si3, Re4], 2),
+      n([Sol3, Si3, Re4], 1),
     ],
   },
 

@@ -773,6 +773,7 @@ function disponer({
     }
     const conVoz = callarVocesVacias(notas);
     acomodarPlicas(conVoz);
+    unificarBarrados(conVoz, compas);
 
     // **El alto se mide, no se supone.** Las octavas graves del Claro de luna
     // caen cuatro líneas adicionales abajo del pentagrama, y con un alto fijo
@@ -913,6 +914,27 @@ function grupos(notas: NotaDibujable[], compas: Compas) {
     porTiempo.get(clave)!.push(n);
   }
   return [...porTiempo.values()].filter((g) => g.length > 1);
+}
+
+/**
+ * Un grupo barrado comparte **una sola** dirección de plica.
+ *
+ * Cada nota suelta elige la plica por su altura, y dentro de un grupo que
+ * cruza el medio del pentagrama eso dejaba la mitad para arriba y la mitad
+ * para abajo — la barra quedaba enganchada de los dos lados, con las plicas
+ * saliendo del lado equivocado de la cabeza. La regla del papel es que el
+ * grupo vota: manda el promedio de sus alturas. En un compás a dos voces no
+ * hay nada que votar, ahí la dirección la puso la voz y ya vienen todas
+ * iguales.
+ */
+function unificarBarrados(notas: NotaDibujable[], compas: Compas) {
+  for (const g of grupos(notas, compas)) {
+    if (g[0].aDosVoces) continue;
+    const alturas = g.flatMap((n) => n.cabezas.map((c) => c.altura));
+    const media = alturas.reduce((a, b) => a + b, 0) / alturas.length;
+    const arriba = media < 4;
+    for (const n of g) n.arriba = arriba;
+  }
 }
 
 function barrar(notas: NotaDibujable[], compas: Compas) {

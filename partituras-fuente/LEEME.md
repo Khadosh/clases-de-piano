@@ -25,6 +25,7 @@ sin compases incompletos— y es mejor que lo diga a que lo tape en silencio.
 | `Bach_Minuet_in_G_Major_BWV_Anh._114.mxl` | Minueto en Sol, BWV Anh. 114 | Christian Petzold (1677–1733) |
 | `Fur_Elise_fingered.mxl` | Para Elisa, WoO 59 | Beethoven (1770–1827) |
 | `Sonate_No._14_Moonlight_1st_Movement.mxl` | Claro de luna, Op. 27 nº 2 | Beethoven (1770–1827) |
+| `Ode_to_Joy_Easy_variation.mxl` | Oda a la alegría (variación fácil, en Sol) | Beethoven (1770–1827) |
 
 Las tres obras son de **dominio público**: los compositores murieron hace más de
 dos siglos. Los archivos vienen de la biblioteca de MuseTrainer
