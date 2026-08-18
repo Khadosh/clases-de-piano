@@ -23,6 +23,20 @@ import {
   PASO_LINEA_INFERIOR,
 } from "@/lib/pentagrama";
 import { banderasDe, cabezaLlena, tienePlica, type Compas } from "@/lib/ritmo";
+import { GLIFOS, semiAncho } from "@/lib/glifos";
+
+/** La bandera que corresponde a esa cantidad de ganchos y ese lado de plica. */
+const glifoBandera = (ganchos: number, arriba: boolean) => {
+  if (ganchos >= 3) return arriba ? GLIFOS.bandera3Arriba : GLIFOS.bandera3Abajo;
+  if (ganchos === 2) return arriba ? GLIFOS.bandera2Arriba : GLIFOS.bandera2Abajo;
+  return arriba ? GLIFOS.bandera1Arriba : GLIFOS.bandera1Abajo;
+};
+
+const GLIFOS_SIGNO = {
+  "♯": GLIFOS.sostenido,
+  "♭": GLIFOS.bemol,
+  "♮": GLIFOS.becuadro,
+} as const;
 
 /**
  * El pentagrama, dibujado a mano como el teclado.
@@ -76,6 +90,8 @@ interface NotaDibujable extends NotaUbicada {
   /** Entró en un barrado: no lleva bandera y la plica llega hasta la barra. */
   barrada?: boolean;
   yBarra?: number;
+  /** El compás tiene dos voces sonando: los silencios se corren para su voz. */
+  aDosVoces?: boolean;
 }
 
 export default function Pentagrama({
@@ -303,13 +319,21 @@ function Nota({
   const llena = cabezaLlena(figura);
   const plica = tienePlica(figura);
   const banderas = banderasDe(figura);
-  const RX = 5.2;
-  const RY = 3.9;
+  const cabeza = llena
+    ? GLIFOS.cabezaNegra
+    : figura.divide === 2
+      ? GLIFOS.cabezaBlanca
+      : GLIFOS.cabezaRedonda;
+  /** El borde de la cabeza, donde se apoya la plica. */
+  const RX = semiAncho(cabeza) * ESPACIO;
 
   if (nota.midis.length === 0) {
-    // Del mismo color que las notas: un silencio es música, no un hueco.
+    // Del mismo color que las notas: un silencio es música, no un hueco. En un
+    // compás a dos voces se corre un espacio para el lado de su voz, que es lo
+    // que hace cualquier edición para que no se pisen los de las dos.
+    const dy = nota.aDosVoces ? (nota.arriba ? -ESPACIO : ESPACIO) : 0;
     return (
-      <g opacity={apagada ? 0.25 : 1}>
+      <g opacity={apagada ? 0.25 : 1} transform={dy ? `translate(0 ${dy})` : undefined}>
         <Silencio nota={nota} color={color} />
       </g>
     );
@@ -319,7 +343,10 @@ function Nota({
   const yTope = Math.min(...ys);
   const yPiso = Math.max(...ys);
   const xPlica = nota.arriba ? nota.x + RX - 0.5 : nota.x - RX + 0.5;
-  const yPlicaFin = nota.arriba ? yTope - 26 : yPiso + 26;
+  // Con dos o más ganchos la plica se alarga un poco, como en las ediciones:
+  // el glifo de la bandera doble mide más que la plica de siempre.
+  const largoPlica = 26 + (banderas >= 2 ? (banderas - 1) * 5 : 0);
+  const yPlicaFin = nota.arriba ? yTope - largoPlica : yPiso + largoPlica;
 
   return (
     <g opacity={apagada ? 0.25 : 1}>
@@ -360,43 +387,35 @@ function Nota({
         />
       )}
 
-      {/* Banderas sólo si la nota no entró en un barrado */}
-      {!nota.barrada &&
-        Array.from({ length: banderas }, (_, i) => (
-          <path
-            key={i}
-            d={
-              nota.arriba
-                ? `M ${xPlica} ${yPlicaFin + i * 5} q 6 2 5.6 7.4 q -1.4 -3.4 -5.6 -4.5`
-                : `M ${xPlica} ${yPlicaFin - i * 5} q 6 -2 5.6 -7.4 q -1.4 3.4 -5.6 4.5`
-            }
-            fill={color}
-          />
-        ))}
+      {/* La bandera, sólo si la nota no entró en un barrado. Es un glifo por
+          cantidad de ganchos —no ganchos apilados— con el origen en la punta
+          de la plica, que es la convención con la que vienen dibujadas. */}
+      {!nota.barrada && banderas > 0 && (
+        <path
+          d={glifoBandera(banderas, nota.arriba).d}
+          fill={color}
+          fillRule="evenodd"
+          transform={`translate(${xPlica} ${yPlicaFin}) scale(${ESPACIO})`}
+        />
+      )}
 
       {nota.cabezas.map((c, i) => (
         <g key={i}>
           {c.signo && (
-            <text
-              x={nota.x - 11}
-              y={c.y + 3.4}
-              textAnchor="end"
-              fontSize={11}
+            <path
+              d={GLIFOS_SIGNO[c.signo].d}
               fill={color}
-              fontWeight={700}
-            >
-              {c.signo}
-            </text>
+              fillRule="evenodd"
+              transform={`translate(${
+                nota.x - RX - 3 - (GLIFOS_SIGNO[c.signo].xMax - GLIFOS_SIGNO[c.signo].xMin) * ESPACIO
+              } ${c.y}) scale(${ESPACIO})`}
+            />
           )}
-          <ellipse
-            cx={nota.x}
-            cy={c.y}
-            rx={RX}
-            ry={RY}
-            transform={`rotate(-20 ${nota.x} ${c.y})`}
-            fill={llena ? color : "none"}
-            stroke={color}
-            strokeWidth={llena ? 0 : 1.6}
+          <path
+            d={cabeza.d}
+            fill={color}
+            fillRule="evenodd"
+            transform={`translate(${nota.x - RX} ${c.y}) scale(${ESPACIO})`}
           />
         </g>
       ))}
@@ -435,46 +454,25 @@ function Silencio({ nota, color }: { nota: NotaDibujable; color: string }) {
     );
   }
 
-  if (figura.divide === 4) {
-    // El zigzag de la negra, centrado en el medio del pentagrama.
-    const y = yLinea(4);
-    return (
-      <path
-        d={`M ${x - 2.5} ${y - 9} l 4.5 5 l -4.5 5 l 5 5.5 q -4 -1.5 -5.5 1.5 q -0.6 -4 2.5 -6.5 l -4.5 -5 l 4 -5.5 z`}
-        fill={color}
-      />
-    );
-  }
-
-  // Corchea para abajo: el trazo diagonal con un ganchito por cada división.
+  // De la negra para abajo son glifos, centrados en la tercera línea como los
+  // trae la fuente. El de la semicorchea ya viene con sus dos ganchos: no se
+  // apilan dos de corchea.
   const ganchos = banderasDe(figura);
-  const y = yLinea(5);
+  const glifo =
+    figura.divide === 4
+      ? GLIFOS.silencioNegra
+      : ganchos === 1
+        ? GLIFOS.silencioCorchea
+        : ganchos === 2
+          ? GLIFOS.silencioSemicorchea
+          : GLIFOS.silencioFusa;
   return (
-    <g>
-      <line
-        x1={x + 2.6}
-        y1={y - 5 - (ganchos - 1) * 4}
-        x2={x - 2.2}
-        y2={y + 5}
-        stroke={color}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-      />
-      {Array.from({ length: ganchos }, (_, i) => {
-        const yg = y - 4 - (ganchos - 1 - i) * 4;
-        return (
-          <g key={i}>
-            <circle cx={x + 1.4} cy={yg} r={1.5} fill={color} />
-            <path
-              d={`M ${x + 1.4} ${yg} q 2.6 0.6 3.4 -2.4`}
-              fill="none"
-              stroke={color}
-              strokeWidth={1.3}
-            />
-          </g>
-        );
-      })}
-    </g>
+    <path
+      d={glifo.d}
+      fill={color}
+      fillRule="evenodd"
+      transform={`translate(${x - semiAncho(glifo) * ESPACIO} ${yLinea(4)}) scale(${ESPACIO})`}
+    />
   );
 }
 
@@ -491,38 +489,18 @@ function lineasAdicionales(altura: number): number[] {
 // ---------------------------------------------------------------------------
 
 /**
- * Las dos claves.
- *
- * Son los contornos de la fuente Gonville (Simon Tatham), sacados de VexFlow
- * (MIT) con `scripts/extraer-claves.md` como receta. Se probó dibujarlas a mano
- * con trazos superpuestos y a tamaño real se leían, pero al lado de una edición
- * de verdad eran un garabato; el contorno de una fuente de grabado es
- * exactamente el problema que un tipógrafo ya resolvió.
- *
- * Están **en espacios de pentagrama**: adentro del grupo la unidad es un
- * espacio y el origen es la línea que la clave nombra — la del Sol para una, la
- * del Fa para la otra —, que es la misma convención de `yDeAltura`. Por eso el
- * `scale(ESPACIO)` y por eso caen solas donde tienen que caer.
+ * Las dos claves, con los contornos de `lib/glifos.ts` (Gonville, vía
+ * VexFlow). El origen de cada glifo ya está sobre la línea que la clave
+ * nombra, la misma convención de `yDeAltura`, así que se traslada a esa línea,
+ * se escala a espacios y cae sola.
  */
 const TINTA = "#e8e3d6";
-
-/** Cuánto sube y cuánto baja cada clave desde su línea, medido en espacios. */
-const ALTO_CLAVE = {
-  sol: { arriba: 4.5, abajo: 2.63 },
-  fa: { arriba: 1.06, abajo: 2.27 },
-};
-
-const TRAZO_CLAVE_SOL =
-  "M 1.464 -4.497 C 1.47 -4.5 1.476 -4.5 1.485 -4.5 C 1.521 -4.5 1.563 -4.47 1.623 -4.395 C 1.866 -4.116 2.037 -3.63 2.037 -3.234 C 2.037 -3.204 2.031 -3.18 2.031 -3.15 C 2.004 -2.679 1.812 -2.292 1.431 -1.926 L 1.329 -1.827 L 1.293 -1.788 L 1.293 -1.776 L 1.314 -1.686 L 1.347 -1.524 L 1.38 -1.374 C 1.425 -1.17 1.443 -1.065 1.443 -1.065 C 1.443 -1.065 1.443 -1.065 1.443 -1.065 C 1.443 -1.065 1.455 -1.065 1.47 -1.068 C 1.485 -1.068 1.533 -1.074 1.584 -1.074 C 1.62 -1.074 1.656 -1.068 1.674 -1.068 C 2.097 -1.014 2.424 -0.711 2.517 -0.285 C 2.535 -0.216 2.541 -0.141 2.541 -0.066 C 2.541 0.339 2.298 0.726 1.893 0.909 C 1.869 0.924 1.86 0.927 1.86 0.927 L 1.86 0.93 C 1.86 0.93 1.878 0.999 1.893 1.077 L 1.938 1.305 L 1.98 1.488 C 2.004 1.605 2.016 1.689 2.016 1.764 C 2.016 1.83 2.007 1.89 1.992 1.959 C 1.89 2.376 1.527 2.625 1.149 2.625 C 0.963 2.625 0.771 2.565 0.603 2.43 C 0.453 2.304 0.387 2.19 0.387 2.04 C 0.387 1.776 0.6 1.59 0.822 1.59 C 0.9 1.59 0.978 1.614 1.053 1.659 C 1.179 1.746 1.236 1.878 1.236 2.007 C 1.236 2.205 1.098 2.4 0.861 2.415 L 0.837 2.415 L 0.855 2.427 C 0.954 2.469 1.053 2.49 1.149 2.49 C 1.392 2.49 1.62 2.367 1.758 2.154 C 1.836 2.034 1.878 1.893 1.878 1.752 C 1.878 1.698 1.869 1.644 1.857 1.584 C 1.857 1.578 1.848 1.53 1.836 1.485 C 1.77 1.161 1.731 0.972 1.731 0.972 C 1.731 0.972 1.731 0.972 1.731 0.972 C 1.725 0.972 1.713 0.972 1.704 0.978 C 1.674 0.984 1.611 0.999 1.584 1.002 C 1.518 1.011 1.455 1.014 1.395 1.014 C 0.807 1.014 0.261 0.618 0.072 0.033 C 0.024 -0.123 -0.003 -0.279 -0.003 -0.435 C -0.003 -0.747 0.096 -1.053 0.288 -1.326 C 0.498 -1.623 0.708 -1.878 0.966 -2.142 L 1.056 -2.235 L 1.035 -2.346 L 0.996 -2.529 L 0.945 -2.763 C 0.93 -2.85 0.912 -2.934 0.909 -2.952 C 0.894 -3.051 0.885 -3.147 0.885 -3.246 C 0.885 -3.624 1.008 -3.987 1.239 -4.278 C 1.308 -4.368 1.431 -4.488 1.464 -4.497 M 1.647 -3.903 C 1.641 -3.903 1.632 -3.903 1.623 -3.903 C 1.5 -3.903 1.341 -3.789 1.233 -3.621 C 1.122 -3.456 1.065 -3.237 1.065 -3.012 C 1.065 -2.952 1.068 -2.889 1.077 -2.826 C 1.086 -2.781 1.089 -2.751 1.113 -2.643 L 1.155 -2.454 C 1.167 -2.397 1.176 -2.352 1.176 -2.346 L 1.176 -2.346 C 1.179 -2.346 1.272 -2.448 1.302 -2.484 C 1.602 -2.823 1.782 -3.18 1.821 -3.495 C 1.824 -3.525 1.824 -3.549 1.824 -3.579 C 1.824 -3.672 1.812 -3.762 1.791 -3.81 C 1.767 -3.858 1.713 -3.897 1.647 -3.903 M 1.194 -1.584 C 1.188 -1.626 1.179 -1.659 1.179 -1.665 C 1.179 -1.665 1.179 -1.665 1.176 -1.665 C 1.17 -1.665 1.041 -1.515 0.951 -1.41 C 0.798 -1.224 0.636 -1.002 0.57 -0.894 C 0.444 -0.681 0.381 -0.444 0.381 -0.21 C 0.381 -0.057 0.411 0.09 0.465 0.231 C 0.627 0.648 0.999 0.909 1.404 0.909 C 1.452 0.909 1.506 0.906 1.557 0.897 C 1.623 0.885 1.704 0.861 1.704 0.852 L 1.704 0.852 C 1.704 0.852 1.698 0.822 1.689 0.789 L 1.602 0.36 L 1.533 0.039 L 1.488 -0.183 L 1.44 -0.399 C 1.416 -0.528 1.407 -0.561 1.407 -0.561 C 1.407 -0.561 1.407 -0.564 1.404 -0.564 C 1.386 -0.564 1.29 -0.516 1.248 -0.486 C 1.092 -0.378 1.011 -0.207 1.011 -0.039 C 1.011 0.12 1.089 0.279 1.239 0.372 C 1.272 0.393 1.284 0.411 1.284 0.432 C 1.284 0.435 1.284 0.444 1.284 0.447 C 1.278 0.483 1.257 0.498 1.227 0.498 C 1.215 0.498 1.2 0.495 1.182 0.486 C 0.906 0.366 0.72 0.081 0.72 -0.231 L 0.72 -0.231 C 0.72 -0.591 0.945 -0.903 1.29 -1.026 L 1.308 -1.032 L 1.278 -1.182 L 1.194 -1.584 M 1.644 -0.582 C 1.62 -0.585 1.596 -0.585 1.578 -0.585 C 1.572 -0.585 1.563 -0.585 1.557 -0.585 L 1.542 -0.585 L 1.554 -0.531 L 1.617 -0.237 L 1.656 -0.045 L 1.698 0.144 L 1.782 0.561 L 1.815 0.72 C 1.827 0.762 1.833 0.798 1.836 0.798 C 1.836 0.798 1.836 0.798 1.836 0.798 C 1.839 0.798 1.89 0.768 1.923 0.744 C 2.076 0.636 2.19 0.468 2.232 0.294 C 2.247 0.237 2.253 0.177 2.253 0.12 C 2.253 -0.228 1.995 -0.543 1.644 -0.582 Z";
-
-const TRAZO_CLAVE_FA =
-  "M 0.921 -1.047 C 0.945 -1.053 0.969 -1.053 0.996 -1.053 C 1.101 -1.053 1.224 -1.041 1.329 -1.02 C 1.821 -0.918 2.16 -0.585 2.223 -0.141 C 2.229 -0.093 2.232 -0.048 2.232 0 C 2.232 0.27 2.139 0.618 1.98 0.909 C 1.602 1.593 0.912 2.085 0.084 2.265 C 0.069 2.265 0.057 2.268 0.042 2.268 C 0.012 2.268 -0.003 2.25 -0.003 2.223 C -0.003 2.193 0.003 2.184 0.063 2.16 C 1.011 1.803 1.644 1.032 1.701 0.168 C 1.704 0.123 1.704 0.072 1.704 0.033 C 1.704 -0.387 1.575 -0.699 1.326 -0.855 C 1.218 -0.924 1.101 -0.957 0.975 -0.957 C 0.696 -0.957 0.411 -0.798 0.279 -0.531 C 0.273 -0.51 0.252 -0.465 0.252 -0.462 C 0.252 -0.462 0.252 -0.462 0.252 -0.462 C 0.252 -0.462 0.255 -0.465 0.264 -0.468 C 0.33 -0.51 0.402 -0.531 0.477 -0.531 C 0.582 -0.531 0.693 -0.486 0.771 -0.402 C 0.843 -0.324 0.882 -0.219 0.882 -0.123 C 0.882 0.072 0.738 0.27 0.513 0.291 C 0.498 0.291 0.483 0.294 0.468 0.294 C 0.219 0.294 0.018 0.066 0.018 -0.222 C 0.018 -0.228 0.018 -0.237 0.018 -0.24 C 0.03 -0.669 0.423 -1.02 0.921 -1.047 M 2.517 -0.645 C 2.523 -0.648 2.526 -0.648 2.535 -0.648 C 2.556 -0.648 2.58 -0.645 2.586 -0.639 C 2.661 -0.618 2.697 -0.552 2.697 -0.489 C 2.697 -0.435 2.67 -0.381 2.616 -0.351 C 2.595 -0.336 2.568 -0.333 2.541 -0.333 C 2.499 -0.333 2.454 -0.351 2.424 -0.39 C 2.4 -0.42 2.388 -0.453 2.388 -0.486 C 2.388 -0.561 2.436 -0.636 2.517 -0.645 M 2.517 0.336 C 2.523 0.336 2.526 0.336 2.535 0.336 C 2.556 0.336 2.58 0.339 2.586 0.345 C 2.661 0.366 2.697 0.432 2.697 0.495 C 2.697 0.549 2.67 0.603 2.616 0.63 C 2.595 0.645 2.568 0.651 2.541 0.651 C 2.499 0.651 2.454 0.63 2.424 0.594 C 2.4 0.564 2.388 0.531 2.388 0.495 C 2.388 0.42 2.436 0.348 2.517 0.336 Z";
 
 function ClaveSol({ x }: { x: number }) {
   const yG = yDeAltura(2, "sol"); // la segunda línea, la que la clave abraza
   return (
     <g transform={`translate(${x} ${yG}) scale(${ESPACIO})`}>
-      <path d={TRAZO_CLAVE_SOL} fill={TINTA} fillRule="evenodd" />
+      <path d={GLIFOS.claveSol.d} fill={TINTA} fillRule="evenodd" />
     </g>
   );
 }
@@ -531,7 +509,7 @@ function ClaveFa({ x }: { x: number }) {
   const yF = yDeAltura(6, "fa"); // la cuarta línea
   return (
     <g transform={`translate(${x} ${yF}) scale(${ESPACIO})`}>
-      <path d={TRAZO_CLAVE_FA} fill={TINTA} fillRule="evenodd" />
+      <path d={GLIFOS.claveFa.d} fill={TINTA} fillRule="evenodd" />
     </g>
   );
 }
@@ -558,17 +536,15 @@ function Armadura({ x, armadura }: { x: number; armadura: number }) {
         Array.from({ length: Math.abs(armadura) }, (_, i) => {
           const letra = orden[i];
           const altura = ALTURA_SOL[letra] - (clave === "fa" ? 2 : 0);
+          const glifo = sostenidos ? GLIFOS.sostenido : GLIFOS.bemol;
           return (
-            <text
+            <path
               key={`${clave}${i}`}
-              x={x + i * ANCHO_ALTERACION}
-              y={yDeAltura(altura, clave) + 3.6}
-              fontSize={13}
+              d={glifo.d}
               fill="#e8e3d6"
-              fontWeight={700}
-            >
-              {sostenidos ? "♯" : "♭"}
-            </text>
+              fillRule="evenodd"
+              transform={`translate(${x + i * ANCHO_ALTERACION} ${yDeAltura(altura, clave)}) scale(${ESPACIO})`}
+            />
           );
         }),
       )}
@@ -766,12 +742,12 @@ function disponer({
     const ys = conVoz.flatMap((n) => n.cabezas.map((c) => c.y));
     const arribaDeTodo = Math.min(
       MARGEN_ARRIBA,
-      yDeAltura(2, "sol") - ALTO_CLAVE.sol.arriba * ESPACIO - 3,
+      yDeAltura(2, "sol") + GLIFOS.claveSol.yMin * ESPACIO - 3,
       ...ys.map((y) => y - 34),
     );
     const abajoDeTodo = Math.max(
       Y_BASE.fa + MARGEN_ABAJO,
-      yDeAltura(6, "fa") + ALTO_CLAVE.fa.abajo * ESPACIO + 3,
+      yDeAltura(6, "fa") + GLIFOS.claveFa.yMax * ESPACIO + 3,
       ...ys.map((y) => y + 34),
     );
 
@@ -862,7 +838,14 @@ function acomodarPlicas(notas: NotaDibujable[]) {
       );
     };
     const masAguda = suenan.reduce((a, b) => (alturaDe(b) > alturaDe(a) ? b : a));
-    for (const n of delCompas) n.arriba = n.voz === masAguda;
+    for (const n of delCompas) {
+      n.arriba = n.voz === masAguda;
+      // Los silencios de un compás a dos voces se corren para el lado de su
+      // voz — arriba los de la de arriba, abajo los de la otra. Sin esto, el
+      // silencio de corchea de una voz y el de semicorchea de la otra caían
+      // en el mismo instante uno arriba del otro, en el mismo renglón.
+      n.aDosVoces = true;
+    }
   }
 }
 

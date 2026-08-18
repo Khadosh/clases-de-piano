@@ -320,13 +320,18 @@ tablas de casos.
   píxeles (`width={s.ancho}`), no estirado al 100%: estirando, el último
   renglón —que suele tener menos compases— salía con las notas un 50% más
   grandes, como mirado con lupa.
-- **Las claves son los contornos de la fuente Gonville**, sacados de VexFlow
-  (MIT); la receta para volver a extraerlos está en
-  `scripts/extraer-claves.md`. Se dibujaron a mano primero y a tamaño real se
-  leían, pero al lado de una edición eran un garabato: el contorno de una
-  clave es un problema de tipógrafo y ya estaba resuelto. Siguen en espacios
-  de pentagrama con el origen en la línea que cada una nombra, así que caen
-  solas donde tienen que caer.
+- **Los símbolos son contornos de la fuente Gonville** (claves, cabezas,
+  silencios, banderas y alteraciones), sacados de VexFlow (MIT) y guardados en
+  `lib/glifos.ts`; la receta para extraer más está en
+  `scripts/extraer-glifos.md`. Se dibujaron a mano primero y a tamaño real se
+  leían, pero al lado de una edición eran un garabato: el contorno de un
+  símbolo musical es un problema de tipógrafo y ya estaba resuelto. Van en
+  espacios de pentagrama y cada familia trae el origen donde VexFlow lo apoya
+  (las claves en su línea, las banderas en la punta de la plica), así que caen
+  solos.
+- **En un compás a dos voces los silencios se corren un espacio** para el lado
+  de su voz, si no el de una voz y el de la otra caen en el mismo renglón uno
+  arriba del otro.
 
 Las cabezas, las plicas, las banderas y los silencios salen del mismo número que
 ya usa `FiguraSVG`: en cuántas partes divide la figura a la redonda. Si aparece

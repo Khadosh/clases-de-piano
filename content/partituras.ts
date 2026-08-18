@@ -118,28 +118,30 @@ export const PIEZAS: Pieza[] = [
       "Cuatro compases y son exactamente lo que estás estudiando: cada uno es un acorde desarmado nota por nota, y lo único que pasa entre compás y compás es que una o dos notas se mueven. Es el enlace de acordes, escrito.",
     hasta: "Los primeros cuatro compases, de un preludio de treinta y cinco.",
     revisar:
-      "Las alturas están chequeadas contra un MusicXML de la edición Breitkopf & Härtel de 1866 (la primera versión que escribimos acá estaba una octava abajo). El tenor termina cada mitad de compás en un silencio de semicorchea; la edición lo liga hasta la barra, pero nuestras ligaduras todavía no suenan y con el pedal es lo mismo.",
+      "Las alturas están chequeadas contra un MusicXML de la edición Breitkopf & Härtel de 1866 (la primera versión que escribimos acá estaba una octava abajo). El tenor va escrito en el pentagrama de arriba con las plicas para abajo, como en las ediciones; con qué mano conviene tocarlo es pregunta para el profe. Y termina cada mitad de compás en un silencio de semicorchea donde la edición lo liga hasta la barra: nuestras ligaduras todavía no suenan, y con el pedal es lo mismo.",
+    // El acorde nunca suena en bloque: el bajo arranca, el tenor entra en la
+    // segunda semicorchea y recién ahí corre el arpegio. El tenor va en el
+    // pentagrama de arriba porque ahí lo escriben las ediciones — Mi4 y Re4
+    // caen justo al pie de la clave de sol, y en el de abajo quedaban
+    // amontonados cabeza contra cabeza con el bajo.
     derecha: [
-      ...repetir([silencio(8), n(Sol4, 16), n(Do5, 16), n(Mi5, 16), n(Sol4, 16), n(Do5, 16), n(Mi5, 16)], 2),
-      ...repetir([silencio(8), n(La4, 16), n(Re5, 16), n(Fa5, 16), n(La4, 16), n(Re5, 16), n(Fa5, 16)], 2),
-      ...repetir([silencio(8), n(Sol4, 16), n(Re5, 16), n(Fa5, 16), n(Sol4, 16), n(Re5, 16), n(Fa5, 16)], 2),
-      ...repetir([silencio(8), n(Sol4, 16), n(Do5, 16), n(Mi5, 16), n(Sol4, 16), n(Do5, 16), n(Mi5, 16)], 2),
+      [
+        ...repetir([silencio(8), n(Sol4, 16), n(Do5, 16), n(Mi5, 16), n(Sol4, 16), n(Do5, 16), n(Mi5, 16)], 2),
+        ...repetir([silencio(8), n(La4, 16), n(Re5, 16), n(Fa5, 16), n(La4, 16), n(Re5, 16), n(Fa5, 16)], 2),
+        ...repetir([silencio(8), n(Sol4, 16), n(Re5, 16), n(Fa5, 16), n(Sol4, 16), n(Re5, 16), n(Fa5, 16)], 2),
+        ...repetir([silencio(8), n(Sol4, 16), n(Do5, 16), n(Mi5, 16), n(Sol4, 16), n(Do5, 16), n(Mi5, 16)], 2),
+      ],
+      [
+        ...repetir([silencio(16), n(Mi4, 4, { puntillo: true }), silencio(16)], 2),
+        ...repetir([silencio(16), n(Re4, 4, { puntillo: true }), silencio(16)], 2),
+        ...repetir([silencio(16), n(Re4, 4, { puntillo: true }), silencio(16)], 2),
+        ...repetir([silencio(16), n(Mi4, 4, { puntillo: true }), silencio(16)], 2),
+      ],
     ],
-    // La izquierda son dos voces de verdad, no un acorde: el bajo arranca el
-    // compás y el tenor entra recién en la segunda semicorchea — es el
-    // desgranado que hace que el acorde nunca suene en bloque.
     izquierda: [
-      [
-        ...repetir([silencio(16), n(Mi4, 4, { puntillo: true }), silencio(16)], 2),
-        ...repetir([silencio(16), n(Re4, 4, { puntillo: true }), silencio(16)], 2),
-        ...repetir([silencio(16), n(Re4, 4, { puntillo: true }), silencio(16)], 2),
-        ...repetir([silencio(16), n(Mi4, 4, { puntillo: true }), silencio(16)], 2),
-      ],
-      [
-        n(Do4, 2), n(Do4, 2), n(Do4, 2), n(Do4, 2),
-        n(Si3, 2), n(Si3, 2),
-        n(Do4, 2), n(Do4, 2),
-      ],
+      n(Do4, 2), n(Do4, 2), n(Do4, 2), n(Do4, 2),
+      n(Si3, 2), n(Si3, 2),
+      n(Do4, 2), n(Do4, 2),
     ],
   },
   {
