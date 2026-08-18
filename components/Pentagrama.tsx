@@ -260,6 +260,19 @@ function Sistema({
               strokeLinecap="butt"
             />
           ))}
+          {b.numero && (
+            <text
+              x={(b.x1 + b.x2) / 2}
+              y={b.arriba ? b.y1 - 5 : b.y1 + (b.lineas - 1) * 5 + 11}
+              textAnchor="middle"
+              fontSize={10}
+              fontStyle="italic"
+              fontWeight={700}
+              fill="#9aa6bf"
+            >
+              {b.numero}
+            </text>
+          )}
         </g>
       ))}
     </g>
@@ -604,6 +617,8 @@ function Compasillo({ x, compas }: { x: number; compas: Compas }) {
 
 interface Barrado {
   clave: Clave;
+  /** El número del grupo irregular: 3 en un tresillo. */
+  numero: number | null;
   x1: number;
   x2: number;
   y1: number;
@@ -789,7 +804,16 @@ function barrados(notas: NotaDibujable[], compas: Compas): Barrado[] {
       : g[g.length - 1].x - RX + 0.5;
     // Tantas líneas como banderas tendría la figura más corta del grupo.
     const lineas = Math.max(...g.map((n) => banderasDe(figuraDeEvento(n))));
-    return { clave: g[0].clave, x1, x2, y1: y, y2: y, lineas, arriba };
+    // El número del grupo irregular va una sola vez, sobre la barra. Se pone
+    // sólo si todo el grupo es del mismo tresillo: medio grupo con tresillo es
+    // un grupo mal armado y es mejor no dibujar nada que dibujar algo falso.
+    const en = g[0].irregular?.en ?? null;
+    const todoIgual = g.every((n) => (n.irregular?.en ?? null) === en);
+    return {
+      clave: g[0].clave,
+      numero: todoIgual ? en : null,
+      x1, x2, y1: y, y2: y, lineas, arriba,
+    };
   });
 }
 

@@ -46,6 +46,8 @@ const n = (midis: number | number[], divide: number, extra: Partial<Evento> = {}
   divide,
   ...extra,
 });
+/** Tres en el tiempo de dos, que es el grupo irregular que aparece siempre. */
+const TRESILLO = { en: 3, de: 2 } as const;
 const silencio = (divide: number, extra: Partial<Evento> = {}): Evento => ({
   midis: [],
   divide,
@@ -132,28 +134,40 @@ export const PIEZAS: Pieza[] = [
     titulo: "Claro de luna",
     compositor: "Beethoven",
     anio: "1801",
-    compas: { numerador: 12, denominador: 8 },
+    compas: { numerador: 4, denominador: 4 },
     tonalidad: { tonica: 1, modo: "menor" },
-    bpm: 52,
+    bpm: 54,
     dificultad: 3,
-    sobre:
-      "El arranque de la sonata Op. 27 nº 2. La derecha son tres notas que giran sin parar y la izquierda son octavas quietas: toda la música pasa en el acorde que sostiene abajo, y cambia cada dos compases. Mirá la armadura — cuatro sostenidos, es Do♯ menor.",
-    hasta: "Los primeros cuatro compases, sin la melodía (que entra después).",
+    sobre: 
+      "El arranque de la sonata Op. 27 nº 2. La derecha son tres notas que giran sin parar —tresillos, tres donde entrarían dos— y la izquierda son octavas quietas: toda la música pasa en el acorde que sostiene abajo. Mirá la armadura: cuatro sostenidos, es Do♯ menor.",
     revisar:
-      "Beethoven lo escribe en compasillo con tresillos de corchea. Acá está en 12/8, que son las mismas doce corcheas por compás y el mismo pulso con puntillo, pero sin tener que dibujar tresillos. Los dos primeros compases son seguros; los acordes del tercero y el cuarto los saqué de memoria y hay que confirmarlos.",
+      "Importada de un MusicXML, con los tresillos como los escribió Beethoven. Corta en el compás 3 porque en el 4 entra la melodía y ahí la mano derecha pasa a tener dos voces, que nuestro modelo todavía no sabe escribir.",
+    hasta: "Los primeros tres compases, antes de que entre la melodía.",
     derecha: [
-      ...repetir([n(Sols3, 8), n(Dos4b, 8), n(Mi4, 8)], 4),
-      ...repetir([n(Sols3, 8), n(Dos4b, 8), n(Mi4, 8)], 4),
-      ...repetir([n(La3, 8), n(Dos4b, 8), n(Mi4, 8)], 4),
-      ...repetir([n(Fas3, 8), n(La3, 8), n(Re4, 8)], 4),
+      n(56, 8, { irregular: TRESILLO }), n(61, 8, { irregular: TRESILLO }),
+      n(64, 8, { irregular: TRESILLO }), n(56, 8, { irregular: TRESILLO }),
+      n(61, 8, { irregular: TRESILLO }), n(64, 8, { irregular: TRESILLO }),
+      n(56, 8, { irregular: TRESILLO }), n(61, 8, { irregular: TRESILLO }),
+      n(64, 8, { irregular: TRESILLO }), n(56, 8, { irregular: TRESILLO }),
+      n(61, 8, { irregular: TRESILLO }), n(64, 8, { irregular: TRESILLO }),
+      n(56, 8, { irregular: TRESILLO }), n(61, 8, { irregular: TRESILLO }),
+      n(64, 8, { irregular: TRESILLO }), n(56, 8, { irregular: TRESILLO }),
+      n(61, 8, { irregular: TRESILLO }), n(64, 8, { irregular: TRESILLO }),
+      n(56, 8, { irregular: TRESILLO }), n(61, 8, { irregular: TRESILLO }),
+      n(64, 8, { irregular: TRESILLO }), n(56, 8, { irregular: TRESILLO }),
+      n(61, 8, { irregular: TRESILLO }), n(64, 8, { irregular: TRESILLO }),
+      n(57, 8, { irregular: TRESILLO }), n(61, 8, { irregular: TRESILLO }),
+      n(64, 8, { irregular: TRESILLO }), n(57, 8, { irregular: TRESILLO }),
+      n(61, 8, { irregular: TRESILLO }), n(64, 8, { irregular: TRESILLO }),
+      n(57, 8, { irregular: TRESILLO }), n(62, 8, { irregular: TRESILLO }),
+      n(66, 8, { irregular: TRESILLO }), n(57, 8, { irregular: TRESILLO }),
+      n(62, 8, { irregular: TRESILLO }), n(66, 8, { irregular: TRESILLO }),
     ],
     izquierda: [
-      n([Dos2, Dos3], 1, { puntillo: true }),
-      n([Dos2, Dos3], 1, { puntillo: true }),
-      n([La1, La2], 1, { puntillo: true }),
-      n([Fas1, Fas2], 1, { puntillo: true }),
+      n([37, 49], 1), n([35, 47], 1), n([33, 45], 2), n([30, 42], 2),
     ],
   },
+
   {
     slug: "canon-en-re",
     titulo: "Canon en Re",

@@ -195,6 +195,49 @@ probar("un compás bien cerrado no da falso positivo", () => {
   assert.deepEqual(compasesIncompletos(evs, c), []);
 });
 
+// ---- Los tresillos ---------------------------------------------------------
+
+const tresillo = { en: 3, de: 2 };
+
+probar("una corchea de tresillo dura dos tercios de corchea", () => {
+  const normal = duracionDeEvento({ midis: [60], divide: 8 });
+  const trino = duracionDeEvento({ midis: [60], divide: 8, irregular: tresillo });
+  assert.equal(normal, 0.125);
+  assert.ok(Math.abs(trino - 0.125 * 2 / 3) < 1e-12);
+});
+
+probar("tres corcheas de tresillo duran lo mismo que una negra", () => {
+  const tres = 3 * duracionDeEvento({ midis: [60], divide: 8, irregular: tresillo });
+  assert.ok(Math.abs(tres - 0.25) < 1e-9, `dieron ${tres}`);
+});
+
+probar("doce corcheas de tresillo cierran un compás de 4/4", () => {
+  const c = { numerador: 4, denominador: 4 };
+  const evs = Array.from({ length: 12 }, () => ({ midis: [60], divide: 8, irregular: tresillo }));
+  assert.deepEqual(compasesIncompletos(evs, c), []);
+});
+
+probar("la nota trece cae en el compás dos y no en el uno", () => {
+  // El caso que se rompía: doce tercios suman 0,999999996 y no 1, así que la
+  // primera del compás siguiente se colaba en el anterior.
+  const c = { numerador: 4, denominador: 4 };
+  const evs = Array.from({ length: 13 }, () => ({ midis: [60], divide: 8, irregular: tresillo }));
+  const u = ubicar(evs, c);
+  assert.equal(u[11].compas, 0);
+  assert.equal(u[12].compas, 1);
+});
+
+probar("un tresillo de negras dura lo mismo que una blanca", () => {
+  const tres = 3 * duracionDeEvento({ midis: [60], divide: 4, irregular: tresillo });
+  assert.ok(Math.abs(tres - 0.5) < 1e-9, `dieron ${tres}`);
+});
+
+probar("el puntillo y el tresillo se combinan sin pisarse", () => {
+  // Corchea con puntillo = 3/16; en tresillo, dos tercios de eso = 1/8.
+  const d = duracionDeEvento({ midis: [60], divide: 8, puntillo: true, irregular: tresillo });
+  assert.ok(Math.abs(d - 0.125) < 1e-12, `dio ${d}`);
+});
+
 // ---- Los signos que se dibujan ---------------------------------------------
 
 probar("en Do mayor un fa♯ lleva sostenido y el siguiente del mismo compás no", () => {

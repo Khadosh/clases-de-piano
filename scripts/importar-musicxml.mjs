@@ -133,12 +133,41 @@ function aMidi(pitch) {
   return (octave + 1) * 12 + LETRA_A_SEMITONO[step] + alter;
 }
 
+/** Cómo se llama cada figura en MusicXML y en cuántas partes divide la redonda. */
+const TIPO_A_DIVIDE = {
+  whole: 1, half: 2, quarter: 4, eighth: 8,
+  "16th": 16, "32nd": 32, "64th": 64,
+};
+
 /**
- * De una duración en "divisions" a nuestra figura.
+ * La figura de una nota, leída como está escrita.
  *
- * `divisions` dice cuántas unidades entra una negra, así que una redonda son
- * cuatro. De ahí sale en cuántas partes divide la figura a la redonda, que es
- * el único número con el que trabaja todo el resto del proyecto.
+ * Se lee del `<type>` y no de la duración, porque con tresillos la duración ya
+ * viene multiplicada: una corchea de tresillo dura dos tercios de corchea, y de
+ * ese número no se puede sacar ninguna figura. La figura es corchea igual — se
+ * dibuja con su bandera— y lo que cambia es cuánto entra.
+ */
+function figuraDeNota(nodo, avisos, numeroMedida) {
+  const tipo = texto(nodo, "type");
+  const divide = TIPO_A_DIVIDE[tipo];
+  if (!divide) return null;
+  const puntos = hijos(nodo, "dot").length;
+  if (puntos > 1) {
+    avisos.push(`Compás ${numeroMedida}: una figura con doble puntillo, que no manejamos. Se tomó como si tuviera uno.`);
+  }
+  const tm = hijo(nodo, "time-modification");
+  const en = tm ? numero(tm, "actual-notes") : null;
+  const de = tm ? numero(tm, "normal-notes") : null;
+  return {
+    divide,
+    puntillo: puntos > 0,
+    irregular: en && de && en !== de ? { en, de } : undefined,
+  };
+}
+
+/**
+ * De una duración en "divisions" a nuestra figura. Es el camino de atrás: para
+ * los silencios de relleno, que no salen de ninguna nota escrita.
  */
 function aFigura(duracion, divisions) {
   const enRedondas = duracion / (divisions * 4);
@@ -254,10 +283,18 @@ export function importar(xml, { hasta = Infinity } = {}) {
         continue;
       }
 
+      const escrita = figuraDeNota(nodo, avisos, numeroMedida);
+      if (!escrita && !esSilencio) {
+        avisos.push(`Compás ${numeroMedida}: una figura que no reconocemos (${texto(nodo, "type") ?? "sin tipo"}). Se salteó.`);
+        cursor += duracion;
+        continue;
+      }
+
       const t = cursor;
       const nota = {
         t,
         duracion,
+        escrita,
         midis: esSilencio ? [] : [aMidi(hijo(nodo, "pitch"))],
         ligadaAdelante: hijos(nodo, "tie").some((x) => x.attrs.type === "start"),
         ligadaAtras: hijos(nodo, "tie").some((x) => x.attrs.type === "stop"),
@@ -363,6 +400,9 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
     ) {
       previa.duracion += nota.duracion;
       previa.ligadaAdelante = nota.ligadaAdelante;
+      // La figura escrita ya no vale: la nota resultante es más larga, así que
+      // se deduce de la duración sumada.
+      previa.escrita = null;
       continue;
     }
     juntadas.push({ ...nota, midis: [...nota.midis] });
@@ -376,12 +416,14 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
   let cursor = 0;
   for (const nota of juntadas) {
     if (nota.t > cursor + 1e-9) {
-      const hueco = aFigura(nota.t - cursor, divisions);
-      if (hueco) fila.push({ midis: [], ...hueco });
-      else
+      // Un hueco casi nunca es una figura sola: se llena con las que hagan
+      // falta, de la más larga a la más corta, como se escribe un silencio.
+      const sobra = rellenar(nota.t - cursor, divisions, fila);
+      if (sobra > 1e-9) {
         avisos.push(
-          `En la mano ${nombre} quedó un hueco de ${nota.t - cursor} divisiones (compás ${nota.compas}) que no entra en una figura sola.`,
+          `En la mano ${nombre}, compás ${nota.compas}: quedó un resto de ${sobra} divisiones que no entra en ninguna figura (¿un tresillo partido?).`,
         );
+      }
       cursor = nota.t;
     }
     if (nota.t < cursor - 1e-9) {
@@ -390,35 +432,50 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
       );
       continue;
     }
-    const figura = aFigura(nota.duracion, divisions);
+    // Se prefiere la figura tal como está escrita; la deducida de la duración
+    // es el plan B, para silencios de relleno y archivos sin <type>.
+    const figura = nota.escrita ?? aFigura(nota.duracion, divisions);
     if (!figura) {
       avisos.push(
-        `En la mano ${nombre}, compás ${nota.compas}: una duración de ${nota.duracion} divisiones no es ninguna figura (¿tresillo?). Se salteó.`,
+        `En la mano ${nombre}, compás ${nota.compas}: una duración de ${nota.duracion} divisiones no es ninguna figura. Se salteó.`,
       );
       continue;
     }
-    fila.push({ midis: nota.midis, ...figura });
+    const limpia = { midis: nota.midis, divide: figura.divide };
+    if (figura.puntillo) limpia.puntillo = true;
+    if (figura.irregular) limpia.irregular = figura.irregular;
+    fila.push(limpia);
     cursor += nota.duracion;
   }
   return fila;
 }
 
-/** Le agrega silencios a la mano que quedó corta hasta que las dos midan igual. */
-function emparejar(a, b, divisions) {
-  const largo = (fila) =>
-    fila.reduce((s, e) => s + (1 / e.divide) * (e.puntillo ? 1.5 : 1), 0);
-  const diferencia = Math.round((largo(a) - largo(b)) * 1e6) / 1e6;
-  if (diferencia === 0) return;
-  const corta = diferencia > 0 ? b : a;
-  let falta = Math.abs(diferencia) * divisions * 4;
-  // De la figura más larga a la más corta, que es como se escribe un silencio.
+/**
+ * Llena `cuanto` divisiones con silencios, de la figura más larga a la más
+ * corta. Devuelve lo que no entró en ninguna.
+ */
+function rellenar(cuanto, divisions, fila) {
+  let falta = cuanto;
   for (const divide of [1, 2, 4, 8, 16, 32, 64]) {
     const unidad = (divisions * 4) / divide;
     while (falta >= unidad - 1e-9) {
-      corta.push({ midis: [], divide });
+      fila.push({ midis: [], divide });
       falta -= unidad;
     }
   }
+  return falta;
+}
+
+/** Le agrega silencios a la mano que quedó corta hasta que las dos midan igual. */
+function emparejar(a, b, divisions) {
+  const largo = (fila) =>
+    fila.reduce((s, e) => {
+      const entera = (1 / e.divide) * (e.puntillo ? 1.5 : 1);
+      return s + (e.irregular ? (entera * e.irregular.de) / e.irregular.en : entera);
+    }, 0);
+  const diferencia = Math.round((largo(a) - largo(b)) * 1e6) / 1e6;
+  if (diferencia === 0) return;
+  rellenar(Math.abs(diferencia) * divisions * 4, divisions, diferencia > 0 ? b : a);
 }
 
 /** De la cantidad de alteraciones a la tónica, por el círculo de quintas. */
@@ -454,7 +511,16 @@ function principal() {
     const midis = e.midis.length === 0 ? "[]" : e.midis.length === 1 ? String(e.midis[0]) : `[${e.midis.join(", ")}]`;
     // Ojo con el puntillo de los silencios: perderlo acortaba la mano y las dos
     // dejaban de durar lo mismo. Lo agarró el test, no el ojo.
-    const extra = e.puntillo ? ", { puntillo: true }" : "";
+    const partes = [];
+    if (e.puntillo) partes.push("puntillo: true");
+    if (e.irregular) {
+      partes.push(
+        e.irregular.en === 3 && e.irregular.de === 2
+          ? "irregular: TRESILLO"
+          : `irregular: { en: ${e.irregular.en}, de: ${e.irregular.de} }`,
+      );
+    }
+    const extra = partes.length ? `, { ${partes.join(", ")} }` : "";
     return e.midis.length === 0
       ? `silencio(${e.divide}${extra})`
       : `n(${midis}, ${e.divide}${extra})`;

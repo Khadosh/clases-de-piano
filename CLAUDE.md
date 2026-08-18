@@ -353,8 +353,8 @@ modelo es más pobre que MusicXML y conviene saber qué se perdió:
 
 - **Una sola voz por mano.** Las que arrancan juntas quedan como acorde; una
   segunda voz con ritmo propio no entra y se avisa.
-- **Sin tresillos.** Una duración que no es ninguna figura se saltea. Es lo que
-  frena al Claro de luna de verdad.
+- **Los tresillos entran** (se leen del `<time-modification>`), pero una figura
+  que no reconocemos se saltea igual.
 - **Sin compases incompletos.** La anacrusa se rellena con silencios, así que los
   números de compás quedan corridos uno respecto de la edición.
 - **Las ligaduras que cruzan la barra no se juntan.** Unir la nota le suma
@@ -376,6 +376,20 @@ por el ojo:
 Los `.mxl` que se importaron viven en `partituras-fuente/` con su procedencia, y
 ahí está también la advertencia que importa: **de dominio público es la obra, no
 necesariamente el archivo**.
+
+**Los tresillos son ortogonales a la figura.** `irregular: { en: 3, de: 2 }`
+quiere decir "tres donde entraban dos", y va aparte de `divide` a propósito: en
+un tresillo de corcheas la corchea **sigue siendo una corchea** —se dibuja igual,
+con su bandera— y lo único que cambia es cuánto dura. Meterlo adentro de `divide`
+habría roto la idea de la que sale todo el resto del proyecto, que una figura se
+define por en cuántas partes divide a la redonda. El número se dibuja una sola
+vez sobre la barra del grupo, y sólo si todo el grupo es del mismo tresillo.
+
+**Y traen una trampa de coma flotante.** Un tercio no es una fracción binaria, así
+que doce tresillos suman 0,999999996 y no 1. Con la tolerancia vieja (1e-9) el
+compás nunca cerraba y la primera nota del siguiente se colaba en el anterior.
+Todas las comparaciones de tiempo van con la misma `HOLGURA` de 1e-6, que es
+enorme al lado del ruido y minúscula al lado de cualquier duración real.
 
 **Los tresillos se esquivan con el compás.** El Claro de luna son doce corcheas
 por compás, que es exactamente 12/8 — mismo pulso con puntillo, mismas notas, y

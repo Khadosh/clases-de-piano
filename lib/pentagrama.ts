@@ -169,6 +169,17 @@ export interface Evento {
   /** En cuántas partes divide a la redonda: 4 es negra, 8 corchea. */
   divide: number;
   puntillo?: boolean;
+  /**
+   * Grupo irregular. `{ en: 3, de: 2 }` es un tresillo: tres notas donde
+   * entraban dos.
+   *
+   * Es **ortogonal a la figura** y por eso va aparte: en un tresillo de
+   * corcheas la corchea sigue siendo una corchea —se dibuja igual, con su
+   * bandera— y lo único que cambia es cuánto dura. Meterlo adentro de `divide`
+   * habría roto la idea de la que sale todo el resto: que una figura se define
+   * por en cuántas partes divide a la redonda.
+   */
+  irregular?: { en: number; de: number };
   /** Se prolonga sobre la siguiente en vez de volver a atacarse. */
   ligada?: boolean;
 }
@@ -177,7 +188,8 @@ export interface Evento {
 export function duracionDeEvento(e: Evento): number {
   const f = figuraQueDivide(e.divide);
   if (!f) throw new Error(`No existe una figura que divida en ${e.divide}`);
-  return duracionDe(f, e.puntillo);
+  const entera = duracionDe(f, e.puntillo);
+  return e.irregular ? (entera * e.irregular.de) / e.irregular.en : entera;
 }
 
 export function figuraDeEvento(e: Evento): Figura {
@@ -213,7 +225,7 @@ export function ubicar(eventos: Evento[], compas: Compas): NotaUbicada[] {
     const ubicada: NotaUbicada = {
       ...e,
       t,
-      compas: Math.floor(redondear(t) / largo + 1e-9),
+      compas: Math.floor(redondear(t) / largo + HOLGURA),
       dentro: redondear(t) % largo,
     };
     t = redondear(t + duracionDeEvento(e));
@@ -221,8 +233,28 @@ export function ubicar(eventos: Evento[], compas: Compas): NotaUbicada[] {
   });
 }
 
-/** Las duraciones son fracciones binarias; redondear evita el ruido de coma flotante. */
-const redondear = (x: number) => Math.round(x * 1e6) / 1e6;
+/**
+ * Limpia el ruido de coma flotante sin romper los tercios.
+ *
+ * Antes redondeaba a seis decimales, y eso alcanzaba mientras todas las
+ * duraciones eran fracciones binarias. Con los tresillos dejó de alcanzar: un
+ * tercio queda en 0,083333 y doce de ésos suman 0,999996, así que el compás
+ * nunca cerraba y la primera nota del siguiente se colaba en el anterior. Con
+ * nueve decimales el error queda muy por debajo de la tolerancia con la que se
+ * compara.
+ */
+const redondear = (x: number) => Math.round(x * 1e9) / 1e9;
+
+/**
+ * Con cuánta holgura se compara.
+ *
+ * Tiene que ser bastante más grande que el ruido que dejan los tercios al
+ * sumarse: doce tresillos dan 0,999999996 y no 1, así que decidir en qué compás
+ * cae una nota con una tolerancia de 1e-9 mandaba la primera del compás
+ * siguiente al anterior. Nada de música real cae a menos de una millonésima de
+ * una barra de compás sin estar justo encima.
+ */
+const HOLGURA = 1e-6;
 
 /**
  * ¿Cierra cada compás con la cuenta justa?
@@ -239,17 +271,17 @@ export function compasesIncompletos(
   const porCompas = new Map<number, number>();
   let t = 0;
   for (const e of eventos) {
-    const n = Math.floor(redondear(t) / largo + 1e-9);
+    const n = Math.floor(redondear(t) / largo + HOLGURA);
     porCompas.set(n, redondear((porCompas.get(n) ?? 0) + duracionDeEvento(e)));
     t = redondear(t + duracionDeEvento(e));
   }
   const total = redondear(t);
-  const ultimoEntero = Math.floor(total / largo + 1e-9);
+  const ultimoEntero = Math.floor(total / largo + HOLGURA);
   return [...porCompas.entries()]
     .filter(([n, suma]) => {
       // El último puede estar a medias si la pieza corta ahí: eso no es error.
-      if (n === ultimoEntero && redondear(total % largo) !== 0) return false;
-      return Math.abs(suma - largo) > 1e-6;
+      if (n === ultimoEntero && Math.abs(total % largo) > HOLGURA) return false;
+      return Math.abs(suma - largo) > HOLGURA;
     })
     .map(([n, suma]) => ({ compas: n, suma, deberia: largo }));
 }
