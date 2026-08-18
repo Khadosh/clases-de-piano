@@ -340,6 +340,43 @@ instante quedaban con la duración más larga de todas, y en la Oda a la alegrí
 las negras de la derecha sonaban un compás entero como la redonda de la
 izquierda. Son dos vistas de lo mismo y tienen que vivir separadas.
 
+### Importar de MusicXML
+
+`npm run importar -- archivo.mxl --slug x --hasta N`. MusicXML (`.musicxml`, y
+`.mxl` que es el mismo comprimido) es el formato en el que se entienden entre sí
+los programas de partituras, y **es lo único que se puede importar**: un PDF es
+una foto y sacarle las notas es reconocimiento óptico, otro problema entero.
+
+El script escribe el objeto listo para pegar y, por la salida de error, **el
+informe de lo que no pudo**. Ese informe es la mitad del valor, porque nuestro
+modelo es más pobre que MusicXML y conviene saber qué se perdió:
+
+- **Una sola voz por mano.** Las que arrancan juntas quedan como acorde; una
+  segunda voz con ritmo propio no entra y se avisa.
+- **Sin tresillos.** Una duración que no es ninguna figura se saltea. Es lo que
+  frena al Claro de luna de verdad.
+- **Sin compases incompletos.** La anacrusa se rellena con silencios, así que los
+  números de compás quedan corridos uno respecto de la edición.
+- **Las ligaduras que cruzan la barra no se juntan.** Unir la nota le suma
+  duración a un compás y se la saca al siguiente, y los dos dejan de cerrar.
+
+Cuatro cosas que costaron y están resueltas, todas encontradas por el test y no
+por el ojo:
+
+- **El reloj es absoluto, no por compás.** Arrancando de cero en cada compás,
+  del segundo en adelante todo parecía caer encima del primero.
+- **La mano que entra tarde arranca con silencio.** Empezar en su primera nota le
+  come el silencio de adelante y le corre toda la música hacia atrás.
+- **Los silencios también llevan puntillo.** Perderlo al escribirlos acortaba la
+  mano y las dos dejaban de durar lo mismo.
+- **El archivo de origen puede estar mal.** De las versiones de Para Elisa de esa
+  biblioteca, una tiene el compás 8 corto y desalinea todo lo que sigue. El
+  importador lo avisa; se usó otra.
+
+Los `.mxl` que se importaron viven en `partituras-fuente/` con su procedencia, y
+ahí está también la advertencia que importa: **de dominio público es la obra, no
+necesariamente el archivo**.
+
 **Los tresillos se esquivan con el compás.** El Claro de luna son doce corcheas
 por compás, que es exactamente 12/8 — mismo pulso con puntillo, mismas notas, y
 no hay que dibujar tresillos. Cuando la música entra en un compás compuesto,
@@ -715,6 +752,7 @@ acá, porque el que no ve nada asume que está roto.
 npm run dev        # desarrollo
 npm run build      # build de producción (falla si hay error de tipos)
 npm run typecheck  # sólo tipos
+npm run importar   # de un MusicXML a una pieza de content/partituras.ts
 npm run test:pentagrama # el pentagrama y que las piezas cierren la cuenta
 npm run test:grados  # los grados de una tonalidad y las escalas
 npm run test:ritmo   # figuras y compases
