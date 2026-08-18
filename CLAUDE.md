@@ -553,6 +553,12 @@ Vive en `lib/audio.ts` y tiene tres decisiones que no son obvias:
 - **Los osciladores no son un fallback de emergencia.** Son lo que suena en el
   primer segundo, mientras bajan los samples, y también si algún día no están.
   La app nunca queda muda.
+- **Parar es `pararTodo()`, no "dejar de agendar".** Como la pieza se agenda
+  entera de una, cuando apretás parar todas las notas que faltan ya tienen su
+  fuente creada con el `start()` en el futuro: hay que apagarlas
+  (`releaseAll()` de Tone las cubre, los osciladores se llevan en una lista).
+  El botón de parar estuvo un tiempo cortando sólo el dibujo, y la música
+  seguía hasta el final.
 
 El piano son 17 samples del Salamander Grand Piano, uno cada tres semitonos, en
 `public/piano/` (ver `CREDITOS.md` ahí: es CC-BY y hay que atribuirlo, por eso

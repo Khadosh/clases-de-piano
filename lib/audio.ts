@@ -64,6 +64,7 @@ export function getAudioContext(): AudioContext | null {
 
 type Sampler = {
   triggerAttackRelease: (nota: string, dur: number, cuando: number) => void;
+  releaseAll: () => void;
 };
 
 let sampler: Sampler | null = null;
@@ -138,6 +139,9 @@ export function hayPiano() {
 // Los osciladores, para cuando no hay samples
 // ---------------------------------------------------------------------------
 
+/** Los osciladores vivos, para poder callarlos si alguien aprieta parar. */
+const oscVivos = new Set<OscillatorNode>();
+
 function osciladores(pitch: Pitch, duration: number, t0: number) {
   const ac = getAudioContext();
   if (!ac) return;
@@ -166,7 +170,35 @@ function osciladores(pitch: Pitch, duration: number, t0: number) {
     osc.connect(g).connect(env);
     osc.start(t0);
     osc.stop(t0 + duration + 0.05);
+    oscVivos.add(osc);
+    osc.onended = () => oscVivos.delete(osc);
   }
+}
+
+/**
+ * Calla todo lo que suena **y todo lo agendado a futuro**.
+ *
+ * Es lo que hace de verdad el botón de parar de las partituras. La trampa es
+ * que la pieza entera se agenda de una contra el reloj del audio, así que no
+ * alcanza con dejar de agendar: las notas que faltan ya tienen su fuente
+ * creada con su `start()` en el futuro. `releaseAll()` de Tone las apaga a
+ * todas —las que suenan con su cola de release, las futuras sin arrancar—, y
+ * los osciladores se paran de la lista de vivos.
+ */
+export function pararTodo() {
+  try {
+    sampler?.releaseAll();
+  } catch {
+    // Sin piano cargado no hay nada que soltar.
+  }
+  for (const osc of [...oscVivos]) {
+    try {
+      osc.stop();
+    } catch {
+      // Ya estaba parado.
+    }
+  }
+  oscVivos.clear();
 }
 
 // ---------------------------------------------------------------------------

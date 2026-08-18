@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Pentagrama from "./Pentagrama";
 import Midi from "./Midi";
-import { getAudioContext, playNote, wakeAudio } from "@/lib/audio";
+import { getAudioContext, pararTodo, playNote, wakeAudio } from "@/lib/audio";
 import { useMidi } from "@/lib/useMidi";
 import { mod12 } from "@/lib/music";
 import { duracionDeCompas, duracionDeEvento, ubicar, vocesDe } from "@/lib/pentagrama";
@@ -145,8 +145,10 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
       pararRef.current = () => {
         cancelAnimationFrame(raf);
-        // Los samples ya agendados se dejan morir solos: cortarlos a mitad de
-        // nota suena peor que dejar que se apaguen.
+        // La pieza entera ya está agendada, así que "dejar de agendar" no
+        // existe: hay que apagar lo que suena y lo que falta. Antes esto sólo
+        // cortaba el dibujo y el botón de parar no paraba nada.
+        pararTodo();
       };
     },
     [notas, largoCompas, segundosPorRedonda, finMusical],
