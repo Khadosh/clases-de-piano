@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Pentagrama from "./Pentagrama";
 import EdicionCompleta from "./EdicionCompleta";
 import Midi from "./Midi";
-import { getAudioContext, pararTodo, playNote, wakeAudio } from "@/lib/audio";
+import { getAudioContext, notaOff, notaOn, pararTodo, wakeAudio } from "@/lib/audio";
 import { useMidi } from "@/lib/useMidi";
 import { mod12 } from "@/lib/music";
 import { duracionDeCompas, duracionDeEvento, ubicar, vocesDe } from "@/lib/pentagrama";
@@ -139,11 +139,34 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       const arranque = ctx.currentTime + 0.15;
       const aSegundos = (t: number) => arranque + (t - t0Musical) * segundosPorRedonda;
 
+      // **No se agenda la pieza entera: se agenda lo que viene.** La primera
+      // versión mandaba todo de una y el botón de parar no podía parar nada —
+      // cada nota ya tenía su apagado agendado y Tone la había soltado de su
+      // lista. Ahora cada nota son dos eventos, apretar y soltar, y un timer
+      // los va despachando 150ms antes de su hora contra el reloj del audio
+      // (los dos relojes de siempre, como el metrónomo). Parar es dejar de
+      // despachar y soltar lo apretado: las notas que faltaban nunca llegan a
+      // existir.
+      const eventos: { t: number; tipo: "on" | "off"; midi: number; dur: number }[] = [];
       for (const n of notas) {
         if (n.t < t0Musical - 1e-9) continue;
         if (n.t >= fin - 1e-9) continue;
-        playNote(n.midi, n.duracion * segundosPorRedonda * 0.95, aSegundos(n.t));
+        const dur = n.duracion * segundosPorRedonda * 0.95;
+        eventos.push({ t: aSegundos(n.t), tipo: "on", midi: n.midi, dur });
+        eventos.push({ t: aSegundos(n.t) + dur, tipo: "off", midi: n.midi, dur });
       }
+      eventos.sort((a, b) => a.t - b.t);
+      let proximo = 0;
+      const despachar = () => {
+        const horizonte = ctx.currentTime + 0.15;
+        while (proximo < eventos.length && eventos[proximo].t <= horizonte) {
+          const e = eventos[proximo++];
+          if (e.tipo === "on") notaOn(e.midi, e.t, e.dur);
+          else notaOff(e.midi, e.t);
+        }
+      };
+      despachar();
+      const timer = setInterval(despachar, 25);
 
       let raf = 0;
       const mirar = () => {
@@ -156,6 +179,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             tocarRef.current?.(recorte.desde);
             return;
           }
+          clearInterval(timer);
           setTocando(false);
           setSonando(null);
           return;
@@ -167,9 +191,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
       pararRef.current = () => {
         cancelAnimationFrame(raf);
-        // La pieza entera ya está agendada, así que "dejar de agendar" no
-        // existe: hay que apagar lo que suena y lo que falta. Antes esto sólo
-        // cortaba el dibujo y el botón de parar no paraba nada.
+        clearInterval(timer);
         pararTodo();
       };
     },

@@ -685,51 +685,42 @@ function disponer({
   const totalCompases = Math.max(...todas.map((n) => n.compas), 0) + 1;
   const primerCompas = rango?.desde ?? 0;
 
-  // Cada compás pide el ancho que necesita: uno con doce corcheas no puede
-  // ocupar lo mismo que uno con cuatro negras. Las dos voces caen en los mismos
-  // instantes muchas veces, así que se cuentan los instantes distintos.
-  const anchoDe = (c: number) => {
+  // **Todos los compases miden lo mismo.** El ancho lo pide el más denso —con
+  // la raíz de sus instantes, que lineal un compás de doce tresillos aplastaba
+  // al del acorde tenido— y ese ancho vale para todos. Una edición impresa le
+  // da a cada compás lo justo para ahorrar papel; acá no hay papel, y con el
+  // ancho parejo los compases quedan alineados en columnas entre renglón y
+  // renglón, que para leer y practicar sirve mucho más.
+  const anchoNecesario = (c: number) => {
     const cuantas = new Set(
       todas.filter((n) => n.compas === c).map((n) => n.dentro),
     ).size;
-    // Un compás con más notas necesita más lugar, pero la diferencia no puede
-    // ser de uno a tres: con la cuenta lineal, un compás de doce tresillos
-    // aplastaba al de al lado que tenía un acorde tenido. La raíz da la misma
-    // idea mucho más pareja.
     return Math.max(120, 46 + Math.sqrt(cuantas) * 46);
   };
+  let anchoCompas = 120;
+  for (let c = primerCompas; c < totalCompases; c++) {
+    anchoCompas = Math.max(anchoCompas, anchoNecesario(c));
+  }
 
-  // Cuántos compases entran por renglón. El encabezado se paga una vez.
+  // Cuántos entran por renglón, y el sobrante se reparte parejo: cada renglón
+  // lleva la misma cantidad al mismo ancho, así que las barras caen todas en
+  // la misma vertical (el último puede llevar menos, pero del mismo ancho).
   const encabezado = anchoEncabezado(armadura);
   const disponible = Math.max(240, Math.min(ancho, 900)) - encabezado - 8;
+  const porRenglon = Math.max(1, Math.floor(disponible / anchoCompas));
+  const anchoFinal = Math.max(disponible / porRenglon, 100);
   const grupos: number[][] = [];
-  let actual: number[] = [];
-  let usado = 0;
   for (let c = primerCompas; c < totalCompases; c++) {
-    const w = anchoDe(c);
-    if (actual.length && usado + w > disponible) {
-      grupos.push(actual);
-      actual = [];
-      usado = 0;
+    if (!grupos.length || grupos[grupos.length - 1].length === porRenglon) {
+      grupos.push([]);
     }
-    actual.push(c);
-    usado += w;
+    grupos[grupos.length - 1].push(c);
   }
-  if (actual.length) grupos.push(actual);
 
   const largoCompas = duracionDeCompas(compas);
 
   const sistemas: SistemaDispuesto[] = grupos.map((compasesDelSistema, gi) => {
-    // El sobrante se reparte entre los compases del renglón, así que todos los
-    // renglones terminan a la misma altura y la página se ve pareja.
-    const crudo = compasesDelSistema.map(anchoDe);
-    const suma = crudo.reduce((a, b) => a + b, 0);
-    // El último renglón no se estira para llenar: si tiene un solo compás,
-    // estirarlo lo deja del ancho de la página y descolgado de todo lo demás.
-    // Es lo que hace cualquier edición impresa.
-    const esUltimo = gi === grupos.length - 1;
-    const escala = suma > 0 ? Math.min(disponible / suma, esUltimo ? 1.15 : 1.6) : 1;
-    const anchos = crudo.map((w) => w * escala);
+    const anchos = compasesDelSistema.map(() => anchoFinal);
 
     let x = encabezado;
     const inicio = new Map<number, { x: number; ancho: number }>();

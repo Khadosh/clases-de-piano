@@ -64,6 +64,8 @@ export function getAudioContext(): AudioContext | null {
 
 type Sampler = {
   triggerAttackRelease: (nota: string, dur: number, cuando: number) => void;
+  triggerAttack: (nota: string, cuando: number) => void;
+  triggerRelease: (nota: string, cuando: number) => void;
   releaseAll: () => void;
 };
 
@@ -176,14 +178,16 @@ function osciladores(pitch: Pitch, duration: number, t0: number) {
 }
 
 /**
- * Calla todo lo que suena **y todo lo agendado a futuro**.
+ * Suelta todo lo que está sonando.
  *
- * Es lo que hace de verdad el botón de parar de las partituras. La trampa es
- * que la pieza entera se agenda de una contra el reloj del audio, así que no
- * alcanza con dejar de agendar: las notas que faltan ya tienen su fuente
- * creada con su `start()` en el futuro. `releaseAll()` de Tone las apaga a
- * todas —las que suenan con su cola de release, las futuras sin arrancar—, y
- * los osciladores se paran de la lista de vivos.
+ * Es la mitad del botón de parar; la otra mitad es del que agenda, que tiene
+ * que dejar de agendar. Y ojo: esto sólo alcanza a las notas apretadas con
+ * `notaOn` y todavía no soltadas. Las de `playNote` no — su apagado se agenda
+ * junto con el ataque y Tone las saca de su lista de vivas en ese momento,
+ * así que `releaseAll()` no las ve. Por eso el reproductor de partituras va
+ * con `notaOn`/`notaOff` y un lookahead, no con `playNote` — la primera
+ * versión de parar hacía `releaseAll()` sobre notas de `playNote` y no paraba
+ * nada.
  */
 export function pararTodo() {
   try {
@@ -220,6 +224,37 @@ export function playNote(pitch: Pitch, duration = 0.9, cuando?: number) {
   } else {
     osciladores(pitch, duration, t);
   }
+}
+
+/**
+ * Apretar y soltar por separado, para lo que necesita poder **parar**.
+ *
+ * `playNote` agenda el apagado en el momento de la llamada, y Tone ahí mismo
+ * saca la fuente de su lista de vivas: cuando después llega `pararTodo()`, la
+ * lista está vacía y no hay nada que soltar — por eso el botón de parar no
+ * paraba. Con el ataque y el apagado separados, la nota queda en la lista de
+ * Tone hasta que alguien la suelte: o `notaOff` cuando le toca, o `pararTodo`
+ * si apretaste parar.
+ *
+ * El que use esto tiene que agendar **de a poco** (el lookahead de siempre) y
+ * soltar cada nota que apretó. `duracionSiOscilador` es para el arranque sin
+ * samples: los osciladores no se sueltan, se apagan solos a su hora.
+ */
+export function notaOn(pitch: Pitch, cuando: number, duracionSiOscilador: number) {
+  const ac = getAudioContext();
+  if (!ac) return;
+  const t = Math.max(cuando, ac.currentTime);
+  if (listo && sampler) {
+    sampler.triggerAttack(noteNameWithOctave(pitch, "en"), t);
+  } else {
+    osciladores(pitch, duracionSiOscilador, t);
+  }
+}
+
+export function notaOff(pitch: Pitch, cuando: number) {
+  const ac = getAudioContext();
+  if (!ac || !listo || !sampler) return;
+  sampler.triggerRelease(noteNameWithOctave(pitch, "en"), Math.max(cuando, ac.currentTime));
 }
 
 export function playChord(pitches: Pitch[], duration = 1.6, cuando?: number) {
