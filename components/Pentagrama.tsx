@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  HOLGURA,
   vocesDe,
   type Voces,
   alturaEnPentagrama,
@@ -66,8 +67,6 @@ interface NotaDibujable extends NotaUbicada {
   clave: Clave;
   /** Cuál de las voces de ese pentagrama. 0 es la de arriba. */
   voz: number;
-  /** Cuántas voces hay en ese pentagrama: cambia hacia dónde va la plica. */
-  cuantasVoces: number;
   x: number;
   /** Una por cada tecla del acorde, ya escrita y ubicada. */
   cabezas: { y: number; altura: number; signo: Signo }[];
@@ -131,10 +130,10 @@ export default function Pentagrama({
         sistemas.map((s, i) => (
         <svg
           key={i}
-          viewBox={`0 0 ${s.ancho} ${ALTO_SISTEMA}`}
+          viewBox={`0 ${s.arribaDeTodo} ${s.ancho} ${s.abajoDeTodo - s.arribaDeTodo}`}
           width="100%"
           className="block select-none"
-          style={{ maxWidth: s.ancho * 1.6 }}
+          style={{ maxWidth: s.ancho * 1.5 }}
           role="img"
           aria-label={`Compases ${s.desde + 1} a ${s.hasta + 1} de ${totalCompases}`}
         >
@@ -487,60 +486,77 @@ function lineasAdicionales(altura: number): number[] {
 // ---------------------------------------------------------------------------
 
 /**
- * La clave de sol, dibujada alrededor de la línea del Sol.
+ * Las dos claves.
  *
- * No es la del grabador de una edición linda: es una espiral aproximada, y es a
- * propósito. Lo que tiene que hacer es leerse como una clave de sol a tamaño de
- * celular, y para eso alcanza. Los símbolos de Unicode (𝄞) tienen el mismo
- * problema que los de las figuras: casi ninguna fuente los trae.
+ * Están dibujadas **en espacios de pentagrama y no en píxeles**: adentro del
+ * grupo, la unidad es un espacio y el origen es la línea que la clave nombra —
+ * la del Sol para una, la del Fa para la otra. Por eso el `scale(ESPACIO)`. Con
+ * medidas absolutas había que rehacerlas si el pentagrama cambiaba de tamaño, y
+ * la clave dejaba de caer donde cae.
+ *
+ * **El grosor se hace con varios trazos encima y no con un contorno.** Una
+ * clave de verdad es una cinta que engorda y adelgaza, y eso en SVG pide
+ * dibujar el borde entero —sesenta puntos que hay que acertar de memoria—. Con
+ * dos o tres trazos redondeados superpuestos, uno grueso donde la panza es
+ * gruesa y uno fino donde afina, sale lo mismo a la vista y se puede corregir
+ * moviendo un número. Los símbolos de Unicode (𝄞) no sirven, por lo mismo que
+ * las figuras: casi ninguna fuente los trae.
  */
+const TINTA = "#e8e3d6";
+
+/** Cuánto sube y cuánto baja cada clave desde su línea, medido en espacios. */
+const ALTO_CLAVE = {
+  sol: { arriba: 3.9, abajo: 2.6 },
+  fa: { arriba: 0.8, abajo: 2.6 },
+};
+
 function ClaveSol({ x }: { x: number }) {
   const yG = yDeAltura(2, "sol"); // la segunda línea, la que la clave abraza
   return (
-    <g transform={`translate(${x} ${yG})`}>
-      {/* La espiral que rodea la línea del Sol, la caña que sube y el rulo que
-          baja. Es una aproximación: tiene que leerse como clave de sol a tamaño
-          de celular, no ser la de una edición grabada. */}
-      <path
-        d="M 0 0
-           c -4.6 0 -6.6 -3.6 -6.6 -6.4
-           c 0 -3.4 2.6 -6.2 6.2 -9.4
-           c 3.4 -3 5.2 -5.6 5.2 -8.6
-           c 0 -2.6 -1.4 -4.4 -3.2 -4.4
-           c -2.2 0 -3.6 2.2 -3.6 5.6
-           c 0 3.2 1 6.6 2.2 10.4
-           c 1.6 5 3.4 10.6 3.4 15.4
-           c 0 5.4 -3 8.8 -7 8.8
-           c -3.4 0 -5.8 -2.4 -5.8 -5.4
-           c 0 -2.4 1.6 -4 3.6 -4
-           c 1.9 0 3.2 1.4 3.2 3.2
-           c 0 1.7 -1.1 2.9 -2.6 3"
+    <g transform={`translate(${x} ${yG}) scale(${ESPACIO})`}>
+      <g
         fill="none"
-        stroke="#e8e3d6"
-        strokeWidth={1.7}
+        stroke={TINTA}
         strokeLinecap="round"
         strokeLinejoin="round"
-      />
-      <circle cx={-0.2} cy={0.2} r={1.9} fill="none" stroke="#e8e3d6" strokeWidth={1.6} />
+      >
+        {/* El mástil: el rulo de arriba, la caña que baja y el ganchito del pie. */}
+        <path
+          d="M -0.44 -2.75 C -0.52 -3.42, 0.00 -3.80, 0.26 -3.42 C 0.50 -3.06, 0.34 -2.62, 0.22 -2.20 L 0.10 1.80 C 0.08 2.28, -0.24 2.52, -0.56 2.42 C -0.82 2.34, -0.86 2.00, -0.62 1.90"
+          strokeWidth={0.17}
+        />
+        {/* La vuelta grande, que cruza el mástil y rodea la línea del Sol. */}
+        <path
+          d="M 0.20 -2.05 C -0.08 -1.35, -0.74 -0.78, -0.98 -0.05 C -1.20 0.72, -0.88 1.55, -0.18 1.76 C 0.52 1.96, 1.02 1.46, 0.96 0.80"
+          strokeWidth={0.34}
+        />
+        {/* El brazo que entra al ojo: afina, así que va aparte y más fino. */}
+        <path d="M 0.96 0.80 C 0.90 0.28, 0.44 -0.04, 0.00 0.06" strokeWidth={0.19} />
+        {/* La panza, encima y más gruesa. */}
+        <path
+          d="M -1.06 0.38 C -1.18 1.08, -0.84 1.62, -0.18 1.76 C 0.36 1.88, 0.82 1.60, 0.94 1.14"
+          strokeWidth={0.5}
+        />
+      </g>
+      {/* El ojo, justo sobre la línea del Sol: es lo que la clave señala. */}
+      <circle cx={-0.06} cy={0.04} r={0.19} fill={TINTA} />
     </g>
   );
 }
 
-/** La clave de fa: la cabeza va sobre la línea del Fa y los dos puntos la rodean. */
 function ClaveFa({ x }: { x: number }) {
   const yF = yDeAltura(6, "fa"); // la cuarta línea
   return (
-    <g transform={`translate(${x} ${yF})`}>
-      <path
-        d="M -1 5 c 6 -1 9 -5 9 -10 c 0 -4 -3 -6.5 -6 -5.6 c -2.2 0.7 -2.6 3.6 -0.8 4.6"
-        fill="none"
-        stroke="#e8e3d6"
-        strokeWidth={2.2}
-        strokeLinecap="round"
-      />
-      <circle cx={-3.4} cy={-8.6} r={2.6} fill="#e8e3d6" />
-      <circle cx={11} cy={-2} r={1.5} fill="#e8e3d6" />
-      <circle cx={11} cy={2} r={1.5} fill="#e8e3d6" />
+    <g transform={`translate(${x} ${yF}) scale(${ESPACIO})`}>
+      <g fill="none" stroke={TINTA} strokeLinecap="round" strokeLinejoin="round">
+        {/* Arranca gruesa saliendo de la cabeza y se va afinando hacia la cola. */}
+        <path d="M -0.15 -0.42 C 0.45 -0.62, 0.95 -0.18, 0.92 0.55" strokeWidth={0.45} />
+        <path d="M 0.92 0.55 C 0.88 1.35, 0.30 2.00, -0.55 2.45" strokeWidth={0.2} />
+      </g>
+      {/* La cabeza va sobre la línea del Fa y los dos puntos la rodean. */}
+      <circle cx={-0.15} cy={0} r={0.42} fill={TINTA} />
+      <circle cx={1.3} cy={-0.5} r={0.17} fill={TINTA} />
+      <circle cx={1.3} cy={0.5} r={0.17} fill={TINTA} />
     </g>
   );
 }
@@ -635,6 +651,9 @@ interface Barrado {
 
 interface SistemaDispuesto {
   ancho: number;
+  /** Hasta dónde llega el dibujo para arriba y para abajo, con líneas adicionales. */
+  arribaDeTodo: number;
+  abajoDeTodo: number;
   desde: number;
   hasta: number;
   primero: boolean;
@@ -674,7 +693,11 @@ function disponer({
     const cuantas = new Set(
       todas.filter((n) => n.compas === c).map((n) => n.dentro),
     ).size;
-    return Math.max(96, 30 + cuantas * 17);
+    // Un compás con más notas necesita más lugar, pero la diferencia no puede
+    // ser de uno a tres: con la cuenta lineal, un compás de doce tresillos
+    // aplastaba al de al lado que tenía un acorde tenido. La raíz da la misma
+    // idea mucho más pareja.
+    return Math.max(120, 46 + Math.sqrt(cuantas) * 46);
   };
 
   // Cuántos compases entran por renglón. El encabezado se paga una vez.
@@ -702,7 +725,11 @@ function disponer({
     // renglones terminan a la misma altura y la página se ve pareja.
     const crudo = compasesDelSistema.map(anchoDe);
     const suma = crudo.reduce((a, b) => a + b, 0);
-    const escala = suma > 0 ? disponible / suma : 1;
+    // El último renglón no se estira para llenar: si tiene un solo compás,
+    // estirarlo lo deja del ancho de la página y descolgado de todo lo demás.
+    // Es lo que hace cualquier edición impresa.
+    const esUltimo = gi === grupos.length - 1;
+    const escala = suma > 0 ? Math.min(disponible / suma, esUltimo ? 1.15 : 1.6) : 1;
     const anchos = crudo.map((w) => w * escala);
 
     let x = encabezado;
@@ -721,7 +748,6 @@ function disponer({
       fila: NotaUbicada[],
       clave: Clave,
       voz: number,
-      cuantasVoces: number,
     ) => {
       fila.forEach((nota, indice) => {
         const caja = inicio.get(nota.compas);
@@ -742,31 +768,49 @@ function disponer({
           ...nota,
           clave,
           voz,
-          cuantasVoces,
           x: xNota,
           cabezas,
-          // **Con dos voces la plica no se elige por la altura.** La de arriba
-          // va siempre para arriba y la de abajo siempre para abajo: es lo que
-          // hace que se puedan leer separadas aunque se crucen.
-          arriba: cuantasVoces > 1 ? voz === 0 : media < 4,
+          // Provisorio: por la altura, que es la regla de una voz sola. Con dos
+          // voces sonando manda la voz, y eso lo decide `acomodarPlicas` recién
+          // cuando sabe qué compases tienen de verdad dos voces.
+          arriba: media < 4,
           indice,
         });
       });
     };
     for (const { clave, voces } of pentagramas) {
-      voces.forEach((fila, voz) => poner(fila, clave, voz, voces.length));
+      voces.forEach((fila, voz) => poner(fila, clave, voz));
     }
-    acomodarPlicas(notas);
+    const conVoz = callarVocesVacias(notas);
+    acomodarPlicas(conVoz);
+
+    // **El alto se mide, no se supone.** Las octavas graves del Claro de luna
+    // caen cuatro líneas adicionales abajo del pentagrama, y con un alto fijo
+    // quedaban cortadas por la mitad. La clave de sol entra en la cuenta porque
+    // el rulo de arriba se va del margen y también se cortaba.
+    const ys = conVoz.flatMap((n) => n.cabezas.map((c) => c.y));
+    const arribaDeTodo = Math.min(
+      MARGEN_ARRIBA,
+      yDeAltura(2, "sol") - ALTO_CLAVE.sol.arriba * ESPACIO - 3,
+      ...ys.map((y) => y - 34),
+    );
+    const abajoDeTodo = Math.max(
+      Y_BASE.fa + MARGEN_ABAJO,
+      yDeAltura(6, "fa") + ALTO_CLAVE.fa.abajo * ESPACIO + 3,
+      ...ys.map((y) => y + 34),
+    );
 
     return {
       ancho: x + 8,
+      arribaDeTodo,
+      abajoDeTodo,
       desde: compasesDelSistema[0],
       hasta: compasesDelSistema[compasesDelSistema.length - 1],
       primero: gi === 0,
       ultimo: gi === grupos.length - 1,
-      notas: barrar(notas, compas),
+      notas: barrar(conVoz, compas),
       barras,
-      barrados: barrados(notas, compas),
+      barrados: barrados(conVoz, compas),
       zonas,
     };
   });
@@ -774,35 +818,75 @@ function disponer({
   return { sistemas, totalCompases };
 }
 
+/** Las notas de un pentagrama, agrupadas por compás. */
+function porCompas(notas: NotaDibujable[]) {
+  const mapa = new Map<string, NotaDibujable[]>();
+  for (const n of notas) {
+    const llave = `${n.clave}:${n.compas}`;
+    if (!mapa.has(llave)) mapa.set(llave, []);
+    mapa.get(llave)!.push(n);
+  }
+  return mapa;
+}
+
+/** Qué voces suenan de verdad en ese compás: las que tienen alguna nota. */
+const vocesQueSuenan = (delCompas: NotaDibujable[]) => [
+  ...new Set(delCompas.filter((n) => n.midis.length > 0).map((n) => n.voz)),
+];
+
 /**
- * Hacia dónde va la plica de cada voz, decidido **compás por compás**.
+ * Una voz que calla un compás entero no se dibuja, si la otra sí toca.
  *
- * La regla es la de siempre: con dos voces en un pentagrama, la de arriba lleva
- * las plicas para arriba y la de abajo para abajo. Lo que no funciona es
- * decidir cuál es cuál mirando el promedio de la pieza entera — en el Claro de
- * luna la melodía tiene pasajes graves y el arpegio termina promediando más
- * alto, así que quedaban al revés. En un compás no hay ambigüedad.
+ * Es lo que hace cualquier edición impresa: si de las dos voces del pentagrama
+ * una no está, ya se ve que no está, y una redonda de silencio arriba del
+ * acorde no agrega nada. Acá pesa más que en el papel porque el importador
+ * rellena con silencios todo lo que una voz no toca — sin esto, los primeros
+ * compases del Claro de luna salían con un silencio de más en cada mano y con
+ * la mano izquierda contando dos voces donde hay una sola.
+ *
+ * Un compás en el que **ninguna** voz toca conserva sus silencios: ahí el
+ * silencio es la música.
+ */
+function callarVocesVacias(notas: NotaDibujable[]) {
+  const callados = new Set<NotaDibujable>();
+  for (const delCompas of porCompas(notas).values()) {
+    const suenan = vocesQueSuenan(delCompas);
+    if (suenan.length === 0) continue;
+    for (const n of delCompas) {
+      if (!suenan.includes(n.voz)) callados.add(n);
+    }
+  }
+  return notas.filter((n) => !callados.has(n));
+}
+
+/**
+ * Hacia dónde va la plica, decidido **compás por compás**.
+ *
+ * Con dos voces sonando en un pentagrama vale la regla de siempre: la de arriba
+ * lleva las plicas para arriba y la de abajo para abajo, que es lo que permite
+ * leerlas separadas cuando se cruzan. Lo que no funciona es decidir cuál es
+ * cuál mirando el promedio de la pieza entera — en el Claro de luna la melodía
+ * tiene pasajes graves y el arpegio termina promediando más alto, así que
+ * quedaban al revés. En un compás no hay ambigüedad.
+ *
+ * Y **un compás donde sólo suena una voz no es un compás a dos voces**, aunque
+ * la pieza tenga dos: ahí manda la altura, como en cualquier pentagrama normal.
+ * Sin esta parte, las octavas graves de la izquierda del Claro de luna salían
+ * con la plica para abajo por ser "la voz de abajo" y se iban media página.
  */
 function acomodarPlicas(notas: NotaDibujable[]) {
-  const porPentagrama = new Map<string, NotaDibujable[]>();
-  for (const n of notas) {
-    if (n.cuantasVoces < 2 || n.midis.length === 0) continue;
-    const llave = `${n.clave}:${n.compas}`;
-    if (!porPentagrama.has(llave)) porPentagrama.set(llave, []);
-    porPentagrama.get(llave)!.push(n);
-  }
-  for (const delCompas of porPentagrama.values()) {
+  for (const delCompas of porCompas(notas).values()) {
+    const suenan = vocesQueSuenan(delCompas);
+    if (suenan.length < 2) continue;
     const alturaDe = (voz: number) => {
-      const suyas = delCompas.filter((n) => n.voz === voz);
+      const suyas = delCompas.filter((n) => n.voz === voz && n.midis.length > 0);
       if (!suyas.length) return -Infinity;
       return (
         suyas.reduce((s, n) => s + Math.max(...n.cabezas.map((c) => c.altura)), 0) /
         suyas.length
       );
     };
-    const voces = [...new Set(delCompas.map((n) => n.voz))];
-    if (voces.length < 2) continue;
-    const masAguda = voces.reduce((a, b) => (alturaDe(b) > alturaDe(a) ? b : a));
+    const masAguda = suenan.reduce((a, b) => (alturaDe(b) > alturaDe(a) ? b : a));
     for (const n of delCompas) n.arriba = n.voz === masAguda;
   }
 }
@@ -821,7 +905,10 @@ function grupos(notas: NotaDibujable[], compas: Compas) {
   for (const n of notas) {
     if (n.midis.length === 0) continue;
     if (figuraDeEvento(n).divide < 8) continue;
-    const tiempo = Math.floor(n.dentro / duracionTiempo + 1e-9);
+    // Con la misma holgura que todo el resto. Con 1e-9 el cuarto tresillo se
+    // colaba en el primer tiempo —tres tercios dan 0,2499999…— y los grupos
+    // salían de cuatro y de dos en vez de tres y tres.
+    const tiempo = Math.floor(n.dentro / duracionTiempo + HOLGURA);
     // La voz entra en la clave: dos voces del mismo pentagrama no se barran
     // juntas aunque caigan en el mismo tiempo.
     const clave = `${n.clave}:${n.voz}:${n.compas}:${tiempo}`;

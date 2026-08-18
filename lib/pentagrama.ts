@@ -236,16 +236,26 @@ export interface NotaUbicada extends Evento {
  *
  * No parte las notas que cruzan la barra: si una lo hace, la pieza está mal
  * escrita y es mejor enterarse que taparlo. Sí se avisa.
+ *
+ * **`dentro` se resta, no se saca con `%`.** Es la misma trampa de los tercios
+ * de siempre, y acá pegaba fuerte: doce tresillos suman 0,999999996, así que la
+ * primera nota del compás siguiente caía en el compás correcto —eso lo arregla
+ * la holgura— pero con un `dentro` de 0,999999996 en vez de 0. Con eso se
+ * dibujaba pegada a la barra del final de su propio compás y contaba en el
+ * último tiempo, así que los tresillos salían agrupados 2+3+3+3+1.
+ * Restándole el arranque del compás, el mismo ruido queda en −4e-9 y se recorta
+ * a cero.
  */
 export function ubicar(eventos: Evento[], compas: Compas): NotaUbicada[] {
   const largo = duracionDeCompas(compas);
   let t = 0;
   return eventos.map((e) => {
+    const cual = Math.floor(redondear(t) / largo + HOLGURA);
     const ubicada: NotaUbicada = {
       ...e,
       t,
-      compas: Math.floor(redondear(t) / largo + HOLGURA),
-      dentro: redondear(t) % largo,
+      compas: cual,
+      dentro: Math.max(0, redondear(redondear(t) - cual * largo)),
     };
     t = redondear(t + duracionDeEvento(e));
     return ubicada;
@@ -273,7 +283,7 @@ const redondear = (x: number) => Math.round(x * 1e9) / 1e9;
  * siguiente al anterior. Nada de música real cae a menos de una millonésima de
  * una barra de compás sin estar justo encima.
  */
-const HOLGURA = 1e-6;
+export const HOLGURA = 1e-6;
 
 /**
  * ¿Cierra cada compás con la cuenta justa?

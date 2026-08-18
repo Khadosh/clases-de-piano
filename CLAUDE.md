@@ -311,6 +311,16 @@ tablas de casos.
   medirlo y el servidor no lo sabe. Por eso el pentagrama no dibuja nada hasta
   haber medido: si dibujara con un ancho supuesto, el cliente armaría otros
   renglones y React se quejaría de que el HTML no coincide.
+- **El ancho de un compás va con la raíz de sus instantes, no lineal** — lineal,
+  uno de doce tresillos aplastaba al del acorde tenido de al lado. Y **el alto
+  de un renglón se mide de sus notas**: las octavas graves del Claro de luna
+  caen cuatro líneas abajo del pentagrama, y con un alto fijo salían cortadas
+  por la mitad.
+- **Las claves están dibujadas en espacios de pentagrama**, con el origen en la
+  línea que cada una nombra, y el grosor se hace superponiendo dos o tres
+  trazos redondeados — no con el contorno de la cinta, que pide sesenta puntos
+  imposibles de corregir. Si hay que retocarlas, el arnés para verlas grandes y
+  chicas a la vez es un script de un rato; no se corrigen a ciegas.
 
 Las cabezas, las plicas, las banderas y los silencios salen del mismo número que
 ya usa `FiguraSVG`: en cuántas partes divide la figura a la redonda. Si aparece
@@ -393,6 +403,14 @@ se lee mejor así— o una lista de filas. `vocesDe()` normaliza las dos formas.
   entera se elige mal: en el Claro de luna la melodía tiene pasajes graves y el
   arpegio termina promediando más alto. En un compás no hay ambigüedad.
 - **Las dos voces no se barran juntas** aunque caigan en el mismo tiempo.
+- **Una voz que calla un compás entero no se dibuja**, si la otra sí toca. El
+  importador rellena con silencios todo lo que una voz no toca, y dibujarlos
+  ponía una redonda de silencio arriba de cada acorde y hacía parecer a dos
+  voces compases que tienen una. Un compás donde *ninguna* voz toca conserva
+  sus silencios: ahí el silencio es la música. Y en un compás donde suena una
+  sola voz la plica vuelve a decidirse por la altura, como en un pentagrama
+  normal — por ser "la voz de abajo", las octavas graves de la izquierda
+  llevaban la plica para abajo y se iban media página.
 
 **Los tresillos son ortogonales a la figura.** `irregular: { en: 3, de: 2 }`
 quiere decir "tres donde entraban dos", y va aparte de `divide` a propósito: en
@@ -407,6 +425,14 @@ que doce tresillos suman 0,999999996 y no 1. Con la tolerancia vieja (1e-9) el
 compás nunca cerraba y la primera nota del siguiente se colaba en el anterior.
 Todas las comparaciones de tiempo van con la misma `HOLGURA` de 1e-6, que es
 enorme al lado del ruido y minúscula al lado de cualquier duración real.
+
+La misma trampa mordió dos veces más, así que vale generalizarla: **cualquier
+número que salga de acumular tercios está sucio, y compararlo o recortarlo con
+otra tolerancia que `HOLGURA` está mal**. Una vez fue el agrupador del barrado,
+que con 1e-9 armaba los tresillos 4+2; la otra fue el `dentro` de `ubicar`, que
+sacado con `%` dejaba a la primera nota del compás con 0,999999996 de distancia
+al arranque — dibujada pegada a la barra *final* de su compás. Las dos están
+en `test:pentagrama`.
 
 **Los tresillos se esquivan con el compás.** El Claro de luna son doce corcheas
 por compás, que es exactamente 12/8 — mismo pulso con puntillo, mismas notas, y

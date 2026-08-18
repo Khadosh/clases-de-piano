@@ -228,6 +228,17 @@ probar("la nota trece cae en el compás dos y no en el uno", () => {
   assert.equal(u[12].compas, 1);
 });
 
+probar("y arranca ese compás desde cero, no desde 0,999999996", () => {
+  // La otra mitad del mismo caso: con `%` en vez de la resta, la nota trece
+  // caía en el compás correcto pero con `dentro` casi 1 — se dibujaba pegada a
+  // la barra final de su compás y contaba en el último tiempo, así que los
+  // tresillos del compás dos se agrupaban 2+3+3+3+1 en vez de 3+3+3+3.
+  const c = { numerador: 4, denominador: 4 };
+  const evs = Array.from({ length: 13 }, () => ({ midis: [60], divide: 8, irregular: tresillo }));
+  const u = ubicar(evs, c);
+  assert.ok(Math.abs(u[12].dentro) < 1e-6, `dentro dio ${u[12].dentro}`);
+});
+
 probar("un tresillo de negras dura lo mismo que una blanca", () => {
   const tres = 3 * duracionDeEvento({ midis: [60], divide: 4, irregular: tresillo });
   assert.ok(Math.abs(tres - 0.5) < 1e-9, `dieron ${tres}`);
