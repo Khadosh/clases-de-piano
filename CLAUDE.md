@@ -283,6 +283,65 @@ girando cada acorde para moverse poco. Tres cosas que costaron:
 "la correcta es ésta" sería mentir. Muestra cuánto moviste contra el mínimo, y
 podés empatar el óptimo por otro camino.
 
+## Las partituras
+
+`/partituras`. Piezas de dominio público **escritas como datos**, no como
+imagen ni como PDF. Ésa es toda la diferencia: la app sabe qué nota es cada
+cosa, así que la toca, te marca dónde va mientras suena, arranca desde el
+compás que le señales y —con el teclado enchufado— te espera a vos en vez de
+irse sola. Con un PDF no se puede hacer ninguna de las cinco.
+
+**La altura en el papel es diatónica, no cromática.** Es la misma regla que
+ordena los acordes: el renglón lo decide la *letra* con la que se escribe la
+nota, no la tecla. Fa♯ y Sol♭ son el mismo dedo en renglones distintos, así que
+lo primero que hace el dibujo es escribir cada nota en la tonalidad
+(`escribirEnPapel`) y recién después ubicarla. De ahí sale todo lo demás sin
+tablas de casos.
+
+- **La armadura decide qué lleva signo.** Si la tonalidad ya dice que los fa van
+  sostenidos, la nota va pelada; sólo lleva signo la que se sale.
+- **Una alteración vale hasta la barra de compás**, y para esa letra en esa
+  octava. Por eso `signosDe` recibe la fila entera y no una nota: hay que
+  llevar el estado del compás. Volver a lo que dice la armadura después de
+  haber alterado pide becuadro.
+- **Se barra por tiempo.** Las figuras con bandera seguidas dentro del mismo
+  tiempo van con barra, que es para lo que existe el barrado: que se vea de un
+  golpe dónde cae el pulso. Sin eso, doce corcheas son doce banderitas.
+- **Cuántos compases entran por renglón depende del ancho**, así que hay que
+  medirlo y el servidor no lo sabe. Por eso el pentagrama no dibuja nada hasta
+  haber medido: si dibujara con un ancho supuesto, el cliente armaría otros
+  renglones y React se quejaría de que el HTML no coincide.
+
+Las cabezas, las plicas, las banderas y los silencios salen del mismo número que
+ya usa `FiguraSVG`: en cuántas partes divide la figura a la redonda. Si aparece
+una figura nueva se dibuja sola.
+
+### Escribir una pieza
+
+Se agrega a `content/partituras.ts` y no se toca nada más. Cada mano es una fila
+de eventos con sus teclas y su figura; los silencios son un evento sin teclas, y
+hacen falta — si la derecha entra tarde, esa espera se escribe.
+
+**Están transcriptas de memoria y son un pedazo.** Las obras son de dominio
+público, pero la transcripción es nuestra y puede tener errores: sale bien el
+arranque de las conocidas y se pone dudosa en las voces internas y los compases
+tardíos. Por eso cada pieza declara `hasta` (hasta dónde llega) y `revisar` (qué
+hay que chequear), y las dos cosas se muestran al pie. Es la misma regla que
+`openQuestions`: la duda anotada es mejor que el invento en silencio.
+
+**Los tresillos se esquivan con el compás.** El Claro de luna son doce corcheas
+por compás, que es exactamente 12/8 — mismo pulso con puntillo, mismas notas, y
+no hay que dibujar tresillos. Cuando la música entra en un compás compuesto,
+conviene escribirla ahí.
+
+`npm run test:pentagrama` prueba dos cosas distintas. La geometría contra lo que
+todo el mundo sabe de memoria: el Do central en su línea adicional, el Sol en la
+segunda línea de su clave, fa♯ y sol♭ en renglones distintos, las armaduras
+contra el círculo de quintas. Y las piezas: **que cada compás cierre la cuenta**
+y que las dos manos duren lo mismo. Esa última es la que más sirve escribiendo —
+un compás al que le falta una corchea es imposible de ver mirando el dibujo y
+salta enseguida acá. Ya agarró dos.
+
 ## El examen
 
 Cada clase termina con un examen de ocho preguntas, y **no hay que escribirlo**:
@@ -637,6 +696,7 @@ acá, porque el que no ve nada asume que está roto.
 npm run dev        # desarrollo
 npm run build      # build de producción (falla si hay error de tipos)
 npm run typecheck  # sólo tipos
+npm run test:pentagrama # el pentagrama y que las piezas cierren la cuenta
 npm run test:grados  # los grados de una tonalidad y las escalas
 npm run test:ritmo   # figuras y compases
 npm run test:enlace  # el enlace de acordes

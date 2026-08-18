@@ -29,6 +29,7 @@ const NAV = [
   { href: "/", label: "Inicio" },
   { href: "/clases", label: "Clases" },
   { href: "/acordes", label: "Acordes" },
+  { href: "/partituras", label: "Partituras" },
   { href: "/practica", label: "Práctica" },
 ];
 
@@ -41,8 +42,11 @@ export default function RootLayout({
     <html lang="es-AR" className={`${fraunces.variable} ${grotesk.variable}`}>
       <body className="min-h-screen antialiased">
         <header className="sticky top-0 z-50 border-b border-borde/70 bg-noche/80 backdrop-blur-md">
-          <nav className="mx-auto flex max-w-5xl items-center gap-2 px-4 py-3">
-            <Link href="/" className="group mr-auto flex items-center gap-2.5">
+          {/* En el celular el menú no entra en una línea, así que se desliza.
+              Se prefiere eso a esconder secciones atrás de un botón: son cinco
+              y la de más a la derecha es la que más se usa. */}
+          <nav className="mx-auto flex max-w-5xl items-center gap-2 overflow-x-auto px-4 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]{display:none}">
+            <Link href="/" className="group mr-auto flex shrink-0 items-center gap-2.5">
               <span className="flex h-8 items-end gap-[2px] rounded-[5px] bg-tiza p-[3px] shadow-[0_2px_0_#8d8778]">
                 {[0, 1, 2, 3, 4].map((i) => (
                   <span
@@ -60,7 +64,7 @@ export default function RootLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="rounded-full px-2.5 py-1.5 text-sm text-humo transition hover:bg-carta hover:text-tiza sm:px-3"
+                className="shrink-0 rounded-full px-2.5 py-1.5 text-sm text-humo transition hover:bg-carta hover:text-tiza sm:px-3"
               >
                 {item.label}
               </Link>
