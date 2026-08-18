@@ -67,44 +67,71 @@ type Sampler = {
 };
 
 let sampler: Sampler | null = null;
-let pedido = false;
 let listo = false;
 
-async function cargarPiano() {
-  if (pedido) return;
-  pedido = true;
-  const ac = getAudioContext();
-  if (!ac) return;
-  try {
-    const Tone = await import("tone");
-    Tone.setContext(ac);
-    const s = new Tone.Sampler({
-      urls: Object.fromEntries(
-        SAMPLES.map((n) => [n, `${n.replace("#", "s")}.mp3`]),
-      ),
-      baseUrl: "/piano/",
-      release: 1.2,
-      onload: () => {
-        listo = true;
-      },
-      onerror: () => {
-        // No están los samples: nos quedamos con los osciladores y listo.
-        listo = false;
-        sampler = null;
-      },
-    }).toDestination();
-    s.volume.value = -6;
-    sampler = s;
-  } catch {
-    listo = false;
-    sampler = null;
-  }
+/**
+ * La promesa de que el piano está listo (o de que no va a estarlo).
+ *
+ * Existe porque hay dos formas de pedir sonido y necesitan cosas distintas. La
+ * mayoría —apretar una tecla, escuchar un acorde— quiere sonar *ya*, y que la
+ * primera nota salga con osciladores mientras bajan los samples está bien. Pero
+ * el que agenda una pieza entera de una sola vez no puede hacer eso: agendaría
+ * los cuarenta segundos con osciladores y ya no hay vuelta atrás, aunque los
+ * samples lleguen dos segundos después. Ése tiene que esperar.
+ */
+let cargando: Promise<void> | null = null;
+
+function cargarPiano(): Promise<void> {
+  if (cargando) return cargando;
+  cargando = (async () => {
+    const ac = getAudioContext();
+    if (!ac) return;
+    try {
+      const Tone = await import("tone");
+      Tone.setContext(ac);
+      await new Promise<void>((resolver) => {
+        const s = new Tone.Sampler({
+          urls: Object.fromEntries(
+            SAMPLES.map((n) => [n, `${n.replace("#", "s")}.mp3`]),
+          ),
+          baseUrl: "/piano/",
+          release: 1.2,
+          onload: () => {
+            listo = true;
+            sampler = s;
+            resolver();
+          },
+          onerror: () => {
+            // No están los samples: nos quedamos con los osciladores y listo.
+            listo = false;
+            sampler = null;
+            resolver();
+          },
+        }).toDestination();
+        s.volume.value = -6;
+      });
+    } catch {
+      listo = false;
+      sampler = null;
+    }
+  })();
+  return cargando;
 }
 
-/** Hay que llamarlo desde un gesto del usuario antes del primer sonido. */
-export function wakeAudio() {
+/**
+ * Hay que llamarlo desde un gesto del usuario antes del primer sonido.
+ *
+ * Devuelve una promesa por si al que llama le importa que ya esté el piano de
+ * verdad; casi nadie la usa, y está bien: la nota suena igual con osciladores.
+ */
+export function wakeAudio(): Promise<void> {
   getAudioContext();
-  void cargarPiano();
+  return cargarPiano();
+}
+
+/** ¿Ya está el piano de verdad, o lo que suena son los osciladores? */
+export function hayPiano() {
+  return listo;
 }
 
 // ---------------------------------------------------------------------------

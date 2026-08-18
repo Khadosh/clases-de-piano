@@ -329,6 +329,17 @@ tardíos. Por eso cada pieza declara `hasta` (hasta dónde llega) y `revisar` (q
 hay que chequear), y las dos cosas se muestran al pie. Es la misma regla que
 `openQuestions`: la duda anotada es mejor que el invento en silencio.
 
+**Se puede tocar de a una mano.** Es lo primero que se estudia —una mano por
+vez y recién después las dos juntas—, así que el selector está arriba de todo y
+manda sobre las tres cosas: qué suena, qué te sigue y qué se dibuja. La mano
+apagada no se saca del pentagrama, se atenúa: sigue estando para leerla.
+
+**Cada nota conserva su duración.** Suena obvio y se rompió enseguida: al juntar
+las dos manos en instantes para el modo de seguirte, las notas del mismo
+instante quedaban con la duración más larga de todas, y en la Oda a la alegría
+las negras de la derecha sonaban un compás entero como la redonda de la
+izquierda. Son dos vistas de lo mismo y tienen que vivir separadas.
+
 **Los tresillos se esquivan con el compás.** El Claro de luna son doce corcheas
 por compás, que es exactamente 12/8 — mismo pulso con puntillo, mismas notas, y
 no hay que dibujar tresillos. Cuando la música entra en un compás compuesto,
@@ -427,6 +438,14 @@ Vive en `lib/audio.ts` y tiene tres decisiones que no son obvias:
   que use ése (`Tone.setContext`). Si Tone arma el suyo quedan dos contextos
   compitiendo por el audio del sistema y en algunos browsers uno queda mudo —
   y el que quedaría mudo es el del micrófono.
+- **`wakeAudio()` devuelve una promesa y a veces hay que esperarla.** Hay dos
+  formas de pedir sonido: la que quiere sonar *ya* (apretar una tecla, escuchar
+  un acorde) se banca que la primera nota salga con osciladores mientras bajan
+  los samples. La que agenda una pieza entera de una sola vez, no: agendaría
+  cuarenta segundos con osciladores y no hay vuelta atrás aunque los samples
+  lleguen dos segundos después. Eso fue exactamente lo que pasó con las
+  partituras — sonaba a sintetizador barato y la mano izquierda directamente no
+  se escuchaba, porque los graves con oscilador casi no suenan.
 - **Tone se importa tarde**, con `await import("tone")` adentro de `wakeAudio()`.
   Son 59 KB comprimidos y no hacen falta hasta que algo suena; como `wakeAudio()`
   siempre corre desde un gesto del usuario, baja junto con los samples. La

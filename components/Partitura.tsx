@@ -18,17 +18,26 @@ import type { Pieza } from "@/content/partituras";
  * enchufado— esperarte a vos en vez de irse sola.
  */
 
-interface Momento {
-  /** En redondas desde el arranque. */
+export type Manos = "ambas" | "derecha" | "izquierda";
+
+/** Una nota suelta, con la duración que le toca a ella y no a su vecina. */
+interface NotaSuelta {
   t: number;
-  compas: number;
-  /** Las teclas que caen justo en este instante, de las dos manos. */
-  midis: number[];
+  midi: number;
   duracion: number;
 }
 
+/** Un instante: todo lo que hay que tocar junto para que la pieza avance. */
+interface Momento {
+  t: number;
+  compas: number;
+  midis: number[];
+}
+
 export default function Partitura({ pieza }: { pieza: Pieza }) {
+  const [manos, setManos] = useState<Manos>("ambas");
   const [sonando, setSonando] = useState<number | null>(null);
+  const [cargando, setCargando] = useState(false);
   const [tocando, setTocando] = useState(false);
   const [siguiendo, setSiguiendo] = useState(false);
   const [i, setI] = useState(0);
@@ -37,36 +46,43 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
   const [desdeCompas, setDesdeCompas] = useState(0);
   const pararRef = useRef<(() => void) | null>(null);
 
-  /** La pieza vista como una fila de instantes: es lo que se toca y lo que se espera. */
-  const momentos = useMemo<Momento[]>(() => {
-    const arriba = ubicar(pieza.derecha, pieza.compas);
-    const abajo = ubicar(pieza.izquierda, pieza.compas);
+  /**
+   * La pieza en dos vistas: las notas sueltas para tocarla y los instantes para
+   * seguirte.
+   *
+   * Van separadas porque **cada nota conserva su duración**. Antes se juntaban
+   * en un solo instante con la duración más larga, y en la Oda a la alegría eso
+   * hacía que las negras de la derecha sonaran un compás entero, como la
+   * redonda de la izquierda: quedaba todo pisado.
+   */
+  const { notas, momentos } = useMemo(() => {
+    const filas: [Manos, ReturnType<typeof ubicar>][] = [
+      ["derecha", ubicar(pieza.derecha, pieza.compas)],
+      ["izquierda", ubicar(pieza.izquierda, pieza.compas)],
+    ];
+    const notas: NotaSuelta[] = [];
     const por = new Map<number, Momento>();
-    for (const n of [...arriba, ...abajo]) {
-      if (n.midis.length === 0) continue;
-      const clave = Math.round(n.t * 1e6);
-      const previo = por.get(clave);
-      if (previo) {
-        previo.midis.push(...n.midis);
-        previo.duracion = Math.max(previo.duracion, duracionDeEvento(n));
-      } else {
-        por.set(clave, {
-          t: n.t,
-          compas: n.compas,
-          midis: [...n.midis],
-          duracion: duracionDeEvento(n),
-        });
+    for (const [mano, fila] of filas) {
+      if (manos !== "ambas" && manos !== mano) continue;
+      for (const n of fila) {
+        if (n.midis.length === 0) continue;
+        const duracion = duracionDeEvento(n);
+        for (const midi of n.midis) notas.push({ t: n.t, midi, duracion });
+        const clave = Math.round(n.t * 1e6);
+        const previo = por.get(clave);
+        if (previo) previo.midis.push(...n.midis);
+        else por.set(clave, { t: n.t, compas: n.compas, midis: [...n.midis] });
       }
     }
-    return [...por.values()].sort((a, b) => a.t - b.t);
-  }, [pieza]);
+    return {
+      notas: notas.sort((a, b) => a.t - b.t),
+      momentos: [...por.values()].sort((a, b) => a.t - b.t),
+    };
+  }, [pieza, manos]);
 
+  const finMusical = notas.reduce((s, n) => Math.max(s, n.t + n.duracion), 0);
   const totalCompases =
-    Math.ceil(
-      (momentos.length
-        ? momentos[momentos.length - 1].t + momentos[momentos.length - 1].duracion
-        : 0) / duracionDeCompas(pieza.compas) - 1e-9,
-    ) || 1;
+    Math.ceil(finMusical / duracionDeCompas(pieza.compas) - 1e-9) || 1;
 
   const largoCompas = duracionDeCompas(pieza.compas);
   /** Una redonda dura cuatro negras, así que el bpm de negra manda. */
@@ -85,27 +101,29 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
    * se traba, se atrasa el dibujo y no el sonido.
    */
   const tocar = useCallback(
-    (desde: number) => {
+    async (desde: number) => {
       pararRef.current?.();
-      wakeAudio();
+      setSiguiendo(false);
+      // **Hay que esperar el piano.** Acá se agenda la pieza entera de una, así
+      // que si los samples todavía no llegaron quedan cuarenta segundos
+      // agendados con los osciladores y ya no hay vuelta atrás. Se nota
+      // muchísimo en la mano izquierda: los graves con oscilador casi no suenan.
+      setCargando(true);
+      await wakeAudio();
+      setCargando(false);
       const ctx = getAudioContext();
       if (!ctx) return;
-      setSiguiendo(false);
       setTocando(true);
 
       const t0Musical = desde * largoCompas;
       const arranque = ctx.currentTime + 0.15;
       const aSegundos = (t: number) => arranque + (t - t0Musical) * segundosPorRedonda;
 
-      for (const m of momentos) {
-        if (m.t < t0Musical - 1e-9) continue;
-        for (const midi of m.midis) {
-          playNote(midi, m.duracion * segundosPorRedonda * 0.95, aSegundos(m.t));
-        }
+      for (const n of notas) {
+        if (n.t < t0Musical - 1e-9) continue;
+        playNote(n.midi, n.duracion * segundosPorRedonda * 0.95, aSegundos(n.t));
       }
 
-      const ultimo = momentos[momentos.length - 1];
-      const finMusical = ultimo ? ultimo.t + ultimo.duracion : t0Musical;
       let raf = 0;
       const mirar = () => {
         const t = t0Musical + (ctx.currentTime - arranque) / segundosPorRedonda;
@@ -125,7 +143,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         // nota suena peor que dejar que se apaguen.
       };
     },
-    [momentos, largoCompas, segundosPorRedonda],
+    [notas, largoCompas, segundosPorRedonda, finMusical],
   );
 
   useEffect(() => () => pararRef.current?.(), []);
@@ -190,6 +208,9 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           compas={pieza.compas}
           tonalidad={pieza.tonalidad}
           sonando={siguiendo ? (momentoActual?.t ?? null) : sonando}
+          apagada={
+            manos === "derecha" ? "izquierda" : manos === "izquierda" ? "derecha" : undefined
+          }
           onCompas={(c) => {
             setDesdeCompas(c);
             if (siguiendo) {
@@ -202,7 +223,29 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 border-t border-borde/60 p-4">
+      {/* Con qué mano. Es lo primero que se estudia: una mano por vez y recién
+          después las dos juntas, así que está arriba de todo lo demás. */}
+      <div className="flex flex-wrap items-center gap-2 border-t border-borde/60 px-4 pt-4">
+        <span className="text-xs tracking-[0.2em] text-humo uppercase">Manos</span>
+        {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
+          <button
+            key={m}
+            onClick={() => {
+              parar();
+              setManos(m);
+            }}
+            className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
+              manos === m
+                ? "bg-tiza text-noche"
+                : "bg-carta-2 text-humo hover:text-tiza"
+            }`}
+          >
+            {m === "ambas" ? "las dos" : `sólo ${m}`}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 p-4">
         {tocando ? (
           <button
             onClick={parar}
@@ -213,9 +256,10 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         ) : (
           <button
             onClick={() => tocar(desdeCompas)}
-            className="rounded-full bg-menta px-5 py-2.5 font-bold text-noche transition hover:brightness-110"
+            disabled={cargando}
+            className="rounded-full bg-menta px-5 py-2.5 font-bold text-noche transition hover:brightness-110 disabled:opacity-60"
           >
-            ▶ Escucharla
+            {cargando ? "…" : "▶ Escucharla"}
           </button>
         )}
 

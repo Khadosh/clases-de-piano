@@ -80,6 +80,7 @@ export default function Pentagrama({
   tonalidad,
   sonando,
   onCompas,
+  apagada,
 }: {
   derecha: Evento[];
   izquierda: Evento[];
@@ -89,6 +90,8 @@ export default function Pentagrama({
   sonando?: number | null;
   /** Se llama al tocar un compás, para poder empezar desde ahí. */
   onCompas?: (compas: number) => void;
+  /** La mano que no se está tocando ahora: se dibuja al fondo, sin borrarse. */
+  apagada?: "derecha" | "izquierda";
 }) {
   const caja = useRef<HTMLDivElement>(null);
   // Arranca sin medir a propósito. Cuántos compases entran por renglón depende
@@ -129,7 +132,14 @@ export default function Pentagrama({
           role="img"
           aria-label={`Compases ${s.desde + 1} a ${s.hasta + 1} de ${totalCompases}`}
         >
-          <Sistema s={s} armadura={armadura} compas={compas} sonando={sonando} onCompas={onCompas} />
+          <Sistema
+            s={s}
+            armadura={armadura}
+            compas={compas}
+            sonando={sonando}
+            onCompas={onCompas}
+            apagada={apagada}
+          />
         </svg>
       ))}
     </div>
@@ -146,13 +156,18 @@ function Sistema({
   compas,
   sonando,
   onCompas,
+  apagada,
 }: {
   s: SistemaDispuesto;
   armadura: number;
   compas: Compas;
   sonando?: number | null;
   onCompas?: (compas: number) => void;
+  apagada?: "derecha" | "izquierda";
 }) {
+  /** La mano apagada no se saca: se atenúa. Sigue estando para leerla. */
+  const claveApagada: Clave | null =
+    apagada === "derecha" ? "sol" : apagada === "izquierda" ? "fa" : null;
   const trazo = "#cfd6e6";
   return (
     <g>
@@ -222,6 +237,7 @@ function Sistema({
         <Nota
           key={`${nota.clave}-${nota.indice}`}
           nota={nota}
+          apagada={nota.clave === claveApagada}
           activa={
             sonando != null &&
             sonando >= nota.t - 1e-6 &&
@@ -231,7 +247,7 @@ function Sistema({
       ))}
 
       {s.barrados.map((b, i) => (
-        <g key={i}>
+        <g key={i} opacity={b.clave === claveApagada ? 0.25 : 1}>
           {Array.from({ length: b.lineas }, (_, k) => (
             <line
               key={k}
@@ -250,7 +266,15 @@ function Sistema({
   );
 }
 
-function Nota({ nota, activa }: { nota: NotaDibujable; activa: boolean }) {
+function Nota({
+  nota,
+  activa,
+  apagada,
+}: {
+  nota: NotaDibujable;
+  activa: boolean;
+  apagada?: boolean;
+}) {
   const color = activa ? "#ffcb3d" : "#f2efe6";
   const figura = figuraDeEvento(nota);
   const llena = cabezaLlena(figura);
@@ -261,7 +285,11 @@ function Nota({ nota, activa }: { nota: NotaDibujable; activa: boolean }) {
 
   if (nota.midis.length === 0) {
     // Del mismo color que las notas: un silencio es música, no un hueco.
-    return <Silencio nota={nota} color={color} />;
+    return (
+      <g opacity={apagada ? 0.25 : 1}>
+        <Silencio nota={nota} color={color} />
+      </g>
+    );
   }
 
   const ys = nota.cabezas.map((c) => c.y);
@@ -271,7 +299,7 @@ function Nota({ nota, activa }: { nota: NotaDibujable; activa: boolean }) {
   const yPlicaFin = nota.arriba ? yTope - 26 : yPiso + 26;
 
   return (
-    <g>
+    <g opacity={apagada ? 0.25 : 1}>
       {/* Líneas adicionales, arriba y abajo, para las que se van del pentagrama */}
       {nota.cabezas.flatMap((c) => lineasAdicionales(c.altura)).map((altura, i) => (
         <line
@@ -575,6 +603,7 @@ function Compasillo({ x, compas }: { x: number; compas: Compas }) {
 // ---------------------------------------------------------------------------
 
 interface Barrado {
+  clave: Clave;
   x1: number;
   x2: number;
   y1: number;
@@ -760,7 +789,7 @@ function barrados(notas: NotaDibujable[], compas: Compas): Barrado[] {
       : g[g.length - 1].x - RX + 0.5;
     // Tantas líneas como banderas tendría la figura más corta del grupo.
     const lineas = Math.max(...g.map((n) => banderasDe(figuraDeEvento(n))));
-    return { x1, x2, y1: y, y2: y, lineas, arriba };
+    return { clave: g[0].clave, x1, x2, y1: y, y2: y, lineas, arriba };
   });
 }
 
