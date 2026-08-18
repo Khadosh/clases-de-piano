@@ -316,11 +316,17 @@ tablas de casos.
   de un renglón se mide de sus notas**: las octavas graves del Claro de luna
   caen cuatro líneas abajo del pentagrama, y con un alto fijo salían cortadas
   por la mitad.
-- **Las claves están dibujadas en espacios de pentagrama**, con el origen en la
-  línea que cada una nombra, y el grosor se hace superponiendo dos o tres
-  trazos redondeados — no con el contorno de la cinta, que pide sesenta puntos
-  imposibles de corregir. Si hay que retocarlas, el arnés para verlas grandes y
-  chicas a la vez es un script de un rato; no se corrigen a ciegas.
+- **Todos los renglones van a la misma escala.** Cada sistema se dibuja en
+  píxeles (`width={s.ancho}`), no estirado al 100%: estirando, el último
+  renglón —que suele tener menos compases— salía con las notas un 50% más
+  grandes, como mirado con lupa.
+- **Las claves son los contornos de la fuente Gonville**, sacados de VexFlow
+  (MIT); la receta para volver a extraerlos está en
+  `scripts/extraer-claves.md`. Se dibujaron a mano primero y a tamaño real se
+  leían, pero al lado de una edición eran un garabato: el contorno de una
+  clave es un problema de tipógrafo y ya estaba resuelto. Siguen en espacios
+  de pentagrama con el origen en la línea que cada una nombra, así que caen
+  solas donde tienen que caer.
 
 Las cabezas, las plicas, las banderas y los silencios salen del mismo número que
 ya usa `FiguraSVG`: en cuántas partes divide la figura a la redonda. Si aparece
