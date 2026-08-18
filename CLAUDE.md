@@ -351,14 +351,18 @@ El script escribe el objeto listo para pegar y, por la salida de error, **el
 informe de lo que no pudo**. Ese informe es la mitad del valor, porque nuestro
 modelo es más pobre que MusicXML y conviene saber qué se perdió:
 
-- **Una sola voz por mano.** Las que arrancan juntas quedan como acorde; una
-  segunda voz con ritmo propio no entra y se avisa.
+- **Hasta dos voces por mano.** Se quedan las que más notas tienen —no las más
+  agudas: en la izquierda eso tiraba el bajo y dejaba el pentagrama vacío— y se
+  avisa cuántas notas se perdieron.
 - **Los tresillos entran** (se leen del `<time-modification>`), pero una figura
   que no reconocemos se saltea igual.
 - **Sin compases incompletos.** La anacrusa se rellena con silencios, así que los
   números de compás quedan corridos uno respecto de la edición.
 - **Las ligaduras que cruzan la barra no se juntan.** Unir la nota le suma
   duración a un compás y se la saca al siguiente, y los dos dejan de cerrar.
+- **Los silencios de relleno también se cortan en cada barra**, por lo mismo:
+  una redonda de silencio arrancada a mitad de compás se come la barra. Vale
+  para los huecos del medio y para el relleno del final.
 
 Cuatro cosas que costaron y están resueltas, todas encontradas por el test y no
 por el ojo:
@@ -376,6 +380,19 @@ por el ojo:
 Los `.mxl` que se importaron viven en `partituras-fuente/` con su procedencia, y
 ahí está también la advertencia que importa: **de dominio público es la obra, no
 necesariamente el archivo**.
+
+**Una mano puede tener dos voces.** Cuando la derecha lleva la melodía y el
+acompañamiento a la vez, cada una tiene su propio ritmo y no entran en una sola
+fila. Por eso `derecha` e `izquierda` aceptan una fila suelta —el caso normal, y
+se lee mejor así— o una lista de filas. `vocesDe()` normaliza las dos formas.
+
+- **La de arriba lleva las plicas para arriba y la de abajo para abajo.** Es lo
+  que permite leerlas separadas cuando se cruzan, y por eso con dos voces la
+  plica deja de decidirse por la altura de cada nota.
+- **Cuál es cuál se decide compás por compás.** Mirando el promedio de la pieza
+  entera se elige mal: en el Claro de luna la melodía tiene pasajes graves y el
+  arpegio termina promediando más alto. En un compás no hay ambigüedad.
+- **Las dos voces no se barran juntas** aunque caigan en el mismo tiempo.
 
 **Los tresillos son ortogonales a la figura.** `irregular: { en: 3, de: 2 }`
 quiere decir "tres donde entraban dos", y va aparte de `divide` a propósito: en

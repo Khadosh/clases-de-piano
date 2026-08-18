@@ -206,8 +206,15 @@ export function importar(xml, { hasta = Infinity } = {}) {
   let bpm = null;
   const voces = new Set();
 
-  /** Las notas crudas, con su instante absoluto, antes de armar las filas. */
-  const crudas = { 1: [], 2: [] };
+  /**
+   * Las notas crudas por pentagrama y por voz, con su instante absoluto.
+   *
+   * La voz importa: cuando la mano derecha lleva la melodía y el acompañamiento
+   * a la vez, cada una tiene su propio ritmo y no se pueden escribir como una
+   * sola fila. MusicXML las numera y las escribe una después de la otra,
+   * volviendo el reloj para atrás con `<backup>`.
+   */
+  const crudas = new Map();
   let inicioDelCompas = 0;
   let anacrusa = null;
 
@@ -300,7 +307,9 @@ export function importar(xml, { hasta = Infinity } = {}) {
         ligadaAtras: hijos(nodo, "tie").some((x) => x.attrs.type === "stop"),
         compas: numeroMedida,
       };
-      (crudas[staff] ??= []).push(nota);
+      const llave = `${staff}:${voz ?? "1"}`;
+      if (!crudas.has(llave)) crudas.set(llave, { staff, voz, notas: [] });
+      crudas.get(llave).notas.push(nota);
       ultima = nota;
       cursor += duracion;
       maximo = Math.max(maximo, cursor);
@@ -333,27 +342,62 @@ export function importar(xml, { hasta = Infinity } = {}) {
    * el pie, así que los números quedan corridos uno respecto de la edición.
    */
   if (anacrusa) {
-    for (const fila of Object.values(crudas)) {
-      for (const nota of fila) nota.t += anacrusa;
+    for (const { notas } of crudas.values()) {
+      for (const nota of notas) nota.t += anacrusa;
     }
     avisos.push(
       "La pieza arranca con anacrusa y se rellenó con silencios, así que la numeración de compases queda corrida uno respecto del original.",
     );
   }
 
-  if (voces.size > 2) {
-    avisos.push(
-      `Hay más de una voz por pentagrama (${[...voces].join(", ")}). Nuestro modelo tiene una sola por mano: las que arrancan juntas quedan como acorde y el resto se pierde.`,
-    );
-  }
+
 
   const largoCompas =
     divisions * 4 * ((compas?.numerador ?? 4) / (compas?.denominador ?? 4));
-  const derecha = armarFila(crudas[1] ?? [], divisions, avisos, "derecha", largoCompas);
-  const izquierda = armarFila(crudas[2] ?? [], divisions, avisos, "izquierda", largoCompas);
-  // Y la que termina antes se completa con silencios: las dos manos tienen que
-  // durar lo mismo o los compases dejan de coincidir.
-  emparejar(derecha, izquierda, divisions);
+
+  /**
+   * Las voces de un pentagrama: cuáles se quedan y en qué orden.
+   *
+   * Son dos decisiones distintas y las dos costaron.
+   *
+   * **Cuáles.** Las que más música tienen. La primera versión se quedaba con
+   * las dos más agudas y en la mano izquierda eso tiraba el bajo: se quedaba
+   * con voces de relleno de tres notas y el pentagrama de abajo aparecía casi
+   * vacío.
+   *
+   * **En qué orden.** Por altura, la más aguda primero, porque el dibujo lo usa
+   * para las plicas: la de arriba va con las plicas para arriba y la de abajo
+   * para abajo, que es lo que permite leerlas separadas cuando se cruzan. Los
+   * números de voz de MusicXML no sirven para esto (en el pentagrama de abajo
+   * suelen ser la 5 y la 6).
+   */
+  const vocesDePentagrama = (staff, nombre) => {
+    const suyas = [...crudas.values()].filter((v) => v.staff === staff && v.notas.length);
+    if (!suyas.length) return [[]];
+    const conNotas = (v) => v.notas.filter((n) => n.midis.length).length;
+    const altura = (v) => {
+      const conNota = v.notas.filter((n) => n.midis.length);
+      if (!conNota.length) return -Infinity;
+      return conNota.reduce((s, n) => s + Math.max(...n.midis), 0) / conNota.length;
+    };
+    const elegidas = [...suyas].sort((a, b) => conNotas(b) - conNotas(a)).slice(0, 2);
+    if (suyas.length > 2) {
+      const dejadas = suyas.filter((v) => !elegidas.includes(v));
+      avisos.push(
+        `La mano ${nombre} tiene ${suyas.length} voces y sólo entran dos. Se quedaron las que más notas tienen; se perdieron ${dejadas.reduce((s, v) => s + conNotas(v), 0)} notas.`,
+      );
+    }
+    elegidas.sort((a, b) => altura(b) - altura(a));
+    return elegidas.map((v, i) =>
+      armarFila(v.notas, divisions, avisos, i ? `${nombre} (voz de abajo)` : nombre, largoCompas),
+    );
+  };
+
+  const derecha = vocesDePentagrama(1, "derecha");
+  const izquierda = vocesDePentagrama(2, "izquierda");
+  // Todas las voces tienen que durar lo mismo: llenan los mismos compases. La
+  // que termina antes se completa con silencios.
+  emparejarTodas([...derecha, ...izquierda], divisions, largoCompas);
 
   return {
     titulo,
@@ -418,7 +462,21 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
     if (nota.t > cursor + 1e-9) {
       // Un hueco casi nunca es una figura sola: se llena con las que hagan
       // falta, de la más larga a la más corta, como se escribe un silencio.
-      const sobra = rellenar(nota.t - cursor, divisions, fila);
+      //
+      // **Y se corta en cada barra de compás.** Sin eso, un hueco largo se
+      // llenaba con una redonda de silencio arrancada a mitad de compás, que se
+      // come la barra: el compás quedaba con una redonda de más y el siguiente
+      // sin nada. Lo agarró el test de que cada compás cierre la cuenta.
+      let sobra = 0;
+      let desde = cursor;
+      while (desde < nota.t - 1e-9) {
+        const finDelCompas = largoCompas > 0
+          ? (Math.floor(desde / largoCompas + 1e-6) + 1) * largoCompas
+          : nota.t;
+        const hasta = Math.min(nota.t, finDelCompas);
+        sobra += rellenar(hasta - desde, divisions, fila);
+        desde = hasta;
+      }
       if (sobra > 1e-9) {
         avisos.push(
           `En la mano ${nombre}, compás ${nota.compas}: quedó un resto de ${sobra} divisiones que no entra en ninguna figura (¿un tresillo partido?).`,
@@ -456,26 +514,57 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
  */
 function rellenar(cuanto, divisions, fila) {
   let falta = cuanto;
+  // De la más larga a la más corta, y con la versión de tresillo de cada una:
+  // en una pieza con tresillos los huecos también caen en tercios, y sin esto
+  // quedaba siempre un resto que no entraba en ninguna figura binaria.
+  const opciones = [];
   for (const divide of [1, 2, 4, 8, 16, 32, 64]) {
-    const unidad = (divisions * 4) / divide;
-    while (falta >= unidad - 1e-9) {
-      fila.push({ midis: [], divide });
-      falta -= unidad;
+    const entera = (divisions * 4) / divide;
+    opciones.push({ divide, unidad: entera });
+    opciones.push({ divide, unidad: (entera * 2) / 3, irregular: { en: 3, de: 2 } });
+  }
+  opciones.sort((a, b) => b.unidad - a.unidad);
+  for (const o of opciones) {
+    while (falta >= o.unidad - 1e-6) {
+      const silencio = { midis: [], divide: o.divide };
+      if (o.irregular) silencio.irregular = o.irregular;
+      fila.push(silencio);
+      falta -= o.unidad;
     }
   }
-  return falta;
+  return falta < 1e-6 ? 0 : falta;
 }
 
-/** Le agrega silencios a la mano que quedó corta hasta que las dos midan igual. */
-function emparejar(a, b, divisions) {
+/**
+ * Le agrega silencios a las voces que quedaron cortas hasta que todas midan
+ * igual, **cortando en cada barra de compás**.
+ *
+ * Lo de cortar es lo mismo que hay que hacer con los huecos del medio y por el
+ * mismo motivo: una redonda de silencio que arranca a mitad de compás se come
+ * la barra, y el compás queda con una redonda de más mientras el siguiente
+ * queda vacío.
+ */
+function emparejarTodas(voces, divisions, largoCompas) {
   const largo = (fila) =>
     fila.reduce((s, e) => {
       const entera = (1 / e.divide) * (e.puntillo ? 1.5 : 1);
       return s + (e.irregular ? (entera * e.irregular.de) / e.irregular.en : entera);
     }, 0);
-  const diferencia = Math.round((largo(a) - largo(b)) * 1e6) / 1e6;
-  if (diferencia === 0) return;
-  rellenar(Math.abs(diferencia) * divisions * 4, divisions, diferencia > 0 ? b : a);
+  const unidad = divisions * 4; // divisiones que entran en una redonda
+  const compasEnRedondas = largoCompas > 0 ? largoCompas / unidad : 0;
+  const largos = voces.map(largo);
+  const mayor = Math.max(...largos, 0);
+  voces.forEach((fila, i) => {
+    let desde = largos[i];
+    while (mayor - desde > 1e-6) {
+      const finDelCompas = compasEnRedondas
+        ? (Math.floor(desde / compasEnRedondas + 1e-6) + 1) * compasEnRedondas
+        : mayor;
+      const hasta = Math.min(mayor, finDelCompas);
+      rellenar((hasta - desde) * unidad, divisions, fila);
+      desde = hasta;
+    }
+  });
 }
 
 /** De la cantidad de alteraciones a la tónica, por el círculo de quintas. */
@@ -525,13 +614,23 @@ function principal() {
       ? `silencio(${e.divide}${extra})`
       : `n(${midis}, ${e.divide}${extra})`;
   };
-  const fila = (evs) =>
+  const filaDe = (evs) =>
     evs.map(evento).reduce((lineas, txt) => {
       const ultima = lineas[lineas.length - 1];
       if (ultima && (ultima + ", " + txt).length < 76) lineas[lineas.length - 1] = ultima + ", " + txt;
       else lineas.push(txt);
       return lineas;
-    }, []).map((l) => `      ${l},`).join("\n");
+    }, []);
+
+  /** Una sola voz se escribe como fila suelta; dos, como lista de filas. */
+  const escribirVoces = (voces, sangria) => {
+    if (voces.length === 1) {
+      return filaDe(voces[0]).map((l) => `${sangria}${l},`).join("\n");
+    }
+    return voces
+      .map((v) => `${sangria}[\n${filaDe(v).map((l) => `${sangria}  ${l},`).join("\n")}\n${sangria}],`)
+      .join("\n");
+  };
 
   console.log(`  {
     slug: ${JSON.stringify(slug)},
@@ -545,14 +644,18 @@ function principal() {
     sobre: "",
     hasta: "",
     derecha: [
-${fila(pieza.derecha)}
+${escribirVoces(pieza.derecha, "      ")}
     ],
     izquierda: [
-${fila(pieza.izquierda)}
+${escribirVoces(pieza.izquierda, "      ")}
     ],
   },`);
 
-  console.error(`\n// ${pieza.derecha.length} eventos en la derecha, ${pieza.izquierda.length} en la izquierda`);
+  const cuenta = (voces) =>
+    voces.length === 1
+      ? `${voces[0].length} eventos`
+      : voces.map((v) => v.length).join(" + ") + " eventos en dos voces";
+  console.error(`\n// ${cuenta(pieza.derecha)} en la derecha, ${cuenta(pieza.izquierda)} en la izquierda`);
   if (pieza.avisos.length) {
     console.error("// Lo que NO se pudo importar:");
     for (const a of [...new Set(pieza.avisos)]) console.error(`//   · ${a}`);

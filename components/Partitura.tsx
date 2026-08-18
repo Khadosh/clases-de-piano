@@ -6,7 +6,7 @@ import Midi from "./Midi";
 import { getAudioContext, playNote, wakeAudio } from "@/lib/audio";
 import { useMidi } from "@/lib/useMidi";
 import { mod12 } from "@/lib/music";
-import { duracionDeCompas, duracionDeEvento, ubicar } from "@/lib/pentagrama";
+import { duracionDeCompas, duracionDeEvento, ubicar, vocesDe } from "@/lib/pentagrama";
 import type { Pieza } from "@/content/partituras";
 
 /**
@@ -56,9 +56,15 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
    * redonda de la izquierda: quedaba todo pisado.
    */
   const { notas, momentos } = useMemo(() => {
+    // Cada mano puede traer más de una voz, y para tocar y para seguirte da lo
+    // mismo de cuál venga cada nota: lo que importa es cuándo suena.
     const filas: [Manos, ReturnType<typeof ubicar>][] = [
-      ["derecha", ubicar(pieza.derecha, pieza.compas)],
-      ["izquierda", ubicar(pieza.izquierda, pieza.compas)],
+      ...vocesDe(pieza.derecha).map(
+        (v) => ["derecha", ubicar(v, pieza.compas)] as [Manos, ReturnType<typeof ubicar>],
+      ),
+      ...vocesDe(pieza.izquierda).map(
+        (v) => ["izquierda", ubicar(v, pieza.compas)] as [Manos, ReturnType<typeof ubicar>],
+      ),
     ];
     const notas: NotaSuelta[] = [];
     const por = new Map<number, Momento>();

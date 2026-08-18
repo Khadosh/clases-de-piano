@@ -184,6 +184,25 @@ export interface Evento {
   ligada?: boolean;
 }
 
+/**
+ * Las voces de un pentagrama.
+ *
+ * Una voz es **una fila de eventos**, y nada más: la misma idea de siempre.
+ * Un pentagrama de piano tiene una o dos — cuando la mano derecha lleva la
+ * melodía y el acompañamiento a la vez, cada una es una voz con su propio
+ * ritmo, y por eso no se pueden escribir como una sola fila.
+ *
+ * Se acepta la fila suelta para no obligar a envolver todo lo que ya está
+ * escrito: la enorme mayoría de las manos tiene una sola voz y se lee mejor así.
+ */
+export type Voces = Evento[] | Evento[][];
+
+/** Siempre una lista de voces, venga como venga. */
+export function vocesDe(v: Voces): Evento[][] {
+  if (v.length === 0) return [[]];
+  return Array.isArray(v[0]) ? (v as Evento[][]) : [v as Evento[]];
+}
+
 /** Cuánto dura un evento, medido en redondas. */
 export function duracionDeEvento(e: Evento): number {
   const f = figuraQueDivide(e.divide);

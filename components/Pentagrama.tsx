@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  vocesDe,
+  type Voces,
   alturaEnPentagrama,
   armaduraDe,
   duracionDeCompas,
@@ -62,6 +64,10 @@ const yDeAltura = (altura: number, clave: Clave) =>
 
 interface NotaDibujable extends NotaUbicada {
   clave: Clave;
+  /** Cuál de las voces de ese pentagrama. 0 es la de arriba. */
+  voz: number;
+  /** Cuántas voces hay en ese pentagrama: cambia hacia dónde va la plica. */
+  cuantasVoces: number;
   x: number;
   /** Una por cada tecla del acorde, ya escrita y ubicada. */
   cabezas: { y: number; altura: number; signo: Signo }[];
@@ -82,8 +88,8 @@ export default function Pentagrama({
   onCompas,
   apagada,
 }: {
-  derecha: Evento[];
-  izquierda: Evento[];
+  derecha: Voces;
+  izquierda: Voces;
   compas: Compas;
   tonalidad: Tonalidad;
   /** El instante que está sonando, en redondas desde el arranque. */
@@ -235,7 +241,7 @@ function Sistema({
 
       {s.notas.map((nota) => (
         <Nota
-          key={`${nota.clave}-${nota.indice}`}
+          key={`${nota.clave}-${nota.voz}-${nota.indice}`}
           nota={nota}
           apagada={nota.clave === claveApagada}
           activa={
@@ -646,28 +652,28 @@ function disponer({
   armadura,
   ancho,
 }: {
-  derecha: Evento[];
-  izquierda: Evento[];
+  derecha: Voces;
+  izquierda: Voces;
   compas: Compas;
   armadura: number;
   ancho: number;
 }) {
-  const arriba = ubicar(derecha, compas);
-  const abajo = ubicar(izquierda, compas);
-  const totalCompases =
-    Math.max(
-      ...arriba.map((n) => n.compas),
-      ...abajo.map((n) => n.compas),
-      0,
-    ) + 1;
+  // Cada pentagrama con sus voces ya ubicadas en el tiempo.
+  const pentagramas: { clave: Clave; voces: NotaUbicada[][] }[] = [
+    { clave: "sol", voces: vocesDe(derecha).map((v) => ubicar(v, compas)) },
+    { clave: "fa", voces: vocesDe(izquierda).map((v) => ubicar(v, compas)) },
+  ];
+  const todas = pentagramas.flatMap((p) => p.voces.flat());
+
+  const totalCompases = Math.max(...todas.map((n) => n.compas), 0) + 1;
 
   // Cada compás pide el ancho que necesita: uno con doce corcheas no puede
-  // ocupar lo mismo que uno con cuatro negras.
+  // ocupar lo mismo que uno con cuatro negras. Las dos voces caen en los mismos
+  // instantes muchas veces, así que se cuentan los instantes distintos.
   const anchoDe = (c: number) => {
-    const cuantas = new Set([
-      ...arriba.filter((n) => n.compas === c).map((n) => n.dentro),
-      ...abajo.filter((n) => n.compas === c).map((n) => n.dentro),
-    ]).size;
+    const cuantas = new Set(
+      todas.filter((n) => n.compas === c).map((n) => n.dentro),
+    ).size;
     return Math.max(96, 30 + cuantas * 17);
   };
 
@@ -711,7 +717,12 @@ function disponer({
     });
 
     const notas: NotaDibujable[] = [];
-    const poner = (fila: NotaUbicada[], clave: Clave) => {
+    const poner = (
+      fila: NotaUbicada[],
+      clave: Clave,
+      voz: number,
+      cuantasVoces: number,
+    ) => {
       fila.forEach((nota, indice) => {
         const caja = inicio.get(nota.compas);
         if (!caja) return;
@@ -730,15 +741,22 @@ function disponer({
         notas.push({
           ...nota,
           clave,
+          voz,
+          cuantasVoces,
           x: xNota,
           cabezas,
-          arriba: media < 4,
+          // **Con dos voces la plica no se elige por la altura.** La de arriba
+          // va siempre para arriba y la de abajo siempre para abajo: es lo que
+          // hace que se puedan leer separadas aunque se crucen.
+          arriba: cuantasVoces > 1 ? voz === 0 : media < 4,
           indice,
         });
       });
     };
-    poner(arriba, "sol");
-    poner(abajo, "fa");
+    for (const { clave, voces } of pentagramas) {
+      voces.forEach((fila, voz) => poner(fila, clave, voz, voces.length));
+    }
+    acomodarPlicas(notas);
 
     return {
       ancho: x + 8,
@@ -757,6 +775,39 @@ function disponer({
 }
 
 /**
+ * Hacia dónde va la plica de cada voz, decidido **compás por compás**.
+ *
+ * La regla es la de siempre: con dos voces en un pentagrama, la de arriba lleva
+ * las plicas para arriba y la de abajo para abajo. Lo que no funciona es
+ * decidir cuál es cuál mirando el promedio de la pieza entera — en el Claro de
+ * luna la melodía tiene pasajes graves y el arpegio termina promediando más
+ * alto, así que quedaban al revés. En un compás no hay ambigüedad.
+ */
+function acomodarPlicas(notas: NotaDibujable[]) {
+  const porPentagrama = new Map<string, NotaDibujable[]>();
+  for (const n of notas) {
+    if (n.cuantasVoces < 2 || n.midis.length === 0) continue;
+    const llave = `${n.clave}:${n.compas}`;
+    if (!porPentagrama.has(llave)) porPentagrama.set(llave, []);
+    porPentagrama.get(llave)!.push(n);
+  }
+  for (const delCompas of porPentagrama.values()) {
+    const alturaDe = (voz: number) => {
+      const suyas = delCompas.filter((n) => n.voz === voz);
+      if (!suyas.length) return -Infinity;
+      return (
+        suyas.reduce((s, n) => s + Math.max(...n.cabezas.map((c) => c.altura)), 0) /
+        suyas.length
+      );
+    };
+    const voces = [...new Set(delCompas.map((n) => n.voz))];
+    if (voces.length < 2) continue;
+    const masAguda = voces.reduce((a, b) => (alturaDe(b) > alturaDe(a) ? b : a));
+    for (const n of delCompas) n.arriba = n.voz === masAguda;
+  }
+}
+
+/**
  * Los grupos que van con barra en vez de banderas.
  *
  * Se barran las notas de bandera seguidas que caen dentro del mismo tiempo, que
@@ -771,7 +822,9 @@ function grupos(notas: NotaDibujable[], compas: Compas) {
     if (n.midis.length === 0) continue;
     if (figuraDeEvento(n).divide < 8) continue;
     const tiempo = Math.floor(n.dentro / duracionTiempo + 1e-9);
-    const clave = `${n.clave}:${n.compas}:${tiempo}`;
+    // La voz entra en la clave: dos voces del mismo pentagrama no se barran
+    // juntas aunque caigan en el mismo tiempo.
+    const clave = `${n.clave}:${n.voz}:${n.compas}:${tiempo}`;
     if (!porTiempo.has(clave)) porTiempo.set(clave, []);
     porTiempo.get(clave)!.push(n);
   }

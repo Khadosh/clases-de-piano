@@ -21,6 +21,7 @@ import {
   pasoDe,
   signosDe,
   ubicar,
+  vocesDe,
 } from "../lib/pentagrama.ts";
 import { PIEZAS } from "../content/partituras.ts";
 
@@ -275,34 +276,54 @@ probar("una alteración no contagia a la misma letra en otra octava", () => {
 
 // ---- Las piezas de verdad --------------------------------------------------
 
+/** Todas las voces de una pieza, con el nombre de dónde salió cada una. */
+const vocesConNombre = (pieza) => [
+  ...vocesDe(pieza.derecha).map((v, i) => [`derecha${i ? ` voz ${i + 1}` : ""}`, v]),
+  ...vocesDe(pieza.izquierda).map((v, i) => [`izquierda${i ? ` voz ${i + 1}` : ""}`, v]),
+];
+
 probar("todos los compases de todas las piezas cierran la cuenta", () => {
   for (const pieza of PIEZAS) {
-    for (const [mano, eventos] of [["derecha", pieza.derecha], ["izquierda", pieza.izquierda]]) {
+    for (const [donde, eventos] of vocesConNombre(pieza)) {
       const flojos = compasesIncompletos(eventos, pieza.compas);
       assert.deepEqual(
         flojos,
         [],
-        `${pieza.slug} (${mano}): ${flojos.map((f) => `compás ${f.compas + 1} suma ${f.suma} y debería sumar ${f.deberia}`).join("; ")}`,
+        `${pieza.slug} (${donde}): ${flojos.map((f) => `compás ${f.compas + 1} suma ${f.suma} y debería sumar ${f.deberia}`).join("; ")}`,
       );
     }
   }
 });
 
-probar("las dos manos de cada pieza duran lo mismo", () => {
+probar("todas las voces de una pieza duran lo mismo", () => {
+  // Dos voces del mismo pentagrama llenan los mismos compases, así que si una
+  // dura distinto de la otra hay una nota de más o de menos en algún lado.
   for (const pieza of PIEZAS) {
-    const total = (evs) => evs.reduce((s, e) => s + duracionDeEvento(e), 0);
-    const d = Math.round(total(pieza.derecha) * 1e6) / 1e6;
-    const i = Math.round(total(pieza.izquierda) * 1e6) / 1e6;
-    assert.equal(d, i, `${pieza.slug}: derecha ${d}, izquierda ${i}`);
+    const total = (evs) =>
+      Math.round(evs.reduce((s, e) => s + duracionDeEvento(e), 0) * 1e6) / 1e6;
+    const largos = vocesConNombre(pieza).map(([donde, v]) => [donde, total(v)]);
+    const primero = largos[0][1];
+    for (const [donde, largo] of largos) {
+      assert.equal(largo, primero, `${pieza.slug}: ${donde} dura ${largo} y ${largos[0][0]} dura ${primero}`);
+    }
   }
 });
 
 probar("ninguna pieza usa una figura que no existe", () => {
   for (const pieza of PIEZAS) {
-    for (const e of [...pieza.derecha, ...pieza.izquierda]) {
-      assert.ok(duracionDeEvento(e) > 0, `${pieza.slug}: divide ${e.divide}`);
+    for (const [, v] of vocesConNombre(pieza)) {
+      for (const e of v) {
+        assert.ok(duracionDeEvento(e) > 0, `${pieza.slug}: divide ${e.divide}`);
+      }
     }
   }
+});
+
+probar("una fila suelta y una lista de una voz son lo mismo", () => {
+  const fila = [{ midis: [60], divide: 4 }];
+  assert.deepEqual(vocesDe(fila), [fila]);
+  assert.deepEqual(vocesDe([fila]), [fila]);
+  assert.deepEqual(vocesDe([]), [[]]);
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);
