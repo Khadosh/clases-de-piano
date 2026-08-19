@@ -406,6 +406,19 @@ pegados al pie de la ventana mientras la partitura sigue para abajo, y el
 renglón que está sonando se trae solo a la vista (sólo cuando *cambia* el
 renglón, para no pelearle el scroll al que está mirando otra cosa).
 
+Tres herramientas más, aprendidas de mirar el reproductor de alphaTab:
+
+- **El metrónomo** marca el pulso mientras suena (fuerte en cada barra) y
+  además **cuenta un compás antes de entrar** — sin eso, con el loop puesto la
+  música arranca sola y nunca sabés cuándo poner las manos.
+- **El acelerando** (visible sólo con el loop): cada vuelta sube 4 bpm, hasta
+  el tope del slider. El speed trainer de toda la vida. El bpm va por ref
+  porque el loop se rearma desde adentro de un closure viejo.
+- **Los controles son grupos que no se parten.** Cada grupo (manos, compases,
+  toggles del loop) es un bloque `whitespace-nowrap` adentro de un contenedor
+  con wrap: en el celular los grupos bajan enteros en vez de dejar un chip
+  huérfano en la línea siguiente. Todos los toggles usan el mismo `chip()`.
+
 ### Importar de MusicXML
 
 `npm run importar -- archivo.mxl --slug x --hasta N`. MusicXML (`.musicxml`, y

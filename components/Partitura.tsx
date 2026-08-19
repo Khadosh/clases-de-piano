@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Pentagrama from "./Pentagrama";
 import EdicionCompleta from "./EdicionCompleta";
 import Midi from "./Midi";
-import { getAudioContext, notaOff, notaOn, pararTodo, wakeAudio } from "@/lib/audio";
+import { getAudioContext, notaOff, notaOn, pararTodo, playClick, wakeAudio } from "@/lib/audio";
 import { useMidi } from "@/lib/useMidi";
 import { mod12 } from "@/lib/music";
 import { duracionDeCompas, duracionDeEvento, ubicar, vocesDe } from "@/lib/pentagrama";
@@ -35,6 +35,12 @@ interface Momento {
   midis: number[];
 }
 
+/** El chip que se prende y se apaga: el mismo dibujo en todos los controles. */
+const chip = (activo: boolean) =>
+  `rounded-xl px-3 py-1.5 text-sm font-semibold whitespace-nowrap transition ${
+    activo ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
+  }`;
+
 export default function Partitura({ pieza }: { pieza: Pieza }) {
   const [manos, setManos] = useState<Manos>("ambas");
   const [sonando, setSonando] = useState<number | null>(null);
@@ -48,10 +54,21 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
   /** El pedazo que se está practicando, en compases (ambos inclusive). */
   const [recorte, setRecorte] = useState<{ desde: number; hasta: number } | null>(null);
   const [repetir, setRepetir] = useState(false);
+  const [metronomo, setMetronomo] = useState(false);
+  /** En loop: cada vuelta sube 4 bpm. El speed trainer de toda la vida. */
+  const [acelerando, setAcelerando] = useState(false);
   const [vista, setVista] = useState<"cuaderno" | "edicion">("cuaderno");
   const pararRef = useRef<(() => void) | null>(null);
   const repetirRef = useRef(repetir);
   repetirRef.current = repetir;
+  // Por ref porque el loop se rearma solo desde adentro de un closure viejo:
+  // el bpm que subió el acelerando tiene que llegarle al arranque siguiente.
+  const bpmRef = useRef(bpm);
+  bpmRef.current = bpm;
+  const metronomoRef = useRef(metronomo);
+  metronomoRef.current = metronomo;
+  const acelerandoRef = useRef(acelerando);
+  acelerandoRef.current = acelerando;
   const tocarRef = useRef<((desde: number) => void) | null>(null);
 
   /**
@@ -129,8 +146,6 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
     Math.ceil(finMusical / duracionDeCompas(pieza.compas) - 1e-9) || 1;
 
   const largoCompas = duracionDeCompas(pieza.compas);
-  /** Una redonda dura cuatro negras, así que el bpm de negra manda. */
-  const segundosPorRedonda = (60 / bpm) * 4;
 
   const parar = useCallback(() => {
     pararRef.current?.();
@@ -166,7 +181,14 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       setTocando(true);
 
       const t0Musical = desde * largoCompas;
-      const arranque = ctx.currentTime + 0.15;
+      // Una redonda dura cuatro negras, así que el bpm de negra manda. Se lee
+      // por ref al arrancar cada pasada: el acelerando del loop lo va subiendo.
+      const segundosPorRedonda = (60 / bpmRef.current) * 4;
+      // **El metrónomo te cuenta un compás antes de entrar.** Sin eso, con el
+      // loop puesto la música arranca sola y nunca sabés cuándo poner las
+      // manos: la vuelta empieza con un compás de clicks y recién ahí suena.
+      const cuentaPrevia = metronomoRef.current ? largoCompas * segundosPorRedonda : 0;
+      const arranque = ctx.currentTime + 0.15 + cuentaPrevia;
       const aSegundos = (t: number) => arranque + (t - t0Musical) * segundosPorRedonda;
 
       // **No se agenda la pieza entera: se agenda lo que viene.** La primera
@@ -177,7 +199,10 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       // (los dos relojes de siempre, como el metrónomo). Parar es dejar de
       // despachar y soltar lo apretado: las notas que faltaban nunca llegan a
       // existir.
-      const eventos: { t: number; tipo: "on" | "off"; midi: number; dur: number }[] = [];
+      type Evento =
+        | { t: number; tipo: "on" | "off"; midi: number; dur: number }
+        | { t: number; tipo: "click"; acento: "fuerte" | "medio" | "debil" };
+      const eventos: Evento[] = [];
       for (const n of notas) {
         if (n.t < t0Musical - 1e-9) continue;
         if (n.t >= fin - 1e-9) continue;
@@ -185,13 +210,34 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         eventos.push({ t: aSegundos(n.t), tipo: "on", midi: n.midi, dur });
         eventos.push({ t: aSegundos(n.t) + dur, tipo: "off", midi: n.midi, dur });
       }
+      if (metronomoRef.current) {
+        const tiempo = 1 / pieza.compas.denominador;
+        // El compás de la cuenta previa, con el primer click fuerte...
+        for (let i = 0; i < pieza.compas.numerador; i++) {
+          eventos.push({
+            t: aSegundos(t0Musical - largoCompas + i * tiempo),
+            tipo: "click",
+            acento: i === 0 ? "fuerte" : "medio",
+          });
+        }
+        // ...y el pulso marcado mientras suena, fuerte en cada barra.
+        for (let t = t0Musical; t < fin - 1e-9; t += tiempo) {
+          const enElCompas = Math.round((t % largoCompas) / tiempo);
+          eventos.push({
+            t: aSegundos(t),
+            tipo: "click",
+            acento: enElCompas === 0 ? "fuerte" : "debil",
+          });
+        }
+      }
       eventos.sort((a, b) => a.t - b.t);
       let proximo = 0;
       const despachar = () => {
         const horizonte = ctx.currentTime + 0.15;
         while (proximo < eventos.length && eventos[proximo].t <= horizonte) {
           const e = eventos[proximo++];
-          if (e.tipo === "on") notaOn(e.midi, e.t, e.dur);
+          if (e.tipo === "click") playClick(e.acento, e.t);
+          else if (e.tipo === "on") notaOn(e.midi, e.t, e.dur);
           else notaOff(e.midi, e.t);
         }
       };
@@ -204,8 +250,14 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         if (t >= fin) {
           // El pedazo en loop: al llegar a la barra vuelve a arrancar. Es para
           // lo que existe el recorte — el pasaje que no sale se repite hasta
-          // que salga, sin volver a apuntarle al botón.
+          // que salga, sin volver a apuntarle al botón. Con el acelerando
+          // puesto, cada vuelta sube 4 bpm: el speed trainer de toda la vida.
           if (repetirRef.current && recorte) {
+            if (acelerandoRef.current) {
+              const nuevo = Math.min(bpmRef.current + 4, 160);
+              bpmRef.current = nuevo;
+              setBpm(nuevo);
+            }
             tocarRef.current?.(recorte.desde);
             return;
           }
@@ -214,7 +266,8 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           setSonando(null);
           return;
         }
-        setSonando(t);
+        // Durante la cuenta previa no hay nada que resaltar todavía.
+        setSonando(t < t0Musical ? null : t);
         raf = requestAnimationFrame(mirar);
       };
       raf = requestAnimationFrame(mirar);
@@ -225,7 +278,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         pararTodo();
       };
     },
-    [notas, largoCompas, segundosPorRedonda, finMusical, recorte],
+    [notas, largoCompas, finMusical, recorte, pieza.compas],
   );
   tocarRef.current = tocar;
 
@@ -349,31 +402,30 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           de la música. */}
       <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur">
 
-      {/* Con qué mano. Es lo primero que se estudia: una mano por vez y recién
-          después las dos juntas, así que está arriba de todo lo demás. */}
-      <div className="flex flex-wrap items-center gap-2 px-4 pt-4">
-        <span className="text-xs tracking-[0.2em] text-humo uppercase">Manos</span>
-        {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
-          <button
-            key={m}
-            onClick={() => {
-              parar();
-              setManos(m);
-            }}
-            className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
-              manos === m
-                ? "bg-tiza text-noche"
-                : "bg-carta-2 text-humo hover:text-tiza"
-            }`}
-          >
-            {m === "ambas" ? "las dos" : `sólo ${m}`}
-          </button>
-        ))}
+      {/* Los controles, en dos filas: qué se toca y cómo suena. Cada grupo es
+          un bloque que no se parte (nowrap): en el celular los grupos bajan
+          enteros en vez de dejar un chip huérfano en la línea siguiente. */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 pt-3">
+        <span className="flex items-center gap-1.5 whitespace-nowrap">
+          <span className="mr-1 text-xs tracking-[0.2em] text-humo uppercase">Manos</span>
+          {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
+            <button
+              key={m}
+              onClick={() => {
+                parar();
+                setManos(m);
+              }}
+              className={chip(manos === m)}
+            >
+              {m === "ambas" ? "las dos" : m}
+            </button>
+          ))}
+        </span>
 
         {/* El pedazo: practicar sólo un rango de compases, con repetición. */}
         {totalCompases > 1 && (
-          <span className="ml-auto flex items-center gap-2 text-sm text-humo">
-            <span className="text-xs tracking-[0.2em] uppercase">Compases</span>
+          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm text-humo">
+            <span className="mr-1 text-xs tracking-[0.2em] uppercase">Compases</span>
             <input
               type="number"
               min={1}
@@ -389,7 +441,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
                 setRecorte({ desde, hasta });
                 setDesdeCompas(desde);
               }}
-              className="w-14 rounded-lg bg-carta-2 px-2 py-1 text-center font-mono"
+              className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
               aria-label="Desde el compás"
             />
             <span>al</span>
@@ -408,42 +460,50 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
                 setRecorte({ desde, hasta });
                 setDesdeCompas(desde);
               }}
-              className="w-14 rounded-lg bg-carta-2 px-2 py-1 text-center font-mono"
+              className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
               aria-label="Hasta el compás"
             />
-            {recorte && (
+          </span>
+        )}
+        {recorte && (
+          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm text-humo">
+            {
               <>
-                <label className="flex cursor-pointer items-center gap-1.5">
-                  <input
-                    type="checkbox"
-                    checked={repetir}
-                    onChange={(e) => setRepetir(e.target.checked)}
-                    className="accent-sol"
-                  />
-                  en loop
-                </label>
+                <button onClick={() => setRepetir(!repetir)} className={chip(repetir)}>
+                  ⟳ en loop
+                </button>
+                {repetir && (
+                  <button
+                    onClick={() => setAcelerando(!acelerando)}
+                    className={chip(acelerando)}
+                    title="Cada vuelta del loop sube 4 bpm"
+                  >
+                    acelerando
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     parar();
                     setRecorte(null);
                     setRepetir(false);
+                    setAcelerando(false);
                     setDesdeCompas(0);
                   }}
-                  className="text-xs underline decoration-dotted underline-offset-2 hover:text-tiza"
+                  className="ml-1 text-xs underline decoration-dotted underline-offset-2 hover:text-tiza"
                 >
                   toda la pieza
                 </button>
               </>
-            )}
+            }
           </span>
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 p-4">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         {tocando ? (
           <button
             onClick={parar}
-            className="rounded-full bg-brasa px-5 py-2.5 font-bold text-noche transition hover:brightness-110"
+            className="rounded-full bg-brasa px-5 py-2 font-bold text-noche transition hover:brightness-110"
           >
             ■ Parar
           </button>
@@ -451,7 +511,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           <button
             onClick={() => tocar(desdeCompas)}
             disabled={cargando}
-            className="rounded-full bg-menta px-5 py-2.5 font-bold text-noche transition hover:brightness-110 disabled:opacity-60"
+            className="rounded-full bg-menta px-5 py-2 font-bold text-noche transition hover:brightness-110 disabled:opacity-60"
           >
             {cargando ? "…" : "▶ Escucharla"}
           </button>
@@ -459,28 +519,34 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
         <button
           onClick={siguiendo ? () => setSiguiendo(false) : arrancarSeguimiento}
-          className={`rounded-full px-4 py-2.5 text-sm font-bold transition ${
+          className={`rounded-full px-4 py-2 text-sm font-bold transition ${
             siguiendo ? "bg-brasa text-noche" : "bg-uva text-noche hover:brightness-110"
           }`}
         >
           {siguiendo ? "⏹ Dejar de seguirme" : hayTeclado ? "🎹 Seguime" : "👆 Seguime"}
         </button>
 
-        {totalCompases > 1 && (
-          <span className="rounded-full bg-carta-2 px-3 py-1.5 font-mono text-sm text-humo">
+        <button
+          onClick={() => setMetronomo(!metronomo)}
+          className={chip(metronomo)}
+          title="Un compás de clicks para entrar, y el pulso marcado mientras suena"
+        >
+          🕰 metrónomo
+        </button>
+
+        {desdeCompas > 0 && (
+          <span className="whitespace-nowrap rounded-full bg-carta-2 px-3 py-1.5 font-mono text-xs text-humo">
             desde el compás {desdeCompas + 1}
-            {desdeCompas > 0 && (
-              <button
-                onClick={() => setDesdeCompas(0)}
-                className="ml-2 text-xs underline decoration-dotted underline-offset-2 hover:text-tiza"
-              >
-                al principio
-              </button>
-            )}
+            <button
+              onClick={() => setDesdeCompas(0)}
+              className="ml-2 underline decoration-dotted underline-offset-2 hover:text-tiza"
+            >
+              al principio
+            </button>
           </span>
         )}
 
-        <label className="ml-auto flex items-center gap-2 text-sm text-humo">
+        <label className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm text-humo">
           <span className="font-mono">{bpm} bpm</span>
           <input
             type="range"
@@ -488,7 +554,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             max={160}
             value={bpm}
             onChange={(e) => setBpm(Number(e.target.value))}
-            className="accent-sol"
+            className="w-24 accent-sol sm:w-36"
           />
         </label>
       </div>
