@@ -303,7 +303,15 @@ tablas de casos.
 - **Una alteración vale hasta la barra de compás**, y para esa letra en esa
   octava. Por eso `signosDe` recibe la fila entera y no una nota: hay que
   llevar el estado del compás. Volver a lo que dice la armadura después de
-  haber alterado pide becuadro.
+  haber alterado pide becuadro. (Y recibirla de verdad: hubo una época en que
+  se la llamaba evento por evento y el mismo becuadro salía impreso cuatro
+  veces en el mismo compás.)
+- **Los instantes con alteración piden aire.** El signo va a la izquierda de
+  su cabeza, en el hueco que viene del instante anterior, y en un pasaje denso
+  ese hueco mide menos que el signo: los sostenidos pisaban la plica del
+  vecino. El instante con signo se corre un poco a la derecha y ese aire se
+  suma al ancho del compás — por instante y no por nota, para que las dos
+  claves sigan alineadas.
 - **Se barra por tiempo.** Las figuras con bandera seguidas dentro del mismo
   tiempo van con barra, que es para lo que existe el barrado: que se vea de un
   golpe dónde cae el pulso. Sin eso, doce corcheas son doce banderitas. Y **el

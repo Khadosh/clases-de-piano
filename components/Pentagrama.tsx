@@ -714,6 +714,45 @@ function disponer({
   const totalCompases = Math.max(...todas.map((n) => n.compas), 0) + 1;
   const primerCompas = rango?.desde ?? 0;
 
+  // **Los signos se calculan por fila entera, no por evento.** Es para lo que
+  // `signosDe` pide la fila: el estado del compás. Llamada evento por evento,
+  // cada acorde arrancaba con el compás "limpio" y el mismo becuadro salía
+  // impreso cuatro veces en el mismo compás.
+  const signosPorNota = new Map<NotaUbicada, Signo[]>();
+  for (const p of pentagramas) {
+    for (const v of p.voces) {
+      const cabezasDeLaFila = v.flatMap((n) =>
+        n.midis.map((m) => ({ nota: escribirEnPapel(m, armadura), compas: n.compas })),
+      );
+      const signos = signosDe(cabezasDeLaFila, armadura);
+      let k = 0;
+      for (const n of v) {
+        signosPorNota.set(n, signos.slice(k, k + n.midis.length));
+        k += n.midis.length;
+      }
+    }
+  }
+
+  // **Los instantes con alteración piden aire.** El signo se dibuja a la
+  // izquierda de su cabeza, o sea en el hueco que viene del instante anterior,
+  // y en un pasaje denso ese hueco mide menos que el signo: los sostenidos
+  // salían pisando la plica o la cabeza del vecino. Así que el instante que
+  // trae signo se corre AIRE píxeles a la derecha —el signo entra en el hueco
+  // agrandado— y ese aire se suma al ancho que el compás pide. Es lo mismo que
+  // hace un grabador: la alteración ocupa lugar, no se mete a presión.
+  // Va por instante y no por nota para que las dos claves sigan alineadas.
+  const AIRE = 10;
+  const instantesConSigno = new Map<number, number[]>();
+  for (const n of todas) {
+    if (!signosPorNota.get(n)?.some(Boolean)) continue;
+    const lista = instantesConSigno.get(n.compas) ?? [];
+    if (!lista.some((d) => Math.abs(d - n.dentro) < 1e-6)) lista.push(n.dentro);
+    instantesConSigno.set(n.compas, lista);
+  }
+  const aireDe = (c: number) => (instantesConSigno.get(c)?.length ?? 0) * AIRE;
+  const corrimiento = (c: number, dentro: number) =>
+    (instantesConSigno.get(c) ?? []).filter((d) => d <= dentro + 1e-6).length * AIRE;
+
   // **Todos los compases miden lo mismo.** El ancho lo pide el más denso —con
   // la raíz de sus instantes, que lineal un compás de doce tresillos aplastaba
   // al del acorde tenido— y ese ancho vale para todos. Una edición impresa le
@@ -724,7 +763,7 @@ function disponer({
     const cuantas = new Set(
       todas.filter((n) => n.compas === c).map((n) => n.dentro),
     ).size;
-    return Math.max(120, 46 + Math.sqrt(cuantas) * 46);
+    return Math.max(120, 46 + Math.sqrt(cuantas) * 46) + aireDe(c);
   };
   let anchoCompas = 120;
   for (let c = primerCompas; c < totalCompases; c++) {
@@ -771,13 +810,16 @@ function disponer({
       fila.forEach((nota, indice) => {
         const caja = inicio.get(nota.compas);
         if (!caja) return;
+        // El tiempo reparte el ancho que queda después del aire de los signos,
+        // y cada instante se corre por los signos que hay hasta él (el suyo
+        // incluido: el signo va en el hueco de su izquierda).
         const xNota =
-          caja.x + 16 + (nota.dentro / largoCompas) * (caja.ancho - 26);
+          caja.x +
+          16 +
+          (nota.dentro / largoCompas) * (caja.ancho - 26 - aireDe(nota.compas)) +
+          corrimiento(nota.compas, nota.dentro);
         const escritas = nota.midis.map((m) => escribirEnPapel(m, armadura));
-        const signos = signosDe(
-          escritas.map((e) => ({ nota: e, compas: nota.compas })),
-          armadura,
-        );
+        const signos = signosPorNota.get(nota) ?? escritas.map(() => null);
         const cabezas = escritas.map((e, i) => {
           const altura = alturaEnPentagrama(e, clave);
           return { altura, y: yDeAltura(altura, clave), signo: signos[i] };
