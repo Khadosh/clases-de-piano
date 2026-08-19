@@ -344,9 +344,12 @@ tablas de casos.
   espacios de pentagrama y cada familia trae el origen donde VexFlow lo apoya
   (las claves en su línea, las banderas en la punta de la plica), así que caen
   solos.
-- **En un compás a dos voces los silencios se corren un espacio** para el lado
-  de su voz, si no el de una voz y el de la otra caen en el mismo renglón uno
-  arriba del otro.
+- **En un compás a dos voces los silencios se corren un espacio, para el lado
+  libre.** Sin correrlos, el de una voz y el de la otra caían en el mismo
+  renglón uno arriba del otro. Y el lado no es "arriba el de la voz de
+  arriba": en el preludio eso ponía el silencio del tenor pegado a la blanca
+  del bajo, porque las dos voces viven arriba del pentagrama. Se mira dónde
+  están las notas de la otra voz y el silencio va para el otro lado.
 
 Las cabezas, las plicas, las banderas y los silencios salen del mismo número que
 ya usa `FiguraSVG`: en cuántas partes divide la figura a la redonda. Si aparece

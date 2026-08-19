@@ -92,6 +92,8 @@ interface NotaDibujable extends NotaUbicada {
   yBarra?: number;
   /** El compás tiene dos voces sonando: los silencios se corren para su voz. */
   aDosVoces?: boolean;
+  /** Para qué lado se corre este silencio (lo decide `acomodarPlicas`). */
+  silencioAbajo?: boolean;
 }
 
 export default function Pentagrama({
@@ -393,9 +395,9 @@ function Nota({
 
   if (nota.midis.length === 0) {
     // Del mismo color que las notas: un silencio es música, no un hueco. En un
-    // compás a dos voces se corre un espacio para el lado de su voz, que es lo
-    // que hace cualquier edición para que no se pisen los de las dos.
-    const dy = nota.aDosVoces ? (nota.arriba ? -ESPACIO : ESPACIO) : 0;
+    // compás a dos voces se corre un espacio para el lado libre, que es lo
+    // que hace cualquier edición para que no se pise con la otra voz.
+    const dy = nota.aDosVoces ? (nota.silencioAbajo ? ESPACIO : -ESPACIO) : 0;
     return (
       <g opacity={apagada ? 0.25 : 1} transform={dy ? `translate(0 ${dy})` : undefined}>
         <Silencio nota={nota} color={color} />
@@ -951,11 +953,30 @@ function acomodarPlicas(notas: NotaDibujable[]) {
     const masAguda = suenan.reduce((a, b) => (alturaDe(b) > alturaDe(a) ? b : a));
     for (const n of delCompas) {
       n.arriba = n.voz === masAguda;
-      // Los silencios de un compás a dos voces se corren para el lado de su
-      // voz — arriba los de la de arriba, abajo los de la otra. Sin esto, el
-      // silencio de corchea de una voz y el de semicorchea de la otra caían
-      // en el mismo instante uno arriba del otro, en el mismo renglón.
+      // Los silencios de un compás a dos voces se corren un espacio. Sin esto,
+      // el de corchea de una voz y el de semicorchea de la otra caían en el
+      // mismo instante uno arriba del otro, en el mismo renglón.
       n.aDosVoces = true;
+    }
+    // **Para qué lado se corre cada silencio: para el lado libre.** La primera
+    // regla era "el de la voz de arriba va para arriba", y en el preludio eso
+    // ponía el silencio del tenor pegado a la blanca del bajo — las dos cosas
+    // viven arriba del pentagrama. Se mira dónde están las notas de la otra
+    // voz y el silencio se va para el otro lado.
+    for (const n of delCompas) {
+      if (n.midis.length > 0) continue;
+      const centro = yDeAltura(4, n.clave);
+      const ajenas = delCompas
+        .filter((o) => o.voz !== n.voz && o.midis.length > 0)
+        .flatMap((o) => o.cabezas.map((c) => c.y));
+      if (!ajenas.length) {
+        n.silencioAbajo = !n.arriba;
+        continue;
+      }
+      const cercana = ajenas.reduce((a, b) =>
+        Math.abs(b - centro) < Math.abs(a - centro) ? b : a,
+      );
+      n.silencioAbajo = cercana < centro;
     }
   }
 }
