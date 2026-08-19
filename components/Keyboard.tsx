@@ -144,17 +144,34 @@ export default function Keyboard({
             role={interactive ? "button" : undefined}
             aria-label={interactive ? noteNameWithOctave(pitch) : undefined}
           >
+            {/* Los fantasmas son un velo encima de la tecla, no un reemplazo
+                del color: reemplazándolo, una blanca fantasma quedaba oscura
+                de punta a punta —el fondo de la página se veía a través— y al
+                lado de una negra de verdad parecía una negra partida a la
+                mitad. La tecla sigue siendo una tecla; el velo dice "acá
+                estabas". */}
             <rect
               x={x + 1}
               y={0}
               width={WHITE_W - 2}
               height={WHITE_H}
               rx={5}
-              fill={hex ?? "#f7f4ee"}
-              opacity={mk?.ghost ? 0.38 : 1}
+              fill={mk && !mk.ghost ? (hex ?? "#f7f4ee") : "#f7f4ee"}
               stroke={mk?.active ? "#0b0a14" : "#cbc6ba"}
               strokeWidth={mk?.active ? 3 : 1}
             />
+            {mk?.ghost && (
+              <rect
+                x={x + 1}
+                y={0}
+                width={WHITE_W - 2}
+                height={WHITE_H}
+                rx={5}
+                fill={hex ?? "#f7f4ee"}
+                opacity={0.45}
+                pointerEvents="none"
+              />
+            )}
             {mk?.label && (
               <text
                 x={x + WHITE_W / 2}
@@ -211,11 +228,22 @@ export default function Keyboard({
               width={BLACK_W}
               height={BLACK_H}
               rx={4}
-              fill={hex ?? "#1b1726"}
-              opacity={mk?.ghost ? 0.5 : 1}
+              fill={mk && !mk.ghost ? (hex ?? "#1b1726") : "#1b1726"}
               stroke={mk?.active ? "#fff" : "#000"}
               strokeWidth={mk?.active ? 3 : 1}
             />
+            {mk?.ghost && (
+              <rect
+                x={x}
+                y={0}
+                width={BLACK_W}
+                height={BLACK_H}
+                rx={4}
+                fill={hex ?? "#1b1726"}
+                opacity={0.55}
+                pointerEvents="none"
+              />
+            )}
             {mk?.label && (
               <text
                 x={x + BLACK_W / 2}
