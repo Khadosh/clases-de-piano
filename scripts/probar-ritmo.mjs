@@ -281,5 +281,53 @@ comprobar(
   [true, true],
 );
 
+// ---------------------------------------------------------------------------
+// Los dos quiz de compases: cien rondas de cada uno con azar sembrado.
+// Lo que importa: que el compás cierre justo, que haya UNA sola opción que
+// cierra la cuenta, y que los hermanos (3/4 y 6/8) nunca compitan entre sí.
+// ---------------------------------------------------------------------------
+
+import {
+  azarSembrado,
+  duracionPuesta,
+  rondaCompletar,
+  rondaNumero,
+  sumaDe,
+} from "../lib/compasQuiz.ts";
+
+{
+  const azar = azarSembrado(7);
+  let cierran = 0, unicas = 0, sinHermanos = 0;
+  for (let i = 0; i < 100; i++) {
+    const r = rondaNumero(azar);
+    if (Math.abs(sumaDe(r.figuras) - duracionDeCompas(r.compas)) < 1e-9) cierran++;
+    const queCierran = r.opciones.filter(
+      (o) => Math.abs(duracionDeCompas(o) - sumaDe(r.figuras)) < 1e-9,
+    );
+    if (queCierran.length === 1) unicas++;
+    const duraciones = r.opciones.map(duracionDeCompas);
+    if (new Set(duraciones.map((d) => d.toFixed(6))).size === duraciones.length) sinHermanos++;
+  }
+  comprobar("rondaNumero: las cien rondas cierran justo", cierran, 100);
+  comprobar("rondaNumero: una sola opción cierra la cuenta", unicas, 100);
+  comprobar("rondaNumero: sin duraciones repetidas entre opciones (los hermanos no compiten)", sinHermanos, 100);
+}
+
+{
+  const azar = azarSembrado(11);
+  let cierran = 0, unicas = 0;
+  for (let i = 0; i < 100; i++) {
+    const r = rondaCompletar(azar);
+    const hueco = duracionDeCompas(r.compas) - sumaDe(r.figuras);
+    if (Math.abs(duracionPuesta(r.falta) - hueco) < 1e-9) cierran++;
+    const queCierran = r.opciones.filter(
+      (o) => Math.abs(duracionPuesta(o) - hueco) < 1e-9,
+    );
+    if (queCierran.length === 1 && r.opciones.length === 4) unicas++;
+  }
+  comprobar("rondaCompletar: la que falta cierra el hueco exacto", cierran, 100);
+  comprobar("rondaCompletar: cuatro opciones y una sola cierra", unicas, 100);
+}
+
 console.log(`\n${pasaron} bien, ${fallaron} mal\n`);
 process.exit(fallaron > 0 ? 1 : 0);

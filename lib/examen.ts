@@ -29,6 +29,12 @@ import {
   tiemposDe,
   type Compas,
 } from "./ritmo";
+import {
+  enPalabras,
+  nombreDeOpcion,
+  rondaCompletar,
+  rondaNumero,
+} from "./compasQuiz.ts";
 
 /**
  * Las preguntas del examen de cada clase.
@@ -286,6 +292,35 @@ function preguntaConstante(): Pregunta {
 
 // ---------------------------------------------------------------------------
 
+/**
+ * El presupuesto del compás, en las dos direcciones: del contenido al número y
+ * del número a la figura que falta. Son las mismas rondas de la sala
+ * (`lib/compasQuiz.ts`), contadas en texto.
+ */
+function preguntaPresupuesto(): Pregunta {
+  if (Math.random() < 0.5) {
+    const r = rondaNumero(Math.random);
+    return conOpciones(
+      `Un compás tiene ${enPalabras(r.figuras)} y cierra justo. ¿Qué compás es?`,
+      nombreDeOpcion(r.compas),
+      r.opciones
+        .filter((o) => o !== r.compas)
+        .map(nombreDeOpcion)
+        .slice(0, 3),
+      `${enPalabras(r.figuras)} llenan justo el presupuesto de ${nombreDeOpcion(r.compas)}. Es la segunda lectura de los dos números: cuánto entra.`,
+    );
+  }
+  const r = rondaCompletar(Math.random);
+  const nombreDe = (f: (typeof r.opciones)[number]) =>
+    `${f.figura.nombre}${f.puntillo ? " con puntillo" : ""}`;
+  return conOpciones(
+    `Un compás de ${nombreDeOpcion(r.compas)} ya tiene ${enPalabras(r.figuras)}. ¿Qué figura lo cierra justo?`,
+    nombreDe(r.falta),
+    r.opciones.filter((o) => o !== r.falta).map(nombreDe).slice(0, 3),
+    `Faltaba ${nombreDe(r.falta)}: lo puesto no llega a llenar el presupuesto de ${nombreDeOpcion(r.compas)}.`,
+  );
+}
+
 export interface OpcionesExamen {
   /** Ids de acordes que la clase tocó. Si está vacío, no hay examen. */
   qualityIds: string[];
@@ -333,6 +368,7 @@ export function generarExamen({
   if (compases) {
     fabricas.push(preguntaCompas);
     fabricas.push(preguntaConstante);
+    fabricas.push(preguntaPresupuesto);
   }
 
   const preguntas: Pregunta[] = [];

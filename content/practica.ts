@@ -75,6 +75,8 @@ export type HerramientaSuelta =
   | "escalas"
   | "figuras"
   | "compases"
+  | "que-compas"
+  | "completar-compas"
   | "semitonos";
 
 /** Lo que comparten todas: dónde va, de qué clase salió y cómo se llama su URL. */
@@ -152,6 +154,18 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     bajada:
       "Elegí un compás y escuchá dónde caen los golpes. El botón de la constante pasa de simple a compuesto sin cambiar las notas.",
   },
+  "que-compas": {
+    titulo: "¿Qué compás es?",
+    emoji: "🔢",
+    bajada:
+      "Un compás lleno de figuras que cierra justo, y hay que ponerle el número. Es la cuenta del presupuesto al revés: de lo que entra, al compás.",
+  },
+  "completar-compas": {
+    titulo: "Completá el compás",
+    emoji: "🧩",
+    bajada:
+      "El número está puesto y falta una figura para que la cuenta cierre. 3/4 son tres negras para gastar — hay que encontrar la que gasta justo lo que sobra.",
+  },
   semitonos: {
     titulo: "Los semitonos de la octava",
     emoji: "📏",
@@ -172,6 +186,8 @@ const AREA_DE: Record<string, AreaId> = {
   escalas: "manos",
   figuras: "tiempo",
   compases: "tiempo",
+  "que-compas": "tiempo",
+  "completar-compas": "tiempo",
   nomenclature: "lectura",
   semitonos: "lectura",
 };
@@ -293,6 +309,8 @@ export function catalogo(): Entrada[] {
           break;
         case "compases":
           sumarSuelta("compases", lesson);
+          sumarSuelta("que-compas", lesson);
+          sumarSuelta("completar-compas", lesson);
           break;
         case "semitonos":
           sumarSuelta("semitonos", lesson);

@@ -7,6 +7,7 @@ import Grados from "./Grados";
 import Compases from "./Compases";
 import Enlace from "./Enlace";
 import EnlaceSorteo from "./EnlaceSorteo";
+import CompasQuiz from "./CompasQuiz";
 import ExerciseRunner from "./ExerciseRunner";
 import Figuras from "./Figuras";
 import HandsSwap from "./HandsSwap";
@@ -45,6 +46,10 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <Dictado qualityIds={acordes} modo="cifrado" reloj />;
         case "grados":
           return <Grados />;
+        case "que-compas":
+          return <CompasQuiz modo="numero" />;
+        case "completar-compas":
+          return <CompasQuiz modo="completar" />;
         case "escalas":
           return <Escalas />;
         case "figuras":

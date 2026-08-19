@@ -86,10 +86,19 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 | **Dictado contrarreloj** | El dictado del profe con reloj, racha, y los que fallás volviendo más seguido. |
 | **Progresiones por grados** | "ii – V – I en Fa" y salen los acordes. `lib/grados.ts`. |
 | **Las escalas** | Mayor, menor natural, armónica y melódica, tocadas de la tónica a la octava. `lib/escalas.ts`. |
+| **¿Qué compás es?** | Un compás lleno que cierra justo y hay que ponerle el número. `lib/compasQuiz.ts`. |
+| **Completá el compás** | El número puesto y falta la figura que cierra la cuenta. El mismo componente que el anterior, con la pregunta dada vuelta. |
 
 De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
 con dos enunciados, porque son la misma ronda: se propone algo, lo armás, se
-corrige. Lo único que cambia es si lo ves o lo escuchás.
+corrige. Lo único que cambia es si lo ves o lo escuchás. Los dos de compases
+también son uno solo (`components/CompasQuiz.tsx`) con la pregunta dada vuelta,
+y los dos practican la misma lectura: el compás como presupuesto. En el de
+ponerle el número **los hermanos (3/4 y 6/8) no compiten nunca entre opciones**:
+duran lo mismo, así que habría dos respuestas correctas — distinguirlos pide
+escuchar los golpes, y ése es el ejercicio de la máquina de compases. Las
+mismas rondas entran al examen como texto (`preguntaPresupuesto`). La primera
+ronda sale de un azar sembrado para que servidor y cliente dibujen lo mismo.
 
 **El enlace de la sala trae un dado.** Arranca en la progresión de la clase y
 el 🎲 sortea tonalidad × `PROGRESIONES` (las de verdad — acordes al azar serían
