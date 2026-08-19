@@ -91,6 +91,13 @@ De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
 con dos enunciados, porque son la misma ronda: se propone algo, lo armás, se
 corrige. Lo único que cambia es si lo ves o lo escuchás.
 
+**El enlace de la sala trae un dado.** Arranca en la progresión de la clase y
+el 🎲 sortea tonalidad × `PROGRESIONES` (las de verdad — acordes al azar serían
+ruido), con tríadas o cuatriadas. Nada se pre-genera: los acordes los arma
+`lib/grados.ts` y el recorrido óptimo lo calcula la programación dinámica del
+enlace al vuelo, para cualquier progresión. La `key` del componente rearma el
+ejercicio al cambiar la progresión; sin eso el puntaje anterior quedaba colgado.
+
 **Las escalas no traen digitación, y es a propósito.** La digitación no se
 deduce de la receta —es una tabla por tonalidad y por mano— y ponerla mal
 enseñaría algo peor que no ponerla. Está dicho en la página y queda para

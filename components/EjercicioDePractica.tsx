@@ -6,6 +6,7 @@ import Escalas from "./Escalas";
 import Grados from "./Grados";
 import Compases from "./Compases";
 import Enlace from "./Enlace";
+import EnlaceSorteo from "./EnlaceSorteo";
 import ExerciseRunner from "./ExerciseRunner";
 import Figuras from "./Figuras";
 import HandsSwap from "./HandsSwap";
@@ -27,7 +28,9 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
     case "hands":
       return <HandsSwap positions={e.block.positions} />;
     case "secuencia":
-      return <Enlace acordes={e.block.acordes} />;
+      // En la sala el enlace trae el dado: la progresión de la clase primero,
+      // y cualquier otra sorteada para practicar distinto cada vez.
+      return <EnlaceSorteo acordesDeLaClase={e.block.acordes} />;
     case "nomenclature":
       return <NomenclatureQuiz qualityIds={acordes} />;
     case "suelta":
