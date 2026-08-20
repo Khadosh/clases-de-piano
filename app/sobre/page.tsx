@@ -148,19 +148,29 @@ export default function Sobre() {
         </div>
         <div className="mt-5 space-y-4 leading-relaxed text-humo">
           <p>
-            El tercer personaje es esta página. Después de cada clase, Joaquín
-            cuenta qué pasó — con las fotos del cuaderno de papel, los ejercicios
-            y las dudas — y Claude lo convierte en esto: los teclados que suenan,
-            los dictados que corrigen, el pentagrama dibujado desde cero, los
-            ejercicios que saben qué te sale mal y te lo vuelven a preguntar.
+            El tercer personaje es esta página, escrita{" "}
+            <em className="text-tiza not-italic font-semibold">
+              a cuatro manos de verdad
+            </em>
+            : Joaquín marca el rumbo — qué construir, cómo se tiene que ver, qué
+            quedó raro y se rehace — y Claude escribe el código. Después de cada
+            clase, el relato y las fotos del cuaderno de papel se convierten en
+            contenido: los teclados que suenan, el pentagrama dibujado desde
+            cero, los dictados que corrigen.
           </p>
           <p>
-            Tiene una sola regla de honestidad, heredada del papel: cuando algo
-            no se entendió del todo, no se inventa — se hace la mejor
-            interpretación posible y la duda queda anotada para preguntarle a
-            Quique el miércoles siguiente. Por eso casi todas las clases
-            terminan con una lista de preguntas abiertas. Es un cuaderno: está
-            para equivocarse y corregirse.
+            Pero el corazón está en la <em className="text-tiza not-italic font-semibold">sala de práctica</em>, que es lo
+            que se usa entre miércoles y miércoles: el laboratorio de acordes,
+            los dictados de oído y contrarreloj, el enlace con su puntaje, las
+            secuencias por funciones, los quiz de compases. Ejercicios que se
+            generan distintos cada vez y se acuerdan de lo que te sale mal para
+            preguntártelo más seguido — la diferencia entre un apunte que se
+            lee y un cuaderno que te hace practicar.
+          </p>
+          <p>
+            Y una regla heredada del papel: lo que no se entendió del todo no se
+            inventa — queda anotado para preguntarle a Quique el miércoles
+            siguiente.
           </p>
         </div>
       </section>
