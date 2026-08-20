@@ -92,10 +92,11 @@ export default function Sobre() {
             jazz a la chacarera como si fuera lo más natural del mundo.
           </p>
           <p>
-            Los miércoles deja los arreglos para orquesta y se pone a enseñar a
-            gente de todos los niveles, improvisando acordes y melodías sobre la
-            marcha. De él son la regla de oro, el compás como presupuesto, el
-            triangulito del maj7 y todo lo que este cuaderno afirma.
+            Su vocación docente deja los arreglos para orquesta y le hace lugar
+            a alumnos de todos los niveles, improvisando acordes y melodías
+            sobre la marcha. En este cuaderno le toca el miércoles. De él son
+            la regla de oro, el compás como presupuesto, el triangulito del
+            maj7 y todo lo que estas páginas afirman.
           </p>
         </div>
         <div className="mt-5 flex flex-wrap gap-2">
