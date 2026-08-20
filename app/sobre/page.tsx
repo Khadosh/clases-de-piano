@@ -1,3 +1,5 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import type { Metadata } from "next";
 import Icono from "@/components/Icono";
 
@@ -30,7 +32,25 @@ const LINKS_QUIQUE = [
   },
 ];
 
-function Retrato({ iniciales }: { iniciales: string }) {
+/**
+ * Si la foto está en `public/retratos/<quien>.jpg`, se usa; si no, las
+ * iniciales. Se decide en el build: subir la foto al repo alcanza para que el
+ * próximo deploy la levante, sin tocar código.
+ */
+function Retrato({ quien, iniciales }: { quien: string; iniciales: string }) {
+  const foto = existsSync(join(process.cwd(), "public", "retratos", `${quien}.jpg`))
+    ? `/retratos/${quien}.jpg`
+    : null;
+  if (foto) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={foto}
+        alt={`Retrato de ${quien}`}
+        className="h-20 w-20 shrink-0 rounded-full border-2 border-borde object-cover"
+      />
+    );
+  }
   return (
     <span className="font-display flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-borde bg-carta-2 text-2xl font-black text-sol">
       {iniciales}
@@ -54,7 +74,7 @@ export default function Sobre() {
 
       <section className="card mb-6 p-6">
         <div className="flex flex-wrap items-center gap-4">
-          <Retrato iniciales="QY" />
+          <Retrato quien="quique" iniciales="QY" />
           <div className="min-w-0">
             <h2 className="font-display text-3xl font-black">Quique Yance</h2>
             <p className="font-mono text-xs tracking-wider text-sol uppercase">
@@ -95,7 +115,7 @@ export default function Sobre() {
 
       <section className="card mb-6 p-6">
         <div className="flex flex-wrap items-center gap-4">
-          <Retrato iniciales="J" />
+          <Retrato quien="joaquin" iniciales="J" />
           <div className="min-w-0">
             <h2 className="font-display text-3xl font-black">Joaquín</h2>
             <p className="font-mono text-xs tracking-wider text-sol uppercase">
@@ -136,9 +156,18 @@ export default function Sobre() {
 
       <section className="card p-6">
         <div className="flex flex-wrap items-center gap-4">
-          <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-borde bg-carta-2 text-3xl text-sol">
-            <Icono de="piano" />
-          </span>
+          {existsSync(join(process.cwd(), "public", "retratos", "cuaderno.jpg")) ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src="/retratos/cuaderno.jpg"
+              alt="El tercer pianista"
+              className="h-20 w-20 shrink-0 rounded-full border-2 border-borde object-cover"
+            />
+          ) : (
+            <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-borde bg-carta-2 text-3xl text-sol">
+              <Icono de="piano" />
+            </span>
+          )}
           <div className="min-w-0">
             <h2 className="font-display text-3xl font-black">El cuaderno</h2>
             <p className="font-mono text-xs tracking-wider text-sol uppercase">
