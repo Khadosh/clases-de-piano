@@ -296,7 +296,9 @@ export default function ChordLab({
               <p className="mb-1.5 text-xs tracking-[0.2em] text-humo uppercase">
                 {titulo}
               </p>
-              <div className="flex flex-wrap gap-1.5">
+              {/* En el celular la nube de fichas medía pantallas: una fila
+                  que se desliza, como el menú de arriba. */}
+              <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] sm:flex-wrap">
                 {delGrupo.map((q) => (
                   <button
                     key={q.id}
@@ -305,7 +307,7 @@ export default function ChordLab({
                       setQid(q.id);
                       setInv((n) => Math.min(n, cantidadDeInversiones(q)));
                     }}
-                    className={`rounded-xl px-3 py-2 text-left text-sm font-semibold transition ${
+                    className={`shrink-0 rounded-xl px-3 py-2 text-left text-sm font-semibold whitespace-nowrap transition sm:shrink ${
                       !dictado && qid === q.id
                         ? "bg-tiza text-noche"
                         : "bg-carta-2 text-humo hover:text-tiza"
@@ -325,7 +327,7 @@ export default function ChordLab({
 
       {/* Inversión */}
       {inversiones && (
-        <div className="flex flex-wrap items-center gap-1.5 border-b border-borde/60 p-4">
+        <div className="flex items-center gap-1.5 overflow-x-auto border-b border-borde/60 p-4 [scrollbar-width:none] sm:flex-wrap">
           {Array.from(
             { length: cantidadDeInversiones(elegido) + 1 },
             (_, n) => (

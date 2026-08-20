@@ -65,7 +65,11 @@ export default function RootLayout({
               <Link
                 key={item.href}
                 href={item.href}
-                className="shrink-0 rounded-full px-2.5 py-1.5 text-sm text-humo transition hover:bg-carta hover:text-tiza sm:px-3"
+                // "Inicio" no entra en el celular y es redundante: el logo ya
+                // lleva a inicio. Con eso los otros cinco entran sin cortarse.
+                className={`shrink-0 rounded-full px-2.5 py-1.5 text-sm text-humo transition hover:bg-carta hover:text-tiza sm:px-3 ${
+                  item.href === "/" ? "hidden sm:block" : ""
+                }`}
               >
                 {item.label}
               </Link>

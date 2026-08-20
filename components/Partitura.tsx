@@ -398,15 +398,10 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         </div>
       )}
 
-      {/* Los controles quedan pegados al pie de la ventana mientras la
-          partitura sigue para abajo: en una pieza larga estaban a dos pantallas
-          de la música. */}
-      <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur">
-
-      {/* Los controles, en dos filas: qué se toca y cómo suena. Cada grupo es
-          un bloque que no se parte (nowrap): en el celular los grupos bajan
-          enteros en vez de dejar un chip huérfano en la línea siguiente. */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 px-4 pt-3">
+      {/* Qué se toca (manos y compases) scrollea con la página: en el celular
+          la barra pegajosa con todo adentro se comía media pantalla. Sólo
+          queda pegado lo que se usa mientras suena: tocar, seguir, bpm. */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-borde/60 px-4 py-3">
         <span className="flex items-center gap-1.5 whitespace-nowrap">
           <span className="mr-1 text-xs tracking-[0.2em] text-humo uppercase">Manos</span>
           {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
@@ -500,6 +495,10 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         )}
       </div>
 
+      {/* Los controles de sonar quedan pegados al pie de la ventana mientras
+          la partitura sigue para abajo. */}
+      <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur">
+
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         {tocando ? (
           <button
@@ -568,7 +567,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
       {siguiendo && (
         <div className="border-t border-borde/60 px-4 pb-4">
-          <div className="mt-3 rounded-2xl bg-noche px-5 py-4">
+          <div className="mt-3 rounded-2xl bg-noche px-4 py-3 sm:px-5 sm:py-4">
             {terminada ? (
               <>
                 <p className="font-display text-2xl font-bold text-menta">
@@ -612,7 +611,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
                     </p>
                   )}
                 </div>
-                <p className="mt-2 text-xs text-humo">
+                <p className="mt-2 hidden text-xs text-humo sm:block">
                   No hay reloj: la partitura avanza cuando tocás todas las notas
                   de ese instante. La octava no importa. Tocá un compás del
                   pentagrama para saltar ahí.
