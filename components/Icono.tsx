@@ -218,6 +218,31 @@ const CUERPOS: Record<string, JSX.Element> = {
       <path d="M12 21a2.8 2.8 0 0 1-1.5-5c.3 1.2 1.5 1.5 1.5 1.5s2 1 0 3.5z" strokeWidth={1.3} />
     </g>
   ),
+  youtube: (
+    <g {...S}>
+      <rect x={2.5} y={6} width={19} height={13} rx={4} />
+      <path d="M10.5 9.5v6l5-3-5-3z" fill="currentColor" stroke="none" />
+    </g>
+  ),
+  instagram: (
+    <g {...S}>
+      <rect x={3.5} y={3.5} width={17} height={17} rx={5} />
+      <circle cx={12} cy={12} r={4} />
+      <circle cx={17} cy={7} r={1.2} fill="currentColor" stroke="none" />
+    </g>
+  ),
+  spotify: (
+    <g {...S}>
+      <circle cx={12} cy={12} r={9} />
+      <path d="M8 9.8c3.2-.9 6-.6 8.3.8M8.3 12.7c2.6-.7 4.8-.4 6.7.7M8.6 15.4c2-.5 3.7-.3 5.2.5" strokeWidth={1.5} />
+    </g>
+  ),
+  microfono: (
+    <g {...S}>
+      <rect x={9} y={3} width={6} height={11} rx={3} />
+      <path d="M6 11.5a6 6 0 0 0 12 0M12 17.5V21M9 21h6" />
+    </g>
+  ),
   loop: (
     <g {...S}>
       <path d="M4.5 12a7.5 7.5 0 0 1 13-5.1L20 9.5M19.5 12a7.5 7.5 0 0 1-13 5.1L4 14.5" />

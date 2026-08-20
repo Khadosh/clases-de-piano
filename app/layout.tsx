@@ -31,6 +31,7 @@ const NAV = [
   { href: "/acordes", label: "Acordes" },
   { href: "/partituras", label: "Partituras" },
   { href: "/practica", label: "Práctica" },
+  { href: "/sobre", label: "Sobre" },
 ];
 
 export default function RootLayout({
