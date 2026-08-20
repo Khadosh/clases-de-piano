@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Icono from "./Icono";
 import { type Mark, type Tone } from "./Keyboard";
 import Piano from "./Piano";
 import Pistas, { type Pista } from "./Pistas";
@@ -488,7 +489,7 @@ export default function ChordLab({
                 onClick={nuevoDictado}
                 className="ml-auto rounded-full bg-uva px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
               >
-                🎲 Dictado
+                <Icono de="dado" /> Dictado
               </button>
               {dictado && (
                 <button
@@ -541,7 +542,7 @@ function Correccion({
     return (
       <div className="mt-4 rounded-2xl border border-menta/40 bg-menta/10 px-4 py-3">
         <p className="font-display text-xl font-bold text-menta">
-          {pistas === 0 ? "¡Ahí está! 🎉" : "Ahí está 👍"}
+          {pistas === 0 ? <>¡Ahí está! <Icono de="festejo" /></> : "Ahí está"}
         </p>
         <p className="mt-0.5 text-sm text-humo">
           {pistas === 0

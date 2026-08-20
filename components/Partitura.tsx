@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Icono from "./Icono";
 import Pentagrama from "./Pentagrama";
 import EdicionCompleta from "./EdicionCompleta";
 import Midi from "./Midi";
@@ -523,7 +524,13 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             siguiendo ? "bg-brasa text-noche" : "bg-uva text-noche hover:brightness-110"
           }`}
         >
-          {siguiendo ? "⏹ Dejar de seguirme" : hayTeclado ? "🎹 Seguime" : "👆 Seguime"}
+          {siguiendo ? (
+            "■ Dejar de seguirme"
+          ) : (
+            <>
+              <Icono de={hayTeclado ? "piano" : "dedo"} /> Seguime
+            </>
+          )}
         </button>
 
         <button
@@ -531,7 +538,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           className={chip(metronomo)}
           title="Un compás de clicks para entrar, y el pulso marcado mientras suena"
         >
-          🕰 metrónomo
+          <Icono de="metronomo" /> metrónomo
         </button>
 
         {desdeCompas > 0 && (
@@ -565,7 +572,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             {terminada ? (
               <>
                 <p className="font-display text-2xl font-bold text-menta">
-                  Hasta el final 🎉
+                  Hasta el final <Icono de="festejo" />
                 </p>
                 <p className="mt-1 text-sm text-humo">
                   {errores === 0

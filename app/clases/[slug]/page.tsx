@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Icono from "@/components/Icono";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { LESSONS, formatDate, lessonBySlug, slugOf, temarioDe } from "@/content";
@@ -82,7 +83,7 @@ export default async function ClasePage({
                   href={`#${anchorDe(s.title)}`}
                   className="flex items-center gap-2 rounded-full bg-carta-2 px-4 py-2 text-sm font-semibold transition hover:bg-borde"
                 >
-                  <span>{s.emoji}</span>
+                  <span className="text-sol"><Icono de={s.emoji} /></span>
                   {s.title}
                 </a>
               </li>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Icono from "./Icono";
 import Keyboard, { type Mark } from "./Keyboard";
 import Midi from "./Midi";
 import Pistas, { type Pista } from "./Pistas";
@@ -201,7 +202,7 @@ export default function Escalas() {
           {terminada ? (
             <>
               <p className="font-display my-2 text-4xl font-black text-menta">
-                {errores === 0 ? "Entera y limpia 🎉" : "Entera"}
+                {errores === 0 ? <>Entera y limpia <Icono de="festejo" /></> : "Entera"}
               </p>
               <p className="text-sm text-humo">
                 {errores === 0
@@ -254,7 +255,7 @@ export default function Escalas() {
             onClick={tocarEntera}
             className="rounded-full bg-menta px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
           >
-            🔊 Escucharla entera
+            <Icono de="parlante" /> Escucharla entera
           </button>
           <button
             onClick={reiniciar}
@@ -266,7 +267,7 @@ export default function Escalas() {
             onClick={() => setTonica(Math.floor(Math.random() * 12))}
             className="rounded-full bg-carta-2 px-4 py-2 text-sm font-bold transition hover:bg-borde"
           >
-            🎲 Otra tónica
+            <Icono de="dado" /> Otra tónica
           </button>
         </div>
 

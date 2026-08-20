@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Icono from "./Icono";
 import Enlace from "./Enlace";
 import { PROGRESIONES, TONALIDAD_MAYOR, raizDelGrado } from "@/lib/grados";
 import { chordSymbol, escribirNota, qualityById, raizEscrita } from "@/lib/music";
@@ -88,7 +89,7 @@ export default function EnlaceSorteo({ acordesDeLaClase }: { acordesDeLaClase: s
             onClick={otra}
             className="rounded-xl bg-carta-2 px-3 py-1.5 text-sm font-bold transition hover:bg-borde"
           >
-            🎲 Otra progresión
+            <Icono de="dado" /> Otra progresión
           </button>
         </span>
       </div>

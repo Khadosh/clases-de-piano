@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Icono from "./Icono";
 import { type Mark } from "./Keyboard";
 import Piano from "./Piano";
 import Pistas, { type Pista } from "./Pistas";
@@ -291,7 +292,9 @@ export default function Dictado({
         </span>
         <span className="font-mono">
           <span className={racha >= 3 ? "text-sol" : "text-humo"}>
-            {"🔥".repeat(Math.min(racha, 5))}
+            {Array.from({ length: Math.min(racha, 5) }, (_, i) => (
+              <Icono key={i} de="llama" />
+            ))}
             {racha === 0 ? "—" : ` ${racha}`}
           </span>
           {mejorRacha > 1 && (
@@ -321,7 +324,7 @@ export default function Dictado({
                 onClick={() => sonar()}
                 className="rounded-full bg-uva px-5 py-3 text-lg font-bold text-noche transition hover:brightness-110"
               >
-                🔊 Escuchar otra vez
+                <Icono de="parlante" /> Escuchar otra vez
               </button>
               {regalarRaiz && (
                 <span className="font-display text-4xl font-black text-sol">
@@ -381,7 +384,13 @@ export default function Dictado({
             onClick={nueva}
             className="rounded-full bg-sol px-5 py-2.5 font-bold text-noche transition hover:brightness-110"
           >
-            {resuelta ? "Siguiente →" : "🎲 Otro"}
+            {resuelta ? (
+              "Siguiente →"
+            ) : (
+              <>
+                <Icono de="dado" /> Otro
+              </>
+            )}
           </button>
           {!resuelta && (
             <button
@@ -525,7 +534,7 @@ function Portada({
         onClick={onArrancar}
         className="mt-6 rounded-full bg-sol px-6 py-3 font-bold text-noche transition hover:brightness-110"
       >
-        {modo === "oido" ? "🔊 Arrancar" : "🎲 Arrancar"}
+        <Icono de={modo === "oido" ? "parlante" : "dado"} /> Arrancar
       </button>
     </div>
   );

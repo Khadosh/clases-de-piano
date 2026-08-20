@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Icono from "./Icono";
 import Keyboard, { type Mark } from "./Keyboard";
 import Midi from "./Midi";
 import {
@@ -294,7 +295,7 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
             }}
             className="rounded-full bg-menta px-5 py-2 text-sm font-bold text-noche transition hover:brightness-110"
           >
-            {playing ? "⏸ Pausa" : "▶ Arrancar"}
+            {playing ? "❚❚ Pausa" : "▶ Arrancar"}
           </button>
           <button
             onClick={() => {
@@ -336,11 +337,14 @@ export default function ExerciseRunner({ variants }: { variants: Variant[] }) {
                   : "bg-uva text-noche hover:brightness-110"
               }`}
             >
-              {siguiendo
-                ? "⏹ Parar"
-                : porMidi
-                  ? "🎹 Seguime en el piano"
-                  : "🎤 Escuchame tocar"}
+              {siguiendo ? (
+                "■ Parar"
+              ) : (
+                <>
+                  <Icono de={porMidi ? "piano" : "oreja"} />{" "}
+                  {porMidi ? "Seguime en el piano" : "Escuchame tocar"}
+                </>
+              )}
             </button>
           )}
 
@@ -486,7 +490,7 @@ function PanelDeSeguir({
     return (
       <div className="mt-4 rounded-2xl border border-menta/40 bg-menta/10 px-5 py-4">
         <p className="font-display text-2xl font-bold text-menta">
-          ¡Octava completa! 🎉
+          ¡Octava completa! <Icono de="festejo" />
         </p>
         <p className="mt-1 text-sm text-humo">
           {puntaje.bien} notas bien

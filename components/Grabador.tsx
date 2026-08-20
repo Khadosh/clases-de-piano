@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Icono from "./Icono";
 import { getAudioContext } from "@/lib/audio";
 import { aWav, unir } from "@/lib/wav";
 import { noteNameWithOctave } from "@/lib/music";
@@ -234,7 +235,7 @@ export default function Grabador() {
           )}
 
           <span className="ml-auto font-mono text-sm text-humo">
-            🎹 {notas.length} notas
+            <Icono de="piano" /> {notas.length} notas
           </span>
         </div>
 

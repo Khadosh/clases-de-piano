@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Icono from "@/components/Icono";
 import { LESSONS, computeStats, formatDate, latestLesson, slugOf } from "@/content";
 import { CHORD_QUALITIES } from "@/lib/music";
 import ProximoMiercoles from "@/components/ProximoMiercoles";
@@ -55,7 +56,7 @@ export default function Home() {
           valor={stats.racha}
           etiqueta={`miércoles seguidos`}
           color="text-brasa"
-          sufijo="🔥"
+          sufijo={<Icono de="llama" />}
         />
         <Contador
           valor={stats.acordes}
@@ -163,7 +164,7 @@ function Contador({
   valor: number;
   etiqueta: string;
   color: string;
-  sufijo?: string;
+  sufijo?: React.ReactNode;
 }) {
   return (
     <div className="card px-4 py-4">

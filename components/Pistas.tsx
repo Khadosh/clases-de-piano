@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import Icono from "./Icono";
 
 export interface Pista {
   /** De qué es la pista: "la receta", "el bajo". */
@@ -54,7 +55,7 @@ export default function Pistas({
           onClick={onPedir}
           className="rounded-full bg-carta-2 px-3.5 py-1.5 text-sm font-bold text-humo transition hover:bg-borde hover:text-tiza"
         >
-          💡 {dadas === 0 ? "Una pista" : "Otra pista"}
+          <Icono de="foco" /> {dadas === 0 ? "Una pista" : "Otra pista"}
           <span className="ml-1.5 font-mono text-xs opacity-60">
             quedan {quedan}
           </span>

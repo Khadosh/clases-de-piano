@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Icono from "./Icono";
 import { type Mark } from "./Keyboard";
 import Piano from "./Piano";
 import Pistas, { type Pista } from "./Pistas";
@@ -166,7 +167,7 @@ export default function Grados() {
           onClick={nueva}
           className="rounded-xl bg-carta-2 px-3 py-1.5 text-sm font-bold transition hover:bg-borde"
         >
-          🎲 Otra
+          <Icono de="dado" /> Otra
         </button>
       </div>
 
@@ -200,7 +201,7 @@ export default function Grados() {
               {progresion.nombre} en {escribirNota(raizEscrita(tonica), "en")}
             </p>
             <p className="font-display my-2 text-4xl font-black text-menta">
-              {errores === 0 ? "Entera y sin errores 🎉" : "Completa"}
+              {errores === 0 ? <>Entera y sin errores <Icono de="festejo" /></> : "Completa"}
             </p>
             <p className="mx-auto max-w-lg text-sm text-humo">
               {progresion.porQue}
@@ -251,7 +252,7 @@ export default function Grados() {
             onClick={escuchar}
             className="rounded-full bg-menta px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
           >
-            🔊 Escuchar la vuelta entera
+            <Icono de="parlante" /> Escuchar la vuelta entera
           </button>
           {terminado && (
             <button

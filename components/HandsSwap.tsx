@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Icono from "./Icono";
 import Keyboard, { type Mark } from "./Keyboard";
 import { noteName } from "@/lib/music";
 import { playChord, wakeAudio } from "@/lib/audio";
@@ -69,7 +70,7 @@ export default function HandsSwap({
             auto ? "bg-brasa text-noche" : "bg-carta-2 text-humo hover:text-tiza"
           }`}
         >
-          {auto ? "⏸ Parar el intercambio" : "🔁 Intercambiar solo"}
+          {auto ? "■ Parar el intercambio" : <><Icono de="loop" /> Intercambiar solo</>}
         </button>
       </div>
 

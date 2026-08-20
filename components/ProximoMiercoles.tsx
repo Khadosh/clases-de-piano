@@ -15,7 +15,7 @@ export default function ProximoMiercoles() {
     const faltan = (3 - dia + 7) % 7;
 
     if (faltan === 0) {
-      setTexto("Hoy hay clase 🎹");
+      setTexto("Hoy hay clase");
       return;
     }
     const prox = new Date(hoy);

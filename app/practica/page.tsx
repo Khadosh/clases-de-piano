@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Icono from "@/components/Icono";
 import type { Metadata } from "next";
 import { LESSONS } from "@/content";
 import {
@@ -53,7 +54,7 @@ export default function PracticaPage() {
       {areasConAlgo.map((a) => (
         <section key={a.id} className="mb-14">
           <div className="mb-5 flex items-center gap-3 border-b-2 border-borde pb-3">
-            <span className="text-3xl">{a.emoji}</span>
+            <span className="text-3xl text-sol"><Icono de={a.emoji} /></span>
             <div className="min-w-0">
               <h2 className="font-display text-3xl font-black tracking-tight">
                 {a.titulo}
@@ -90,7 +91,7 @@ function Tarjeta({ e }: { e: Entrada }) {
       href={`/practica/${e.slug}`}
       className="card group flex items-start gap-4 p-5 transition hover:border-sol/40"
     >
-      <span className="text-3xl">{e.emoji}</span>
+      <span className="text-3xl text-sol"><Icono de={e.emoji} /></span>
       <span className="min-w-0">
         <span className="font-display flex flex-wrap items-baseline gap-x-2 text-xl font-bold">
           {e.titulo}

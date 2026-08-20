@@ -1,4 +1,5 @@
 import type { Block } from "@/content/types";
+import Icono from "@/components/Icono";
 import ChordLab from "./ChordLab";
 import Semitonos from "./Semitonos";
 import Figuras from "./Figuras";
@@ -47,7 +48,7 @@ export function BlockView({ block }: { block: Block }) {
       return (
         <section id={anchorDe(block.title)} className="scroll-mt-20 pt-6">
           <div className="flex items-center gap-3 border-b-2 border-borde pb-3">
-            <span className="text-3xl">{block.emoji}</span>
+            <span className="text-3xl text-sol"><Icono de={block.emoji} /></span>
             <h2 className="font-display text-3xl font-black tracking-tight sm:text-4xl">
               {block.title}
             </h2>
@@ -98,7 +99,7 @@ export function BlockView({ block }: { block: Block }) {
               className="flota text-4xl"
               style={{ ["--tilt" as string]: "-6deg" }}
             >
-              {block.emoji}
+              <Icono de={block.emoji} />
             </span>
             <div className="min-w-0">
               <p className="text-xs tracking-[0.2em] text-brasa uppercase">

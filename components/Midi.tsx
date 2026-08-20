@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Icono from "./Icono";
 import type { EstadoMidi } from "@/lib/useMidi";
 
 /**
@@ -40,7 +41,7 @@ export default function Midi({
   if (estado === "conectado") {
     return (
       <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-menta">
-        <span>🎹</span>
+        <span className="text-sol"><Icono de="piano" /></span>
         <span className="font-mono">{dispositivos.join(" · ")}</span>
         <span className="text-humo">{pista}</span>
       </p>
@@ -55,7 +56,7 @@ export default function Midi({
         onClick={() => setAbierto((a) => !a)}
         className="flex items-center gap-2 text-sm text-humo transition hover:text-tiza"
       >
-        <span>🎹</span>
+        <span className="text-sol"><Icono de="piano" /></span>
         {estado === "sin-soporte"
           ? "Este navegador no lee teclados MIDI"
           : estado === "denegado"

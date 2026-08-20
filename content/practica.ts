@@ -170,7 +170,7 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
   },
   "que-compas": {
     titulo: "¿Qué compás es?",
-    emoji: "🔢",
+    emoji: "🧮",
     bajada:
       "Un compás lleno de figuras que cierra justo, y hay que ponerle el número. Es la cuenta del presupuesto al revés: de lo que entra, al compás.",
   },

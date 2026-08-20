@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Icono from "@/components/Icono";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { slugOf } from "@/content";
@@ -45,7 +46,8 @@ export default async function EjercicioPage({
           <>
             <span className="opacity-40">/</span>
             <span>
-              {area.emoji} {area.titulo}
+              <Icono de={area.emoji} className="mr-1 text-sol" />
+              {area.titulo}
             </span>
           </>
         )}
@@ -99,7 +101,8 @@ function Vecino({
         {lado === "anterior" ? "← Anterior" : "Siguiente →"}
       </span>
       <span className="font-display mt-1 block text-lg font-bold">
-        {e.emoji} {e.titulo}
+        <Icono de={e.emoji} className="mr-1.5 text-sol" />
+        {e.titulo}
       </span>
     </Link>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Icono from "./Icono";
 import Keyboard from "./Keyboard";
 import {
   CHORD_QUALITIES,
@@ -140,7 +141,7 @@ export default function NomenclatureQuiz({
           {score.ok}/{score.total}
         </span>
         <span className="font-mono">
-          🔥 {score.racha}
+          <Icono de="llama" /> {score.racha}
           <span className="ml-1 text-xs text-humo">(máx {score.mejor})</span>
         </span>
       </div>

@@ -899,6 +899,14 @@ acá, porque el que no ve nada asume que está roto.
   dominio (`izquierda`, `acordes`, `siguiente`). El código de infraestructura
   puede quedar en inglés donde ya lo está.
 - **Notas en MIDI**: Do central (C4) = 60. Do3 = 48, Do2 = 36.
+- **Nada de emojis en la interfaz: íconos SVG.** Los emojis dependen de la
+  fuente del sistema —en cada aparato se ven distintos, no toman el color del
+  texto— y desentonan con un sitio donde todo lo demás es dibujo propio. Los
+  íconos viven en `components/Icono.tsx`, van en `currentColor` y miden `1em`.
+  Los datos de las clases siguen declarando `emoji:` y el render lo mapea ahí;
+  un emoji sin ícono se muestra tal cual, que es la señal de que falta
+  dibujarlo. Los glifos geométricos de texto (▶ ■ → ↩ ⟳ ✓) sí valen: son
+  tipografía, no emoji.
 - **Nada se baja de un CDN.** Todo lo que la app necesita está en el repo. El
   teclado es SVG dibujado a mano y las ilustraciones, si alguna vez hacen falta,
   se generan y se guardan en `public/`.

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Icono from "./Icono";
 import { type Mark } from "./Keyboard";
 import Piano from "./Piano";
 import Pistas, { type Pista } from "./Pistas";
@@ -382,7 +383,7 @@ export default function Enlace({ acordes }: { acordes: string[] }) {
             disabled={mostrando}
             className="rounded-full bg-carta-2 px-4 py-2 text-sm font-bold transition hover:bg-borde disabled:opacity-50"
           >
-            👂 Escuchar el óptimo
+            <Icono de="oreja" /> Escuchar el óptimo
           </button>
         </div>
       </div>
