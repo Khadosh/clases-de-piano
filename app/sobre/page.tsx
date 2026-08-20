@@ -33,13 +33,13 @@ const LINKS_QUIQUE = [
 ];
 
 /**
- * Si la foto está en `public/retratos/<quien>.jpg`, se usa; si no, las
+ * Si la foto está en `public/retratos/<quien>.png`, se usa; si no, las
  * iniciales. Se decide en el build: subir la foto al repo alcanza para que el
  * próximo deploy la levante, sin tocar código.
  */
 function Retrato({ quien, iniciales }: { quien: string; iniciales: string }) {
-  const foto = existsSync(join(process.cwd(), "public", "retratos", `${quien}.jpg`))
-    ? `/retratos/${quien}.jpg`
+  const foto = existsSync(join(process.cwd(), "public", "retratos", `${quien}.png`))
+    ? `/retratos/${quien}.png`
     : null;
   if (foto) {
     return (
@@ -157,10 +157,10 @@ export default function Sobre() {
 
       <section className="card p-6">
         <div className="flex flex-wrap items-center gap-4">
-          {existsSync(join(process.cwd(), "public", "retratos", "cuaderno.jpg")) ? (
+          {existsSync(join(process.cwd(), "public", "retratos", "cuaderno.png")) ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src="/retratos/cuaderno.jpg"
+              src="/retratos/cuaderno.png"
               alt="El tercer pianista"
               className="h-20 w-20 shrink-0 rounded-full border-2 border-borde object-cover"
             />
