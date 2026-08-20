@@ -77,6 +77,8 @@ export type HerramientaSuelta =
   | "compases"
   | "que-compas"
   | "completar-compas"
+  | "funciones"
+  | "inventor"
   | "semitonos";
 
 /** Lo que comparten todas: dónde va, de qué clase salió y cómo se llama su URL. */
@@ -154,6 +156,18 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     bajada:
       "Elegí un compás y escuchá dónde caen los golpes. El botón de la constante pasa de simple a compuesto sin cambiar las notas.",
   },
+  funciones: {
+    titulo: "Las tres funciones",
+    emoji: "🏠",
+    bajada:
+      "Reposo, media tensión y tensión, con cada grado sonando y las tres cadencias para escuchar. Es el mapa de la armonía funcional: la casa, los intermedios y los que piden volver.",
+  },
+  inventor: {
+    titulo: "Inventar secuencias",
+    emoji: "✍️",
+    bajada:
+      "Armá tu progresión grado por grado, con las funciones pintadas de colores. La regla de oro te avisa si te quedaste cuatro veces en la misma familia, y al final la escuchás entera.",
+  },
   "que-compas": {
     titulo: "¿Qué compás es?",
     emoji: "🔢",
@@ -188,6 +202,8 @@ const AREA_DE: Record<string, AreaId> = {
   compases: "tiempo",
   "que-compas": "tiempo",
   "completar-compas": "tiempo",
+  funciones: "acordes",
+  inventor: "acordes",
   nomenclature: "lectura",
   semitonos: "lectura",
 };
@@ -311,6 +327,10 @@ export function catalogo(): Entrada[] {
           sumarSuelta("compases", lesson);
           sumarSuelta("que-compas", lesson);
           sumarSuelta("completar-compas", lesson);
+          break;
+        case "funciones":
+          sumarSuelta("funciones", lesson);
+          sumarSuelta("inventor", lesson);
           break;
         case "semitonos":
           sumarSuelta("semitonos", lesson);

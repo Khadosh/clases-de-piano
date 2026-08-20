@@ -8,10 +8,14 @@
 
 import assert from "node:assert/strict";
 import {
+  FUNCION_DE_GRADO,
   GRADOS_MAYOR,
   PROGRESIONES,
   TONALIDAD_MAYOR,
+  cadenciaAlFinal,
+  rachaDeFuncion,
   raizDelGrado,
+  violaLaReglaDeOro,
 } from "../lib/grados.ts";
 import {
   ESCALAS,
@@ -167,6 +171,30 @@ probar("las calidades de los grados están todas en el catálogo del código", (
   for (const g of TONALIDAD_MAYOR) {
     assert.ok(ids.has(g.triada) && ids.has(g.cuatriada), g.cifra);
   }
+});
+
+// ---- Las funciones armónicas de la clase 3, contra la tabla del cuaderno ---
+
+probar("las funciones grado por grado: I IIIm VIm reposo, V VII° tensión, IIm IV media", () => {
+  assert.deepEqual(FUNCION_DE_GRADO, [
+    "reposo", "subdominante", "reposo", "subdominante", "dominante", "reposo", "dominante",
+  ]);
+});
+
+probar("la regla de oro: cuatro reposos seguidos la violan, tres no", () => {
+  assert.equal(violaLaReglaDeOro([0, 2, 5, 0]), true);
+  assert.equal(violaLaReglaDeOro([0, 2, 5, 1, 3, 0]), false); // C Em Am Dm F C, del papel
+});
+
+probar("la racha cuenta seguidas y no totales", () => {
+  assert.equal(rachaDeFuncion([0, 4, 0, 4, 0, 4]), 1);
+});
+
+probar("las tres cadencias del cuaderno: V→I auténtica, V→VI rota, V→IV→I plagal", () => {
+  assert.equal(cadenciaAlFinal([1, 4, 0]), "autentica");
+  assert.equal(cadenciaAlFinal([0, 4, 5]), "rota");
+  assert.equal(cadenciaAlFinal([0, 4, 3, 0]), "plagal");
+  assert.equal(cadenciaAlFinal([0, 3]), null);
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

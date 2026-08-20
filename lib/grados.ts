@@ -92,3 +92,86 @@ export const PROGRESIONES: Progresion[] = [
     porQue: "La cadena de quintas: cada acorde cae una quinta del siguiente. Es la ii-V-I con más pista de despegue.",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Las funciones armónicas (clase 3)
+// ---------------------------------------------------------------------------
+
+export type Funcion = "reposo" | "subdominante" | "dominante";
+
+/**
+ * Qué función cumple cada grado, como lo dio el profe: REPOSO es la casa
+ * adonde se tiende a volver (I, IIIm, VIm), TENSIÓN o dominante son los que
+ * piden volver (V, VII°), y MEDIA TENSIÓN o subdominantes son los intermedios
+ * (IIm, IV).
+ */
+export const FUNCION_DE_GRADO: Funcion[] = [
+  "reposo", // I
+  "subdominante", // IIm
+  "reposo", // IIIm
+  "subdominante", // IV
+  "dominante", // V
+  "reposo", // VIm
+  "dominante", // VII°
+];
+
+export const FUNCIONES: Record<
+  Funcion,
+  { nombre: string; alias: string; grados: number[]; papel: string }
+> = {
+  reposo: {
+    nombre: "Reposo",
+    alias: "tónica",
+    grados: [0, 2, 5],
+    papel: "La casa. Adonde se tiende a volver.",
+  },
+  subdominante: {
+    nombre: "Media tensión",
+    alias: "subdominante",
+    grados: [1, 3],
+    papel: "Los intermedios. Salen de casa sin apurar la vuelta.",
+  },
+  dominante: {
+    nombre: "Tensión",
+    alias: "dominante",
+    grados: [4, 6],
+    papel: "Piden volver a la casa. No se pueden quedar ahí.",
+  },
+};
+
+/**
+ * La regla de oro del profe: en una secuencia de acordes nunca hay que repetir
+ * cuatro funciones iguales seguidas — siempre hay que variar entre las tres.
+ * Devuelve la racha más larga de la misma función, para poder avisar justo
+ * cuando aparece la cuarta.
+ */
+export function rachaDeFuncion(grados: number[]): number {
+  let mejor = 0;
+  let racha = 0;
+  let previa: Funcion | null = null;
+  for (const g of grados) {
+    const f = FUNCION_DE_GRADO[g];
+    racha = f === previa ? racha + 1 : 1;
+    previa = f;
+    mejor = Math.max(mejor, racha);
+  }
+  return mejor;
+}
+
+export const violaLaReglaDeOro = (grados: number[]) => rachaDeFuncion(grados) >= 4;
+
+/**
+ * Las cadencias de la clase, mirando el final de la secuencia. La plagal va
+ * como la dio el profe (V → IV → I); si el V es parte de la definición o era
+ * contexto quedó anotado para preguntar.
+ */
+export function cadenciaAlFinal(
+  grados: number[],
+): "autentica" | "rota" | "plagal" | null {
+  const n = grados.length;
+  const cola = (cuantos: number) => grados.slice(n - cuantos).join(",");
+  if (n >= 3 && cola(3) === "4,3,0") return "plagal";
+  if (n >= 2 && cola(2) === "4,0") return "autentica";
+  if (n >= 2 && cola(2) === "4,5") return "rota";
+  return null;
+}

@@ -2,12 +2,13 @@ import type { Lesson } from "@/content/types";
 import { slugOf } from "@/content/types";
 import clase01 from "@/content/lessons/clase-01";
 import clase02 from "@/content/lessons/clase-02";
+import clase03 from "@/content/lessons/clase-03";
 
 /**
  * El índice de clases. Para agregar una clase nueva: crear el archivo en
  * content/lessons/ y sumarlo acá. Nada más.
  */
-export const LESSONS: Lesson[] = [clase01, clase02].sort((a, b) => a.n - b.n);
+export const LESSONS: Lesson[] = [clase01, clase02, clase03].sort((a, b) => a.n - b.n);
 
 export const lessonBySlug = (slug: string) =>
   LESSONS.find((l) => slugOf(l) === slug);
@@ -39,6 +40,7 @@ export function temarioDe(lesson: Lesson) {
   let semitonos = false;
   let figuras = false;
   let compases = false;
+  let funciones = false;
   for (const b of lesson.blocks) {
     if (b.kind === "chord-lab") {
       b.qualities.forEach((q) => qualityIds.add(q));
@@ -47,8 +49,16 @@ export function temarioDe(lesson: Lesson) {
     if (b.kind === "semitonos") semitonos = true;
     if (b.kind === "figuras") figuras = true;
     if (b.kind === "compases") compases = true;
+    if (b.kind === "funciones") {
+      funciones = true;
+      // El campo armónico toca todos estos aunque no haya chord-lab: las
+      // tríadas de los siete grados y las cuatriadas que la clase nombró.
+      for (const q of ["maj", "min", "dim", "maj7", "min7", "dom7", "m7b5"]) {
+        qualityIds.add(q);
+      }
+    }
   }
-  return { qualityIds: [...qualityIds], inversiones, semitonos, figuras, compases };
+  return { qualityIds: [...qualityIds], inversiones, semitonos, figuras, compases, funciones };
 }
 
 export interface Stats {

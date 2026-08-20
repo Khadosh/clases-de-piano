@@ -20,6 +20,7 @@ export type Block =
   | FigurasBlock
   | CompasesBlock
   | SecuenciaBlock
+  | FuncionesBlock
   | QuoteBlock;
 
 /**
@@ -161,6 +162,17 @@ export interface FigurasBlock {
  */
 export interface CompasesBlock {
   kind: "compases";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * Las tres funciones armónicas de la tonalidad mayor —reposo, media tensión y
+ * tensión— con los grados de cada familia sonando, y las tres cadencias de la
+ * clase para escuchar cómo resuelven.
+ */
+export interface FuncionesBlock {
+  kind: "funciones";
   title: string;
   intro?: string;
 }

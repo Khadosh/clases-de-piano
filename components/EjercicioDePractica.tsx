@@ -8,6 +8,8 @@ import Compases from "./Compases";
 import Enlace from "./Enlace";
 import EnlaceSorteo from "./EnlaceSorteo";
 import CompasQuiz from "./CompasQuiz";
+import Funciones from "./Funciones";
+import InventorDeSecuencias from "./InventorDeSecuencias";
 import ExerciseRunner from "./ExerciseRunner";
 import Figuras from "./Figuras";
 import HandsSwap from "./HandsSwap";
@@ -46,6 +48,10 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <Dictado qualityIds={acordes} modo="cifrado" reloj />;
         case "grados":
           return <Grados />;
+        case "funciones":
+          return <Funciones />;
+        case "inventor":
+          return <InventorDeSecuencias />;
         case "que-compas":
           return <CompasQuiz modo="numero" />;
         case "completar-compas":

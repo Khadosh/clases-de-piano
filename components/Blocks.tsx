@@ -4,6 +4,7 @@ import Semitonos from "./Semitonos";
 import Figuras from "./Figuras";
 import Compases from "./Compases";
 import Enlace from "./Enlace";
+import Funciones from "./Funciones";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -166,6 +167,17 @@ export function BlockView({ block }: { block: Block }) {
             <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
           )}
           <Compases />
+        </section>
+      );
+
+    case "funciones":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Funciones />
         </section>
       );
 

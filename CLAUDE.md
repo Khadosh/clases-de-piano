@@ -88,6 +88,7 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 | **Las escalas** | Mayor, menor natural, armónica y melódica, tocadas de la tónica a la octava. `lib/escalas.ts`. |
 | **¿Qué compás es?** | Un compás lleno que cierra justo y hay que ponerle el número. `lib/compasQuiz.ts`. |
 | **Completá el compás** | El número puesto y falta la figura que cierra la cuenta. El mismo componente que el anterior, con la pregunta dada vuelta. |
+| **Inventar secuencias** | La tarea de la clase 3 jugable: grados con las funciones pintadas, la regla de oro avisando en la cuarta igual seguida (sin borrar nada: la secuencia es tuya), y las cadencias detectadas al cierre. `lib/grados.ts`. |
 
 De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
 con dos enunciados, porque son la misma ronda: se propone algo, lo armás, se
@@ -173,6 +174,7 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `figuras` | Las figuras y el árbol de división | Árbol que suena + tabla de las siete figuras |
 | `compases` | Simples, compuestos y la subdivisión | Máquina de compases con metrónomo y el botón de la constante |
 | `secuencia` | Enlazar una progresión girando los acordes | Teclado con el acorde anterior en gris y el puntaje de cuánto te moviste |
+| `funciones` | Las tres funciones armónicas | El mapa reposo/media/tensión con cada grado sonando y las tres cadencias para escuchar |
 
 **Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
 lee como un chorizo. El índice de arriba de la clase se arma solo a partir de

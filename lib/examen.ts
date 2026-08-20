@@ -35,6 +35,7 @@ import {
   rondaCompletar,
   rondaNumero,
 } from "./compasQuiz.ts";
+import { FUNCIONES, FUNCION_DE_GRADO, TONALIDAD_MAYOR } from "./grados.ts";
 
 /**
  * Las preguntas del examen de cada clase.
@@ -321,6 +322,41 @@ function preguntaPresupuesto(): Pregunta {
   );
 }
 
+/**
+ * Las funciones armónicas de la clase 3: qué familia es cada grado, y las
+ * cadencias con su nombre.
+ */
+function preguntaFuncion(): Pregunta {
+  if (Math.random() < 0.5) {
+    const g = Math.floor(Math.random() * 7);
+    const f = FUNCION_DE_GRADO[g];
+    const nombres = {
+      reposo: "reposo (tónica)",
+      subdominante: "media tensión (subdominante)",
+      dominante: "tensión (dominante)",
+    } as const;
+    const correcta = nombres[f];
+    return conOpciones(
+      `En el campo armónico mayor, ¿qué función cumple el ${TONALIDAD_MAYOR[g].cifra}?`,
+      correcta,
+      Object.values(nombres).filter((n) => n !== correcta),
+      `${TONALIDAD_MAYOR[g].cifra}: ${FUNCIONES[f].papel} Reposo son I, IIIm y VIm; tensión son V y VII°; media tensión son IIm y IV.`,
+    );
+  }
+  const cadencias = [
+    { nombre: "Auténtica", forma: "V → I" },
+    { nombre: "Rota o de engaño", forma: "V → VIm" },
+    { nombre: "Plagal", forma: "V → IV → I" },
+  ];
+  const c = pickRandom(cadencias);
+  return conOpciones(
+    `¿Cómo se llama la cadencia ${c.forma}?`,
+    c.nombre,
+    cadencias.filter((o) => o.nombre !== c.nombre).map((o) => o.nombre),
+    `${c.forma} es la ${c.nombre.toLowerCase()}. Auténtica V→I, rota V→VIm (promete el I y aterriza en el relativo), plagal V→IV→I con la subdominante en el medio.`,
+  );
+}
+
 export interface OpcionesExamen {
   /** Ids de acordes que la clase tocó. Si está vacío, no hay examen. */
   qualityIds: string[];
@@ -332,6 +368,8 @@ export interface OpcionesExamen {
   figuras?: boolean;
   /** ¿Vio compases simples y compuestos? */
   compases?: boolean;
+  /** ¿Vio las funciones armónicas? */
+  funciones?: boolean;
   cantidad?: number;
 }
 
@@ -346,6 +384,7 @@ export function generarExamen({
   semitonos,
   figuras,
   compases,
+  funciones,
   cantidad = 8,
 }: OpcionesExamen): Pregunta[] {
   const pozo = qualityIds
@@ -370,6 +409,7 @@ export function generarExamen({
     fabricas.push(preguntaConstante);
     fabricas.push(preguntaPresupuesto);
   }
+  if (funciones) fabricas.push(preguntaFuncion);
 
   const preguntas: Pregunta[] = [];
   // Se garantiza una de armar y después se completa mezclando.
