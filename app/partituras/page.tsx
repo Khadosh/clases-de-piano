@@ -30,6 +30,18 @@ export default function PartiturasPage() {
           toca, te marca dónde va, y con el teclado enchufado te espera a vos en
           vez de irse sola.
         </p>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-humo">
+          Es el último paso de la{" "}
+          <Link
+            href="/practica"
+            className="font-semibold text-tiza underline decoration-dotted underline-offset-4 transition hover:text-sol"
+          >
+            sala de práctica
+          </Link>
+          : los ejercicios entrenan las partes, acá se juntan. Los puntitos son
+          la dificultad, y la lista va de lo que se puede intentar hoy a lo que
+          va a haber que ganarse.
+        </p>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2">
