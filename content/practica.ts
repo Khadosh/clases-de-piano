@@ -79,6 +79,7 @@ export type HerramientaSuelta =
   | "completar-compas"
   | "funciones"
   | "inventor"
+  | "melodia"
   | "semitonos";
 
 /** Lo que comparten todas: dónde va, de qué clase salió y cómo se llama su URL. */
@@ -168,6 +169,12 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     bajada:
       "Armá tu progresión grado por grado, con las funciones pintadas de colores. La regla de oro te avisa si te quedaste cuatro veces en la misma familia, y al final la escuchás entera.",
   },
+  melodia: {
+    titulo: "Ponerle melodía a los acordes",
+    emoji: "🎼",
+    bajada:
+      "El puente con las partituras: elegís o armás una progresión y arriba va una melodía simple, escrita en pentagrama y sonando junto con los acordes. La puede componer la app —siguiendo las reglas de la clase, para escuchar que alcanzan— o la escribís vos pulso por pulso, y te dice qué fue cada nota: del acorde, de paso o en el aire.",
+  },
   "que-compas": {
     titulo: "¿Qué compás es?",
     emoji: "🧮",
@@ -204,6 +211,7 @@ const AREA_DE: Record<string, AreaId> = {
   "completar-compas": "tiempo",
   funciones: "acordes",
   inventor: "acordes",
+  melodia: "acordes",
   nomenclature: "lectura",
   semitonos: "lectura",
 };
@@ -331,6 +339,10 @@ export function catalogo(): Entrada[] {
         case "funciones":
           sumarSuelta("funciones", lesson);
           sumarSuelta("inventor", lesson);
+          // Ponerle melodía es el paso que sigue a inventar la secuencia, y
+          // por eso cuelga de acá: recién con las funciones vistas tiene
+          // sentido hablar de dónde aterriza una melodía.
+          sumarSuelta("melodia", lesson);
           break;
         case "semitonos":
           sumarSuelta("semitonos", lesson);

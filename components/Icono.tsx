@@ -243,6 +243,13 @@ const CUERPOS: Record<string, JSX.Element> = {
       <path d="M6 11.5a6 6 0 0 0 12 0M12 17.5V21M9 21h6" />
     </g>
   ),
+  pentagrama: (
+    <g {...S}>
+      <path d="M3 5.5h18M3 9h18M3 12.5h18M3 16h18M3 19.5h18" strokeWidth={1.1} />
+      <circle cx={13.6} cy={16} r={2.1} fill="currentColor" stroke="none" />
+      <path d="M15.7 16V5.5" strokeWidth={1.4} />
+    </g>
+  ),
   loop: (
     <g {...S}>
       <path d="M4.5 12a7.5 7.5 0 0 1 13-5.1L20 9.5M19.5 12a7.5 7.5 0 0 1-13 5.1L4 14.5" />
@@ -283,6 +290,7 @@ const DE_EMOJI: Record<string, string> = {
   "💡": "foco",
   "🔥": "llama",
   "🔁": "loop",
+  "🎼": "pentagrama",
 };
 
 export default function Icono({

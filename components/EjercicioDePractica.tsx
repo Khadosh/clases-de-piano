@@ -10,6 +10,7 @@ import EnlaceSorteo from "./EnlaceSorteo";
 import CompasQuiz from "./CompasQuiz";
 import Funciones from "./Funciones";
 import InventorDeSecuencias from "./InventorDeSecuencias";
+import Melodia from "./Melodia";
 import ExerciseRunner from "./ExerciseRunner";
 import Figuras from "./Figuras";
 import HandsSwap from "./HandsSwap";
@@ -52,6 +53,8 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <Funciones />;
         case "inventor":
           return <InventorDeSecuencias />;
+        case "melodia":
+          return <Melodia />;
         case "que-compas":
           return <CompasQuiz modo="numero" />;
         case "completar-compas":

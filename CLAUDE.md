@@ -36,6 +36,13 @@ otro la cabeza, otro el metrónomo— y tenerlos todos a la vez no ayuda a
 ninguno. Encima con tres pianos en pantalla el MIDI tenía que adivinar a cuál le
 estabas hablando.
 
+El índice de `/practica` numera las áreas como **pasos de una rutina** —el
+orden ya era ése, ahora está dicho— y cierra con un paso más, el repertorio,
+que apunta a `/partituras` mostrando las piezas más fáciles. Es la conexión
+entre las dos mitades del sitio: los ejercicios entrenan las partes, la
+partitura las junta. No hay que mantener nada ahí: las piezas salen solas de
+`PIEZAS` ordenadas por dificultad.
+
 El `slug` **tiene que ser estable**: es la dirección que queda abierta en el
 teléfono arriba del piano. Por eso el número de clase se agrega sólo cuando hay
 dos del mismo tipo y no siempre — si no, publicar la clase 3 cambiaría la
@@ -89,6 +96,7 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 | **¿Qué compás es?** | Un compás lleno que cierra justo y hay que ponerle el número. `lib/compasQuiz.ts`. |
 | **Completá el compás** | El número puesto y falta la figura que cierra la cuenta. El mismo componente que el anterior, con la pregunta dada vuelta. |
 | **Inventar secuencias** | La tarea de la clase 3 jugable: grados con las funciones pintadas, la regla de oro avisando en la cuarta igual seguida (sin borrar nada: la secuencia es tuya), y las cadencias detectadas al cierre. `lib/grados.ts`. |
+| **Ponerle melodía a los acordes** | El puente con las partituras: la progresión se elige o se arma con los grados, y arriba va una melodía simple dibujada en pentagrama y sonando junta. La compone la app o la escribe el que practica, pulso por pulso, con veredicto por nota. `lib/melodia.ts`. |
 
 De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
 con dos enunciados, porque son la misma ronda: se propone algo, lo armás, se
@@ -112,6 +120,21 @@ ejercicio al cambiar la progresión; sin eso el puntaje anterior quedaba colgado
 deduce de la receta —es una tabla por tonalidad y por mano— y ponerla mal
 enseñaría algo peor que no ponerla. Está dicho en la página y queda para
 preguntarle al profe.
+
+**La melodía se piensa en grados de la escala, no en semitonos.**
+`lib/melodia.ts` compone con las reglas de la clase y ninguna más: nota del
+acorde en los pulsos fuertes (1 y 3), las ajenas ganadas por grado conjunto
+(de paso o vecinas), y el final largo con preferencia por la fundamental. El
+generador es determinístico por semilla —así el servidor y el cliente dibujan
+lo mismo, y «otra melodía» es sólo cambiar la semilla— y cuando la melodía la
+escribe el que practica, el mismo módulo la puntúa nota por nota: del acorde,
+de paso, o en el aire. Puntúa y no corrige, como el enlace: muchas melodías
+distintas están igual de bien. `npm run test:melodia` verifica las promesas
+sobre todas las progresiones × 25 semillas — que si se afirma que las reglas
+alcanzan para que suene bien, más vale que se cumplan siempre y no en la
+pasada que salió linda. El pentagrama y el reproductor son los de las
+partituras: mismo dibujo, mismo esquema de `notaOn`/`notaOff` para que parar
+pueda parar.
 
 `npm run test:grados` prueba las dos tablas nuevas contra casos que se pueden
 verificar en cualquier libro: la tonalidad de Do sin alteraciones, la de Sol con
@@ -927,6 +950,7 @@ npm run typecheck  # sólo tipos
 npm run importar   # de un MusicXML a una pieza de content/partituras.ts
 npm run test:pentagrama # el pentagrama y que las piezas cierren la cuenta
 npm run test:grados  # los grados de una tonalidad y las escalas
+npm run test:melodia # la melodía generada, contra sus propias reglas
 npm run test:ritmo   # figuras y compases
 npm run test:enlace  # el enlace de acordes
 npm run test:notas   # segmentación y puntaje del micrófono
