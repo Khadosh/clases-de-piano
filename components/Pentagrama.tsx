@@ -429,7 +429,8 @@ function Soplo({
   s: SistemaDispuesto;
 }) {
   const e = nota.cabezas[cabeza].escrita;
-  const nombre = `${escribirNota({ letra: e.letra, alter: e.alter, pc: mod12(e.midi) })}${e.octava}`;
+  // En inglés, como el resto del cifrado y como las prácticas de acordes.
+  const nombre = `${escribirNota({ letra: e.letra, alter: e.alter, pc: mod12(e.midi) }, "en")}${e.octava}`;
 
   // Todo lo que suena junto con esta nota: lo que ataca en el mismo instante y
   // lo que viene tenido de antes. (Una nota tenida desde el renglón anterior
