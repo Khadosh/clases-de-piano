@@ -395,6 +395,11 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
               }
             }}
           />
+          <p className="mt-2 text-xs text-humo">
+            ¿Una nota no se deja leer? Primero decidí cuál te parece que es, y
+            después apoyale el mouse o el dedo: te la sopla — y si con lo demás
+            que suena forma un acorde conocido, también.
+          </p>
         </div>
       )}
 

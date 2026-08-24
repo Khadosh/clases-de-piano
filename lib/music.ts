@@ -495,6 +495,50 @@ export function parseCifrado(sym: string): Chord | null {
   return quality ? { root, quality } : null;
 }
 
+export interface AcordeIdentificado {
+  root: PitchClass;
+  quality: ChordQuality;
+  /** La clase de la nota más grave que sonaba. Si no es la fundamental, está invertido. */
+  bajo: PitchClass;
+}
+
+/**
+ * ¿Lo que suena tiene nombre? Prueba cada nota como fundamental contra todas
+ * las recetas. Octavas y notas repetidas no importan: un acorde son sus clases
+ * de nota. Lo usan el teclado libre y el soplo del pentagrama, que por eso
+ * responden exactamente lo mismo.
+ */
+export function identificarAcorde(pitches: Pitch[]): AcordeIdentificado | null {
+  if (pitches.length < 3) return null;
+  const pcs = [...new Set(pitches.map(mod12))].sort((a, b) => a - b);
+
+  for (const root of pcs) {
+    const rel = pcs.map((pc) => mod12(pc - root)).sort((a, b) => a - b);
+    for (const q of CHORD_QUALITIES) {
+      const target = intervalsOf(q)
+        .map(mod12)
+        .sort((a, b) => a - b);
+      if (target.length === rel.length && target.every((v, i) => v === rel[i])) {
+        return { root, quality: q, bajo: mod12(Math.min(...pitches)) };
+      }
+    }
+  }
+  return null;
+}
+
+/**
+ * Cómo se llama la nota que quedó en el bajo, con la letra que le toca dentro
+ * del acorde y no la de la tecla suelta: en Mi♭ menor la del medio es Sol♭,
+ * nunca Fa♯.
+ */
+export function bajoIdentificado(
+  a: AcordeIdentificado,
+  lang: "es" | "en" = "es",
+): string {
+  const escrito = deletrearAcorde(a.root, a.quality).find((n) => n.pc === a.bajo);
+  return escrito ? escribirNota(escrito, lang) : noteName(a.bajo, { lang });
+}
+
 // ---------------------------------------------------------------------------
 // Inversiones
 // ---------------------------------------------------------------------------

@@ -3,12 +3,9 @@
 import Piano from "./Piano";
 import { type Mark } from "./Keyboard";
 import {
-  CHORD_QUALITIES,
+  bajoIdentificado,
   chordSymbol,
-  deletrearAcorde,
-  escribirNota,
-  intervalsOf,
-  mod12,
+  identificarAcorde,
   noteName,
 } from "@/lib/music";
 import { useArmado } from "@/lib/useArmado";
@@ -26,7 +23,13 @@ export default function TecladoLibre() {
   const held = armado.notas;
 
   const marks: Mark[] = held.map((p) => ({ pitch: p, tone: "sol" }));
-  const nombre = identificar(held);
+  // El identificador es el de lib/music, el mismo que sopla en las partituras.
+  const acorde = identificarAcorde(held);
+  const nombre = acorde
+    ? acorde.bajo === acorde.root
+      ? chordSymbol(acorde.root, acorde.quality)
+      : `${chordSymbol(acorde.root, acorde.quality)} (invertido, bajo en ${bajoIdentificado(acorde)})`
+    : null;
 
   return (
     <div className="card overflow-hidden">
@@ -63,33 +66,4 @@ export default function TecladoLibre() {
       </div>
     </div>
   );
-}
-
-/** Busca la receta que coincida, probando cada nota como fundamental. */
-function identificar(pitches: number[]): string | null {
-  if (pitches.length < 3) return null;
-  const pcs = [...new Set(pitches.map(mod12))].sort((a, b) => a - b);
-
-  for (const root of pcs) {
-    const rel = pcs.map((pc) => mod12(pc - root)).sort((a, b) => a - b);
-    for (const q of CHORD_QUALITIES) {
-      const target = intervalsOf(q)
-        .map(mod12)
-        .sort((a, b) => a - b);
-      if (
-        target.length === rel.length &&
-        target.every((v, i) => v === rel[i])
-      ) {
-        const bajo = mod12(Math.min(...pitches));
-        if (bajo === root) return chordSymbol(root, q);
-        // El bajo se nombra como lo nombra el acorde: en un Mi♭ menor la tecla
-        // negra del medio es Sol♭, aunque suelta se la llame Fa♯.
-        const escrito = deletrearAcorde(root, q).find((n) => n.pc === bajo);
-        return `${chordSymbol(root, q)} (invertido, bajo en ${
-          escrito ? escribirNota(escrito) : noteName(bajo)
-        })`;
-      }
-    }
-  }
-  return null;
 }

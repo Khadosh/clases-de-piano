@@ -14,6 +14,7 @@ import {
   ubicar,
   type Clave,
   type Evento,
+  type NotaEnPapel,
   type NotaUbicada,
   type Signo,
   type Tonalidad,
@@ -24,6 +25,14 @@ import {
 } from "@/lib/pentagrama";
 import { banderasDe, cabezaLlena, tienePlica, type Compas } from "@/lib/ritmo";
 import { GLIFOS, semiAncho } from "@/lib/glifos";
+import {
+  bajoIdentificado,
+  chordNameEs,
+  chordSymbol,
+  escribirNota,
+  identificarAcorde,
+  mod12,
+} from "@/lib/music";
 
 /** La bandera que corresponde a esa cantidad de ganchos y ese lado de plica. */
 const glifoBandera = (ganchos: number, arriba: boolean) => {
@@ -83,7 +92,7 @@ interface NotaDibujable extends NotaUbicada {
   voz: number;
   x: number;
   /** Una por cada tecla del acorde, ya escrita y ubicada. */
-  cabezas: { y: number; altura: number; signo: Signo }[];
+  cabezas: { y: number; altura: number; signo: Signo; escrita: NotaEnPapel }[];
   /** Hacia arriba si la nota está en la mitad de abajo del pentagrama. */
   arriba: boolean;
   indice: number;
@@ -232,6 +241,11 @@ function Sistema({
   const claveApagada: Clave | null =
     apagada === "derecha" ? "sol" : apagada === "izquierda" ? "fa" : null;
   const trazo = "#cfd6e6";
+  // Qué cabeza está soplada ahora, si hay alguna. Se limpia cuando el sistema
+  // se rearma (cambió el ancho, el recorte, la mano): las notas son otras y el
+  // cartel viejo apuntaría a una que ya no existe.
+  const [soplo, setSoplo] = useState<{ nota: NotaDibujable; cabeza: number } | null>(null);
+  useEffect(() => setSoplo(null), [s]);
   return (
     <g>
       {/* Las cinco líneas de cada pentagrama */}
@@ -367,6 +381,102 @@ function Sistema({
           )}
         </g>
       ))}
+
+      {/* **El soplo.** Los nombres no van impresos en la partitura: leerla es
+          el ejercicio. Pero la nota que te trabó se le pregunta — el mouse o
+          el dedo encima — y dice cuál es. Es un gesto y no una etiqueta a
+          propósito: primero pensás, después chequeás. Las zonas van al final
+          para quedar arriba de todo lo dibujado. */}
+      {s.notas.flatMap((nota) =>
+        nota.midis.length === 0
+          ? []
+          : nota.cabezas.map((c, i) => (
+              <circle
+                key={`soplo-${nota.clave}-${nota.voz}-${nota.indice}-${i}`}
+                cx={nota.x}
+                cy={c.y}
+                r={10}
+                fill="transparent"
+                className="cursor-help"
+                onMouseEnter={() => setSoplo({ nota, cabeza: i })}
+                onMouseLeave={() =>
+                  setSoplo((v) => (v && v.nota === nota && v.cabeza === i ? null : v))
+                }
+              />
+            )),
+      )}
+      {soplo && <Soplo nota={soplo.nota} cabeza={soplo.cabeza} s={s} />}
+    </g>
+  );
+}
+
+/**
+ * El cartelito que sopla una nota.
+ *
+ * El nombre sale de la nota **escrita**, no de la tecla: dice la alteración
+ * que suena aunque venga callada de la armadura — que es justo el caso en el
+ * que una nota cuesta leerla. Y abajo, si todo lo que suena en ese instante
+ * (las dos claves, las notas tenidas incluidas) coincide con una receta
+ * conocida, el acorde: el identificador es el mismo del teclado libre.
+ */
+function Soplo({
+  nota,
+  cabeza,
+  s,
+}: {
+  nota: NotaDibujable;
+  cabeza: number;
+  s: SistemaDispuesto;
+}) {
+  const e = nota.cabezas[cabeza].escrita;
+  const nombre = `${escribirNota({ letra: e.letra, alter: e.alter, pc: mod12(e.midi) })}${e.octava}`;
+
+  // Todo lo que suena junto con esta nota: lo que ataca en el mismo instante y
+  // lo que viene tenido de antes. (Una nota tenida desde el renglón anterior
+  // queda afuera; para un acorde partido en dos renglones no hay soplo.)
+  const sonando = s.notas
+    .filter(
+      (n) =>
+        n.midis.length > 0 &&
+        n.t <= nota.t + HOLGURA &&
+        nota.t < n.t + duracionDeEvento(n) - HOLGURA,
+    )
+    .flatMap((n) => n.midis);
+  const acorde = identificarAcorde(sonando);
+  const cifrado = acorde
+    ? `${chordSymbol(acorde.root, acorde.quality)}${
+        acorde.bajo === acorde.root ? "" : `/${bajoIdentificado(acorde, "en")}`
+      } · ${chordNameEs(acorde.root, acorde.quality)}`
+    : null;
+
+  const alto = cifrado ? 40 : 26;
+  const ancho = Math.max(nombre.length * 9, (cifrado?.length ?? 0) * 6.2) + 18;
+  const x = Math.min(Math.max(nota.x - ancho / 2, 4), s.ancho - ancho - 4);
+  const cy = nota.cabezas[cabeza].y;
+  // Arriba de la cabeza, salvo que se salga del dibujo: ahí baja.
+  const entraArriba = cy - 14 - alto >= s.arribaDeTodo + 2;
+  const y = entraArriba ? cy - 14 - alto : cy + 14;
+
+  return (
+    <g pointerEvents="none">
+      <rect
+        x={x}
+        y={y}
+        width={ancho}
+        height={alto}
+        rx={8}
+        fill="#12101f"
+        opacity={0.96}
+        stroke="#322c4d"
+      />
+      <text x={x + 9} y={y + 17} fontSize={13} fontWeight={700} fill="#ffcb3d">
+        {nombre}
+      </text>
+      {cifrado && (
+        <text x={x + 9} y={y + 32} fontSize={10.5} fill="#a49dbd">
+          {cifrado}
+        </text>
+      )}
     </g>
   );
 }
@@ -824,7 +934,7 @@ function disponer({
         const signos = signosPorNota.get(nota) ?? escritas.map(() => null);
         const cabezas = escritas.map((e, i) => {
           const altura = alturaEnPentagrama(e, clave);
-          return { altura, y: yDeAltura(altura, clave), signo: signos[i] };
+          return { altura, y: yDeAltura(altura, clave), signo: signos[i], escrita: e };
         });
         const media = cabezas.reduce((s, c) => s + c.altura, 0) / (cabezas.length || 1);
         notas.push({

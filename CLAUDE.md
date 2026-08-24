@@ -396,6 +396,18 @@ Las cabezas, las plicas, las banderas y los silencios salen del mismo número qu
 ya usa `FiguraSVG`: en cuántas partes divide la figura a la redonda. Si aparece
 una figura nueva se dibuja sola.
 
+**Los nombres no van impresos: se soplan.** Es la misma decisión que las teclas
+sin etiqueta — leer la partitura es el ejercicio, y cuarenta nombres prendidos
+lo matan. La nota que te trabó se le pregunta: mouse o dedo encima y un
+cartelito dice cuál es, con la alteración que **suena** aunque venga callada de
+la armadura, que es justo cuando cuesta leerla (el nombre sale de la nota
+escrita, `NotaEnPapel`, nunca de `NOTES_ES[pc]`). Si todo lo que suena en ese
+instante —las dos claves, las tenidas incluidas— coincide con una receta
+conocida, el acorde también se dice, con `identificarAcorde` de `lib/music.ts`,
+que es el mismo identificador del teclado libre: los dos responden igual a
+propósito. Primero pensar, después chequear: por eso es un gesto y no una
+etiqueta.
+
 ### Escribir una pieza
 
 Se agrega a `content/partituras.ts` y no se toca nada más. Cada mano es una fila
