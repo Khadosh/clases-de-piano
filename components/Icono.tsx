@@ -256,6 +256,13 @@ const CUERPOS: Record<string, JSX.Element> = {
       <path d="M20 5v4.5h-4.5M4 19v-4.5h4.5" />
     </g>
   ),
+  imprimir: (
+    <g {...S}>
+      <path d="M7 8V3h10v5" />
+      <rect x={4} y={8} width={16} height={8} rx={2} />
+      <path d="M7 14h10v7H7z" strokeLinejoin="round" />
+    </g>
+  ),
 };
 
 /** De los emojis que quedaron en los datos, al ícono que los reemplaza. */

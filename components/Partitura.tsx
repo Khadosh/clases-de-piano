@@ -345,36 +345,46 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
   return (
     <div ref={caja} className="card">
-      {/* La vista: nuestro cuaderno o la edición completa, si hay de dónde. */}
-      {pieza.fuente && (
-        <div className="flex flex-wrap items-center gap-2 px-4 pt-4">
-          <span className="text-xs tracking-[0.2em] text-humo uppercase">Vista</span>
-          {(["cuaderno", "edicion"] as const).map((v) => (
-            <button
-              key={v}
-              onClick={() => setVista(v)}
-              className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
-                vista === v ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
-              }`}
-            >
-              {v === "cuaderno" ? "el cuaderno" : "edición completa"}
-            </button>
-          ))}
-          {vista === "edicion" && (
-            <span className="text-xs text-humo">
-              la partitura original, con lo que nuestra transcripción todavía no
-              tiene — lo que suena sigue siendo lo nuestro
-            </span>
-          )}
-        </div>
-      )}
+      {/* La vista (nuestro cuaderno o la edición completa, si hay de dónde) y el
+          botón de imprimir. En el papel no hay ni una cosa ni la otra: se elige
+          antes de imprimir, así que las dos quedan afuera de la hoja. */}
+      <div className="flex flex-wrap items-center gap-2 px-4 pt-4 print:hidden">
+        {pieza.fuente && (
+          <>
+            <span className="text-xs tracking-[0.2em] text-humo uppercase">Vista</span>
+            {(["cuaderno", "edicion"] as const).map((v) => (
+              <button
+                key={v}
+                onClick={() => setVista(v)}
+                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
+                  vista === v ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
+                }`}
+              >
+                {v === "cuaderno" ? "el cuaderno" : "edición completa"}
+              </button>
+            ))}
+            {vista === "edicion" && (
+              <span className="text-xs text-humo">
+                la partitura original, con lo que nuestra transcripción todavía
+                no tiene — lo que suena sigue siendo lo nuestro
+              </span>
+            )}
+          </>
+        )}
+        <button
+          onClick={() => window.print()}
+          className={`${chip(false)} ml-auto flex items-center gap-1.5`}
+        >
+          <Icono de="imprimir" /> Imprimir
+        </button>
+      </div>
 
       {vista === "edicion" && pieza.fuente ? (
-        <div className="p-4">
+        <div className="p-4 print:partitura-papel">
           <EdicionCompleta fuente={pieza.fuente} />
         </div>
       ) : (
-        <div className="overflow-x-auto p-4">
+        <div className="overflow-x-auto p-4 print:partitura-papel">
           <Pentagrama
             derecha={pieza.derecha}
             izquierda={pieza.izquierda}
@@ -395,7 +405,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
               }
             }}
           />
-          <p className="mt-2 text-xs text-humo">
+          <p className="mt-2 text-xs text-humo print:hidden">
             ¿Una nota no se deja leer? Primero decidí cuál te parece que es, y
             después apoyale el mouse o el dedo: te la sopla — y si con lo demás
             que suena forma un acorde conocido, también.
@@ -406,7 +416,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       {/* Qué se toca (manos y compases) scrollea con la página: en el celular
           la barra pegajosa con todo adentro se comía media pantalla. Sólo
           queda pegado lo que se usa mientras suena: tocar, seguir, bpm. */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-borde/60 px-4 py-3">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-borde/60 px-4 py-3 print:hidden">
         <span className="flex items-center gap-1.5 whitespace-nowrap">
           <span className="mr-1 text-xs tracking-[0.2em] text-humo uppercase">Manos</span>
           {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
@@ -502,7 +512,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
       {/* Los controles de sonar quedan pegados al pie de la ventana mientras
           la partitura sigue para abajo. */}
-      <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur">
+      <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur print:hidden">
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
         {tocando ? (
@@ -629,7 +639,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       </div>
 
       {siguiendo && (
-        <div className="px-4 pb-4">
+        <div className="px-4 pb-4 print:hidden">
           <Midi
             estado={estadoMidi}
             dispositivos={dispositivos}

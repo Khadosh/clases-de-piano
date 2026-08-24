@@ -42,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="es-AR" className={`${fraunces.variable} ${grotesk.variable}`}>
       <body className="min-h-screen antialiased">
-        <header className="sticky top-0 z-50 border-b border-borde/70 bg-noche/80 backdrop-blur-md">
+        <header className="sticky top-0 z-50 border-b border-borde/70 bg-noche/80 backdrop-blur-md print:hidden">
           {/* En el celular el menú no entra en una línea, así que se desliza.
               Se prefiere eso a esconder secciones atrás de un botón: son cinco
               y la de más a la derecha es la que más se usa. */}
@@ -79,7 +79,7 @@ export default function RootLayout({
 
         <main className="mx-auto max-w-5xl px-4 pb-24">{children}</main>
 
-        <footer className="border-t border-borde/60 px-4 py-8 text-center text-xs leading-relaxed text-humo">
+        <footer className="border-t border-borde/60 px-4 py-8 text-center text-xs leading-relaxed text-humo print:hidden">
           <p>
             Clases con Quique Yance · miércoles · escrito a cuatro manos con
             Claude

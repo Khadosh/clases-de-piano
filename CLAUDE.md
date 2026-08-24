@@ -472,6 +472,26 @@ Tres herramientas más, aprendidas de mirar el reproductor de alphaTab:
   con wrap: en el celular los grupos bajan enteros en vez de dejar un chip
   huérfano en la línea siguiente. Todos los toggles usan el mismo `chip()`.
 
+### Imprimir
+
+Un botón arriba de la partitura llama a `window.print()`. No hay ninguna vista
+aparte para el papel: es la misma pantalla, con dos reglas de CSS.
+
+- **La paleta se invierte, no se duplica.** La nuestra es negativa a propósito
+  (papel oscuro, tinta clara) y el papel de verdad es al revés. En vez de un
+  segundo juego de colores para imprimir, se le aplica `filter: invert(1)` al
+  contenedor de la partitura (`print:partitura-papel` en `globals.css`): las
+  mismas notas, el mismo SVG, dos superficies. Alcanza para las dos vistas —el
+  pentagrama propio y la edición completa de OSMD— porque las dos usan la
+  misma paleta oscura de base.
+- **Todo lo demás se apaga con `print:hidden`.** Nav, footer, migas de pan, el
+  pie de "puede tener errores", los selectores de manos y compases, la barra
+  de reproducción entera y el aviso de MIDI: nada de eso significa algo en una
+  hoja de papel. Queda el título de la pieza y la partitura, nada más.
+- **Un renglón no se corta entre dos hojas.** Cada `<svg>` de sistema lleva
+  `break-inside-avoid`; no hace nada en pantalla —ahí no hay páginas— y evita
+  que un renglón quede partido a la mitad al imprimir.
+
 ### Importar de MusicXML
 
 `npm run importar -- archivo.mxl --slug x --hasta N`. MusicXML (`.musicxml`, y

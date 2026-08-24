@@ -30,7 +30,7 @@ export default async function PiezaPage({
 
   return (
     <div className="pt-10">
-      <nav className="mb-6 text-sm text-humo">
+      <nav className="mb-6 text-sm text-humo print:hidden">
         <Link href="/partituras" className="transition hover:text-sol">
           ← Partituras
         </Link>
@@ -43,13 +43,16 @@ export default async function PiezaPage({
         <h1 className="font-display mt-1 text-4xl font-black tracking-tight sm:text-5xl">
           {pieza.titulo}
         </h1>
-        <p className="mt-3 max-w-3xl leading-relaxed text-humo">{pieza.sobre}</p>
+        <p className="mt-3 max-w-3xl leading-relaxed text-humo print:hidden">
+          {pieza.sobre}
+        </p>
       </header>
 
       <Partitura pieza={pieza} />
 
-      {/* La honestidad al pie: qué es esto exactamente y qué habría que chequear */}
-      <div className="mt-6 rounded-2xl border border-borde bg-carta-2/40 px-5 py-4 text-sm text-humo">
+      {/* La honestidad al pie: qué es esto exactamente y qué habría que chequear.
+          No sirve en el papel: si algo no cierra, se pregunta mirando la pantalla. */}
+      <div className="mt-6 rounded-2xl border border-borde bg-carta-2/40 px-5 py-4 text-sm text-humo print:hidden">
         <p>
           <strong className="text-tiza">{pieza.hasta}</strong> La obra es de
           dominio público; la transcripción la escribimos nosotros a mano y de

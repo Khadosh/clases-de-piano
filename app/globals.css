@@ -119,3 +119,35 @@
     transition-duration: 0.001ms !important;
   }
 }
+
+/**
+ * Imprimir una partitura.
+ *
+ * Nuestra paleta es negativa a propósito (papel oscuro, tinta clara) y el
+ * papel de verdad es al revés. En vez de mantener dos juegos de colores, se
+ * invierte: mismos glifos, mismo SVG, dos superficies. `partitura-papel`
+ * (usado como `print:partitura-papel`) es la única pieza nueva; todo lo demás
+ * es ocultar los controles con `print:hidden` en el componente.
+ */
+@utility partitura-papel {
+  filter: invert(1);
+}
+
+@media print {
+  body {
+    background: #fff !important;
+    background-image: none !important;
+    color: #111 !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .card {
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+}

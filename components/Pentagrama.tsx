@@ -200,7 +200,9 @@ export default function Pentagrama({
           // medido del contenedor, así que acá se dibuja tal cual, en píxeles.
           width={s.ancho}
           height={s.abajoDeTodo - s.arribaDeTodo}
-          className="block max-w-full select-none"
+          // break-inside-avoid: en el papel, un renglón no se parte entre dos
+          // hojas. No hace nada en pantalla, donde no hay páginas.
+          className="block max-w-full select-none break-inside-avoid"
           role="img"
           aria-label={`Compases ${s.desde + 1} a ${s.hasta + 1} de ${totalCompases}`}
         >
