@@ -584,10 +584,15 @@ sacado con `%` dejaba a la primera nota del compás con 0,999999996 de distancia
 al arranque — dibujada pegada a la barra *final* de su compás. Las dos están
 en `test:pentagrama`.
 
-**Los tresillos se esquivan con el compás.** El Claro de luna son doce corcheas
-por compás, que es exactamente 12/8 — mismo pulso con puntillo, mismas notas, y
-no hay que dibujar tresillos. Cuando la música entra en un compás compuesto,
-conviene escribirla ahí.
+**El compás que usa una pieza es el de la edición, no el que sea matemáticamente
+equivalente.** Doce corcheas por compás se pueden escribir en 4/4 con tresillos
+o en 12/8 sin ellos —mismo sonido, mismas notas— pero no es lo mismo para leer:
+en 12/8 el pulso ya se subdivide de a tres solo, así que ahí el "3" no hace
+falta; en 4/4 el pulso se subdivide de a dos, y forzar un grupo de tres es
+justo lo que el tresillo avisa. El Claro de luna lo escribió Beethoven en 4/4,
+y por eso la transcripción también: entra importada del MusicXML real, con sus
+tresillos — no el 12/8 que se había escrito a mano al principio para
+esquivarlos.
 
 `npm run test:pentagrama` prueba dos cosas distintas. La geometría contra lo que
 todo el mundo sabe de memoria: el Do central en su línea adicional, el Sol en la
