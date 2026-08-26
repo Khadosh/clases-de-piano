@@ -57,6 +57,38 @@ const chipAccion = (estado: "listo" | "activo") =>
 /** Una etiqueta de sección: bloque en desktop (adentro del riel), en línea en el celular. */
 const etiqueta = "text-xs tracking-[0.2em] text-humo uppercase lg:mb-2 lg:block";
 
+/**
+ * Opciones que se excluyen entre sí, como **un solo control partido en
+ * gajos** y no tres pastillas sueltas. Además de leerse como una sola cosa,
+ * es lo que hace que cada grupo entre en una línea del riel: las pastillas
+ * con su aire propio envolvían a dos renglones apenas la palabra era larga.
+ */
+function Segmentado<T extends string>({
+  opciones,
+  valor,
+  onCambio,
+}: {
+  opciones: { valor: T; nombre: string }[];
+  valor: T;
+  onCambio: (v: T) => void;
+}) {
+  return (
+    <div className="inline-flex rounded-xl bg-noche/60 p-1 lg:flex lg:w-full">
+      {opciones.map((o) => (
+        <button
+          key={o.valor}
+          onClick={() => onCambio(o.valor)}
+          className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap transition lg:flex-1 lg:px-1 ${
+            valor === o.valor ? "bg-tiza text-noche" : "text-humo hover:text-tiza"
+          }`}
+        >
+          {o.nombre}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Partitura({ pieza }: { pieza: Pieza }) {
   const [manos, setManos] = useState<Manos>("ambas");
   const [sonando, setSonando] = useState<number | null>(null);
@@ -409,19 +441,20 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
   );
 
   return (
-    <div ref={caja} className="card">
-      {/* En desktop hay mucho margen vacío a los costados de una partitura
-          angosta, así que ahí vive un único riel de controles —vista,
-          manos, compases, tocar, seguir— flotando (`sticky`) mientras la
-          partitura sigue para abajo. El estado de "seguirte" no va en el
-          riel: es información sobre LA PARTITURA, así que queda pegado a
-          su pie, no a los botones. En el celular no hay margen que
-          aprovechar y las dos cosas vuelven a ser lo de siempre: todo
-          apilado, con la barra de tocar (control + estado juntos) pegada
-          al pie de la ventana. */}
-      <div className="lg:flex lg:items-start lg:gap-6">
-        {/* Centro: la partitura y, en desktop, su estado de seguimiento. */}
-        <div className="lg:min-w-0 lg:flex-1">
+    // En desktop son dos tarjetas hermanas ADENTRO de la columna de siempre:
+    // la hoja (la partitura, cerrada por los cuatro lados) y el riel de
+    // controles a su derecha, `sticky` mientras la hoja sigue para abajo. El
+    // par respeta el mismo `max-w-5xl` que todo el sitio — se probó romperlo
+    // con un full-bleed y se volvió: rompía la simetría de la app, y el
+    // `100vw` del truco cuenta la barra de scroll, así que metía overflow
+    // horizontal en cualquier máquina con scrollbars de verdad. El estado de
+    // "seguirte" no va en el riel: es información sobre LA PARTITURA, así que
+    // queda pegado al pie de la hoja, no a los botones. En el celular todo
+    // vuelve a ser una sola tarjeta apilada, con la barra de tocar pegada al
+    // pie de la ventana.
+    <div ref={caja} className="max-lg:card lg:flex lg:items-start lg:gap-5">
+        {/* La hoja: la partitura, una tarjeta que cierra. */}
+        <div className="lg:card lg:min-w-0 lg:flex-1">
           {vista === "edicion" && pieza.fuente ? (
             <div className="p-4 print:partitura-papel">
               <EdicionCompleta fuente={pieza.fuente} />
@@ -461,7 +494,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
               única marca de que esto está vivo — una sombra no se nota casi
               nada sobre un fondo ya oscuro. */}
           {estadoSeguimiento && (
-            <div className="hidden print:hidden lg:sticky lg:bottom-4 lg:z-10 lg:mt-3 lg:block lg:overflow-hidden lg:rounded-2xl lg:border lg:border-t-2 lg:border-borde lg:border-t-sol">
+            <div className="hidden print:hidden lg:sticky lg:bottom-4 lg:z-10 lg:mx-4 lg:mb-4 lg:block lg:overflow-hidden lg:rounded-2xl lg:border lg:border-t-2 lg:border-borde lg:border-t-sol">
               {estadoSeguimiento}
             </div>
           )}
@@ -483,7 +516,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             hijos pasan a ser hijos directos de la tarjeta entera, que sí es
             alta — y en desktop vuelve a ser una caja real, con su propia
             tarjeta, para poder ser el riel `sticky`. */}
-        <aside className="contents print:hidden lg:sticky lg:top-20 lg:card lg:block lg:w-[230px] lg:shrink-0 lg:overflow-hidden">
+        <aside className="contents print:hidden lg:sticky lg:top-20 lg:card lg:block lg:w-[256px] lg:shrink-0 lg:overflow-hidden">
           {/* La vista (nuestro cuaderno o la edición completa, si hay de dónde)
               y el botón de imprimir. En el papel no hay ni una cosa ni la
               otra: se elige antes de imprimir, así que las dos quedan afuera
@@ -492,17 +525,14 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             {pieza.fuente && (
               <>
                 <span className={etiqueta}>Vista</span>
-                <span className="flex flex-wrap gap-2 lg:w-full">
-                  {(["cuaderno", "edicion"] as const).map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setVista(v)}
-                      className={chip(vista === v)}
-                    >
-                      {v === "cuaderno" ? "el cuaderno" : "edición completa"}
-                    </button>
-                  ))}
-                </span>
+                <Segmentado
+                  opciones={[
+                    { valor: "cuaderno", nombre: "el cuaderno" },
+                    { valor: "edicion", nombre: "edición" },
+                  ]}
+                  valor={vista}
+                  onCambio={setVista}
+                />
                 {vista === "edicion" && (
                   <span className="text-xs text-humo">
                     la partitura original, con lo que nuestra transcripción
@@ -523,20 +553,18 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-borde/60 px-4 py-3 lg:flex-col lg:items-stretch lg:gap-4 lg:p-4">
             <div>
               <span className={etiqueta}>Manos</span>
-              <span className="flex flex-wrap gap-2">
-                {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
-                  <button
-                    key={m}
-                    onClick={() => {
-                      parar();
-                      setManos(m);
-                    }}
-                    className={chip(manos === m)}
-                  >
-                    {m === "ambas" ? "las dos" : m}
-                  </button>
-                ))}
-              </span>
+              <Segmentado
+                opciones={[
+                  { valor: "izquierda", nombre: "izquierda" },
+                  { valor: "derecha", nombre: "derecha" },
+                  { valor: "ambas", nombre: "las dos" },
+                ]}
+                valor={manos}
+                onCambio={(m) => {
+                  parar();
+                  setManos(m);
+                }}
+              />
             </div>
 
             {/* El pedazo: practicar sólo un rango de compases, con repetición. */}
@@ -703,7 +731,6 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             </div>
           )}
         </aside>
-      </div>
     </div>
   );
 }

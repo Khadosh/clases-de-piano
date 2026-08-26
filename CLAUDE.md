@@ -494,36 +494,48 @@ Tres herramientas más, aprendidas de mirar el reproductor de alphaTab:
   con wrap: en el celular los grupos bajan enteros en vez de dejar un chip
   huérfano en la línea siguiente. Todos los toggles usan el mismo `chip()`.
 
-### El riel
+### La hoja y el riel
 
-En desktop, `/partituras/[slug]` rompe el `max-w-5xl` del layout general y usa
-el margen que le sobra a los costados de una partitura angosta: **un solo**
-`<aside>` a la derecha —vista/imprimir, manos/compases, tocar/seguir/
-metrónomo/bpm, todo junto— con `position: sticky`, así que queda a la vista
-mientras la partitura sigue para abajo. El margen de la izquierda queda vacío
-a propósito: partir los controles en dos rieles (uno de cada lado) se probó
-primero y quedaba raro, como una configuración a medio terminar de cada lado
-de la hoja; todo en un solo panel se lee de una vez, de arriba abajo, como un
-panel de control.
+En desktop, `/partituras/[slug]` son dos tarjetas hermanas **adentro de la
+columna `max-w-5xl` de siempre**: la hoja (la partitura, una tarjeta que
+cierra por los cuatro lados) y el riel a su derecha —256px, `position:
+sticky`— con todos los controles: vista/imprimir, manos/compases,
+tocar/seguir/metrónomo/bpm. Se probó romper la columna con un "full bleed"
+para ganar el margen de la página, y se volvió atrás por tres razones que
+conviene recordar:
 
-**El estado de "seguirte" no vive en ese panel: vive pegado al pie de la
-partitura.** Es información sobre lo que estás tocando —qué compás, cuántas
+- rompía la simetría de ancho del sitio — todo lo demás mide `max-w-5xl`;
+- la hoja perdía su borde derecho y la partitura dejaba de leerse como hoja;
+- el `100vw` del truco cuenta la barra de scroll, así que en cualquier
+  máquina con scrollbars que ocupan lugar metía overflow horizontal. **El
+  test de Playwright no lo vio**: el Chromium headless usa scrollbars
+  superpuestas, de ancho cero — un overflow por `100vw` sólo aparece con
+  una barra de verdad.
+
+**Las opciones que se excluyen van en un control segmentado** (`Segmentado`
+en `Partitura.tsx`): un solo control partido en gajos, no pastillas sueltas.
+Además de leerse como una sola cosa, es lo que hace que "izquierda / derecha
+/ las dos" entre en una línea del riel — las pastillas con su propio aire
+envolvían a dos renglones. Los acentos de color son dos y nada más: `sol`
+para "listo, arrancame" (escuchar, seguir) y `brasa` para "está pasando,
+tocá para parar"; el resto son pastillas neutras.
+
+**El estado de "seguirte" no vive en el riel: vive pegado al pie de la
+hoja.** Es información sobre lo que estás tocando —qué compás, cuántas
 van, los errores— no un control, y mezclado entre los botones quedaba
-perdido. En desktop es su propio `sticky` clavado al fondo de la columna de
-la partitura (no del panel), así que sigue a la vista mientras tocás sin
-competir con las manos/compases. `estadoSeguimiento` es un solo bloque de
-JSX armado una vez en el cuerpo del componente y usado en los dos lugares —el
-riel en desktop, adentro de la barra de tocar en el celular— para que las dos
-copias jamás se desincronicen.
+perdido. En desktop es su propio `sticky` clavado al fondo de la hoja (no
+del riel), así que sigue a la vista mientras tocás sin competir con las
+manos/compases. `estadoSeguimiento` es un solo bloque de JSX armado una vez
+en el cuerpo del componente y usado en los dos lugares —el pie de la hoja en
+desktop, adentro de la barra de tocar en el celular— para que las dos copias
+jamás se desincronicen.
 
-En el celular, donde no hay margen que aprovechar, todo vuelve a ser lo de
-siempre: filas apiladas arriba y abajo del pentagrama, con la barra de
-tocar —controles y estado juntos, como antes de que existiera el riel—
-pegada al pie de la ventana. Es nada más que `flex-direction` y un par de
-`lg:hidden`/`hidden lg:block`; el contenido es el mismo componente.
+En el celular todo vuelve a ser una sola tarjeta apilada (`max-lg:card` en
+el contenedor, `lg:card` en la hoja y el riel), con la barra de tocar
+—controles y estado juntos— pegada al pie de la ventana.
 
 Dos trampas de CSS que costaron caro, las dos con el mismo síntoma —el
-elemento pegado al pie deja de estar pegado, y en vez de flotar se va con el
+elemento pegado deja de estar pegado, y en vez de flotar se va con el
 scroll como si `sticky` no estuviera puesto—:
 
 - **`position: sticky` no flota solo: necesita que su padre directo sea alto.**
@@ -539,15 +551,16 @@ scroll como si `sticky` no estuviera puesto—:
   que es donde hace falta ser una columna con su propio ancho.
 - **Un `transform` o un `overflow` en cualquier ancestro también apaga el
   `sticky` de los descendientes**, aunque esté a varios niveles de distancia.
-  El ensanche de la página usa el truco de siempre para "full bleed" —hacer
-  que un contenedor mida el viewport entero e ignore el `max-w` del padre— y
-  la variante más común de ese truco (`left-1/2` + `translate-x(-50%)`) lleva
-  justo eso: un transform. Con ese transform puesto, los rieles de adentro
-  medían `position: sticky` correctamente en el inspector y aun así se iban
-  con el scroll. La versión sin transform usa márgenes negativos
-  (`margin-inline: calc(50% - 50vw)`), que consigue lo mismo —ensanchar sin
-  heredar el `max-w`— sin tocar ninguna propiedad que le rompa el `sticky` a
-  nada de adentro.
+  Lo trajo la variante más común del full bleed (`left-1/2` +
+  `translate-x(-50%)`): con ese transform puesto, el riel medía `position:
+  sticky` correctamente en el inspector y aun así se iba con el scroll. El
+  full bleed entero se terminó yendo (ver arriba), pero la trampa vale para
+  cualquier ancestro futuro.
+
+**Y una de imprimir:** `lg:card` y `max-lg:card` compilan a clases propias
+que el selector `.card` de la regla de impresión no alcanza — la hoja salió
+impresa una vez con todo su fondo oscuro por esto. La regla de `globals.css`
+matchea las tres formas de ser tarjeta.
 
 ### Imprimir
 

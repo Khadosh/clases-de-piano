@@ -145,7 +145,13 @@
     padding: 0 !important;
   }
 
-  .card {
+  /* Las tres formas de ser tarjeta: la clase pelada y sus variantes de
+     breakpoint. `lg:card` y `max-lg:card` compilan a clases PROPIAS que el
+     selector `.card` no alcanza — la hoja de la partitura salió impresa una
+     vez con su fondo oscuro entero por esto. */
+  .card,
+  .lg\:card,
+  .max-lg\:card {
     background: none !important;
     border: none !important;
     border-radius: 0 !important;
