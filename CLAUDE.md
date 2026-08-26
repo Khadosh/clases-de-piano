@@ -401,12 +401,34 @@ sin etiqueta — leer la partitura es el ejercicio, y cuarenta nombres prendidos
 lo matan. La nota que te trabó se le pregunta: mouse o dedo encima y un
 cartelito dice cuál es, con la alteración que **suena** aunque venga callada de
 la armadura, que es justo cuando cuesta leerla (el nombre sale de la nota
-escrita, `NotaEnPapel`, nunca de `NOTES_ES[pc]`). Si todo lo que suena en ese
-instante —las dos claves, las tenidas incluidas— coincide con una receta
-conocida, el acorde también se dice, con `identificarAcorde` de `lib/music.ts`,
-que es el mismo identificador del teclado libre: los dos responden igual a
-propósito. Primero pensar, después chequear: por eso es un gesto y no una
-etiqueta.
+escrita, `NotaEnPapel`, nunca de `NOTES_ES[pc]`). Debajo, hasta tres lecturas
+de acorde con `identificarAcorde` de `lib/music.ts` —el mismo identificador del
+teclado libre—, cada una sólo si agrega algo que la anterior no decía:
+
+- **Ahora**: lo que suena literalmente junto en ese instante. En un arpegio
+  —el Claro de luna es el caso de manual— esto casi nunca es un acorde: en
+  cualquier punto suenan sólo dos notas a la vez, nunca las tres. Esa ausencia
+  es información real y no un hueco: el arpegio arma el acorde *a lo largo*
+  del compás, no en un punto, y sería mentira decir "ahora: Do# menor" cuando
+  ahora sólo suenan dos notas.
+- **El compás, las dos manos**: todas las notas del compás juntas, sin
+  importar cuándo atacan. Es la lectura arpegio-consciente, con el riesgo de
+  siempre —una nota de paso puede colarse y cambiar lo que dice— pero es la
+  única forma de que el arpegio del Claro de luna diga alguna vez "Do# menor".
+- **El compás, sólo esta mano**: lo mismo, mirando nada más la mano de la
+  nota soplada. Es la que separa las dos lecturas de un mismo compás: en el
+  Claro de luna la derecha sola arma Do#m con el Sol# abajo —segunda
+  inversión, si sólo escuchás esa mano—, pero sumada al bajo de la izquierda
+  el acorde completo es Do#m en estado fundamental. Ninguna de las dos
+  miente; una es la mano y la otra son las dos manos, y por eso pueden
+  convivir sin contradecirse.
+
+Ninguna reemplaza a la literal: las tres coexisten y sólo se imprime la que
+suma. En un pasaje de acordes en bloque (la Oda a la alegría) las tres
+coinciden siempre, así que en la práctica se ve una sola línea, "ahora" —y
+eso también es correcto: ahí no hace falta ninguna lectura más floja porque
+la literal ya alcanza. Primero pensar, después chequear: por eso sigue siendo
+un gesto y no una etiqueta.
 
 ### Escribir una pieza
 
@@ -471,6 +493,44 @@ Tres herramientas más, aprendidas de mirar el reproductor de alphaTab:
   toggles del loop) es un bloque `whitespace-nowrap` adentro de un contenedor
   con wrap: en el celular los grupos bajan enteros en vez de dejar un chip
   huérfano en la línea siguiente. Todos los toggles usan el mismo `chip()`.
+
+### Los rieles
+
+En desktop, `/partituras/[slug]` rompe el `max-w-5xl` del layout general y usa
+el margen que le sobra a los costados de una partitura angosta: los controles
+—vista/imprimir y manos/compases a la izquierda, tocar/seguir/metrónomo a la
+derecha— viven ahí, en dos `<aside>` con `position: sticky`, así que quedan a
+la vista mientras la partitura sigue para abajo. En el celular, donde no hay
+margen que aprovechar, son las mismas filas de siempre, apiladas arriba y
+abajo del pentagrama —es nada más que `flex-direction`, el contenido es el
+mismo componente.
+
+Dos trampas de CSS que costaron caro, las dos con el mismo síntoma —el
+elemento pegado al pie deja de estar pegado, y en vez de flotar se va con el
+scroll como si `sticky` no estuviera puesto—:
+
+- **`position: sticky` no flota solo: necesita que su padre directo sea alto.**
+  Es contra ESE padre que el navegador mide cuánto puede recorrer antes de
+  despegarse — si el padre mide casi lo mismo que el hijo, no hay margen para
+  pegarse a nada. Envolver los controles de "tocar" en su propio `<aside>` les
+  dio justo ese problema: el aside sólo tenía un puñado de botones adentro, así
+  que la barra sticky quedaba exactamente donde caía en el documento, a catorce
+  mil píxeles de la partitura del Claro de luna, en vez de en el pie de la
+  ventana. La solución es `display: contents` en el celular —el `<aside>`
+  desaparece como caja y sus hijos pasan a ser hijos directos de la tarjeta
+  entera, que sí es alta— y una caja de verdad recién en desktop (`lg:block`),
+  que es donde hace falta ser una columna con su propio ancho.
+- **Un `transform` o un `overflow` en cualquier ancestro también apaga el
+  `sticky` de los descendientes**, aunque esté a varios niveles de distancia.
+  El ensanche de la página usa el truco de siempre para "full bleed" —hacer
+  que un contenedor mida el viewport entero e ignore el `max-w` del padre— y
+  la variante más común de ese truco (`left-1/2` + `translate-x(-50%)`) lleva
+  justo eso: un transform. Con ese transform puesto, los rieles de adentro
+  medían `position: sticky` correctamente en el inspector y aun así se iban
+  con el scroll. La versión sin transform usa márgenes negativos
+  (`margin-inline: calc(50% - 50vw)`), que consigue lo mismo —ensanchar sin
+  heredar el `max-w`— sin tocar ninguna propiedad que le rompa el `sticky` a
+  nada de adentro.
 
 ### Imprimir
 

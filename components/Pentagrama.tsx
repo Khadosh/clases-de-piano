@@ -32,6 +32,7 @@ import {
   escribirNota,
   identificarAcorde,
   mod12,
+  type AcordeIdentificado,
 } from "@/lib/music";
 
 /** La bandera que corresponde a esa cantidad de ganchos y ese lado de plica. */
@@ -412,14 +413,41 @@ function Sistema({
   );
 }
 
+/** Un acorde identificado, ya escrito como "C#m/G# · Do# menor". */
+function cifradoDe(acorde: AcordeIdentificado | null): string | null {
+  if (!acorde) return null;
+  const bajo = acorde.bajo === acorde.root ? "" : `/${bajoIdentificado(acorde, "en")}`;
+  return `${chordSymbol(acorde.root, acorde.quality)}${bajo} · ${chordNameEs(acorde.root, acorde.quality)}`;
+}
+
 /**
  * El cartelito que sopla una nota.
  *
  * El nombre sale de la nota **escrita**, no de la tecla: dice la alteración
  * que suena aunque venga callada de la armadura — que es justo el caso en el
- * que una nota cuesta leerla. Y abajo, si todo lo que suena en ese instante
- * (las dos claves, las notas tenidas incluidas) coincide con una receta
- * conocida, el acorde: el identificador es el mismo del teclado libre.
+ * que una nota cuesta leerla.
+ *
+ * Abajo, hasta tres lecturas de acorde, cada una sólo si agrega algo que la
+ * anterior no decía:
+ *
+ * - **Ahora**: lo que suena literalmente junto en este instante (las dos
+ *   claves, las tenidas incluidas). En un arpegio como el del Claro de luna
+ *   esto casi nunca es un acorde — en cualquier punto sólo hay dos notas
+ *   sonando a la vez, nunca las tres — y esa ausencia es información real, no
+ *   un hueco: el arpegio arma el acorde *a lo largo* del compás, no en un
+ *   punto.
+ * - **El compás, las dos manos**: todas las notas del compás (sin importar
+ *   cuándo atacan), a ver si juntas arman una receta conocida. Es la lectura
+ *   que responde "qué armonía es este compás", con el mismo riesgo de
+ *   siempre: una nota de paso puede colarse y cambiar lo que dice.
+ * - **El compás, sólo esta mano**: lo mismo pero mirando nada más que la mano
+ *   de la nota que se sopló. Es la que separa las dos lecturas del Claro de
+ *   luna: la derecha sola arma Do#m con el Sol# abajo —segunda inversión—,
+ *   pero sumada al bajo de la izquierda el acorde completo es Do#m en estado
+ *   fundamental. Ninguna de las dos miente; son la mano y las dos manos.
+ *
+ * El identificador es siempre el mismo, `identificarAcorde` de `lib/music.ts`
+ * — el que también usa el teclado libre.
  */
 function Soplo({
   nota,
@@ -433,27 +461,44 @@ function Soplo({
   const e = nota.cabezas[cabeza].escrita;
   // En inglés, como el resto del cifrado y como las prácticas de acordes.
   const nombre = `${escribirNota({ letra: e.letra, alter: e.alter, pc: mod12(e.midi) }, "en")}${e.octava}`;
+  const mano = nota.clave === "sol" ? "la derecha" : "la izquierda";
 
-  // Todo lo que suena junto con esta nota: lo que ataca en el mismo instante y
-  // lo que viene tenido de antes. (Una nota tenida desde el renglón anterior
-  // queda afuera; para un acorde partido en dos renglones no hay soplo.)
-  const sonando = s.notas
-    .filter(
-      (n) =>
-        n.midis.length > 0 &&
-        n.t <= nota.t + HOLGURA &&
-        nota.t < n.t + duracionDeEvento(n) - HOLGURA,
-    )
-    .flatMap((n) => n.midis);
-  const acorde = identificarAcorde(sonando);
-  const cifrado = acorde
-    ? `${chordSymbol(acorde.root, acorde.quality)}${
-        acorde.bajo === acorde.root ? "" : `/${bajoIdentificado(acorde, "en")}`
-      } · ${chordNameEs(acorde.root, acorde.quality)}`
-    : null;
+  // Ahora: lo que ataca en este instante o viene tenido de antes. (Una nota
+  // tenida desde el renglón anterior queda afuera; para un acorde partido en
+  // dos renglones no hay soplo.)
+  const ahora = s.notas.filter(
+    (n) =>
+      n.midis.length > 0 &&
+      n.t <= nota.t + HOLGURA &&
+      nota.t < n.t + duracionDeEvento(n) - HOLGURA,
+  );
+  // El compás entero: todo lo que suena en algún momento de ese compás, sin
+  // importar cuándo. Es la lectura arpegio-consciente.
+  const delCompas = s.notas.filter((n) => n.compas === nota.compas && n.midis.length > 0);
 
-  const alto = cifrado ? 40 : 26;
-  const ancho = Math.max(nombre.length * 9, (cifrado?.length ?? 0) * 6.2) + 18;
+  const filas: { etiqueta: string; texto: string }[] = [];
+  const agregar = (etiqueta: string, acorde: AcordeIdentificado | null) => {
+    const texto = cifradoDe(acorde);
+    // Sólo si dice algo que la fila anterior no decía ya.
+    if (texto && !filas.some((f) => f.texto === texto)) filas.push({ etiqueta, texto });
+  };
+  agregar("ahora", identificarAcorde(ahora.flatMap((n) => n.midis)));
+  agregar("el compás, las dos manos", identificarAcorde(delCompas.flatMap((n) => n.midis)));
+  agregar(
+    `el compás, sólo ${mano}`,
+    identificarAcorde(
+      delCompas.filter((n) => n.clave === nota.clave).flatMap((n) => n.midis),
+    ),
+  );
+
+  const ALTO_NOMBRE = 21;
+  const ALTO_FILA = 14;
+  const alto = ALTO_NOMBRE + filas.length * ALTO_FILA + (filas.length ? 7 : 5);
+  const anchoTexto = Math.max(
+    nombre.length * 9,
+    ...filas.map((f) => (f.etiqueta.length + f.texto.length) * 5.6),
+  );
+  const ancho = Math.min(anchoTexto + 18, s.ancho - 8);
   const x = Math.min(Math.max(nota.x - ancho / 2, 4), s.ancho - ancho - 4);
   const cy = nota.cabezas[cabeza].y;
   // Arriba de la cabeza, salvo que se salga del dibujo: ahí baja.
@@ -475,11 +520,18 @@ function Soplo({
       <text x={x + 9} y={y + 17} fontSize={13} fontWeight={700} fill="#ffcb3d">
         {nombre}
       </text>
-      {cifrado && (
-        <text x={x + 9} y={y + 32} fontSize={10.5} fill="#a49dbd">
-          {cifrado}
+      {filas.map((f, i) => (
+        <text
+          key={f.etiqueta}
+          x={x + 9}
+          y={y + ALTO_NOMBRE + 11 + i * ALTO_FILA}
+          fontSize={10}
+          fill="#a49dbd"
+        >
+          <tspan fill="#7a7396">{f.etiqueta}: </tspan>
+          {f.texto}
         </text>
-      )}
+      ))}
     </g>
   );
 }

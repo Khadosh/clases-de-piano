@@ -48,7 +48,21 @@ export default async function PiezaPage({
         </p>
       </header>
 
-      <Partitura pieza={pieza} />
+      {/* Rompe el max-w-5xl del layout general sólo acá y sólo en desktop: los
+          rieles de `Partitura` necesitan el margen que hoy queda vacío a los
+          costados de la página, no el que sobra adentro de la tarjeta.
+
+          Sin `transform` ni `overflow` en el camino: cualquiera de las dos
+          cosas en un ancestro le rompe el `position: sticky` a los rieles de
+          adentro (`Partitura` los usa para flotar). Por eso el ensanche va con
+          márgenes negativos (`calc(50% - 50vw)`, el truco de siempre para
+          "full bleed") y no con la variante más común de `left-1/2` +
+          `translate-x` — esa lleva un transform. */}
+      <div className="lg:w-screen lg:max-w-none lg:[margin-inline:calc(50%-50vw)] lg:px-6">
+        <div className="lg:mx-auto lg:max-w-[1400px]">
+          <Partitura pieza={pieza} />
+        </div>
+      </div>
 
       {/* La honestidad al pie: qué es esto exactamente y qué habría que chequear.
           No sirve en el papel: si algo no cierra, se pregunta mirando la pantalla. */}

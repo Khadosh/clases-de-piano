@@ -345,141 +345,118 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
   return (
     <div ref={caja} className="card">
-      {/* La vista (nuestro cuaderno o la edición completa, si hay de dónde) y el
-          botón de imprimir. En el papel no hay ni una cosa ni la otra: se elige
-          antes de imprimir, así que las dos quedan afuera de la hoja. */}
-      <div className="flex flex-wrap items-center gap-2 px-4 pt-4 print:hidden">
-        {pieza.fuente && (
-          <>
-            <span className="text-xs tracking-[0.2em] text-humo uppercase">Vista</span>
-            {(["cuaderno", "edicion"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => setVista(v)}
-                className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
-                  vista === v ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
-                }`}
-              >
-                {v === "cuaderno" ? "el cuaderno" : "edición completa"}
-              </button>
-            ))}
-            {vista === "edicion" && (
-              <span className="text-xs text-humo">
-                la partitura original, con lo que nuestra transcripción todavía
-                no tiene — lo que suena sigue siendo lo nuestro
+      {/* En desktop hay mucho margen vacío a los costados de una partitura
+          angosta, así que ahí viven los controles: dos rieles flotantes (uno
+          de configuración, uno de reproducción) que quedan a la vista mientras
+          la partitura sigue para abajo — `sticky`, no fijos, así que dejan de
+          seguir al terminarse el sistema. En el celular no hay margen que
+          aprovechar, y estos mismos bloques vuelven a apilarse como filas: es
+          nada más que un cambio de `flex-direction`, el contenido es el mismo. */}
+      <div className="lg:flex lg:items-start lg:gap-6">
+        {/* Riel izquierdo: configuración — qué mirar y qué tocar. */}
+        {/* `contents` en el celular: el <aside> desaparece como caja y sus
+            hijos quedan directamente adentro de la tarjeta entera, que es
+            donde tienen que estar — ver la nota grande de más abajo, en el
+            riel derecho, sobre por qué esto le hace falta al sticky. */}
+        <aside className="contents print:hidden lg:sticky lg:top-20 lg:block lg:w-[210px] lg:shrink-0">
+          {/* La vista (nuestro cuaderno o la edición completa, si hay de dónde)
+              y el botón de imprimir. En el papel no hay ni una cosa ni la
+              otra: se elige antes de imprimir, así que las dos quedan afuera
+              de la hoja. */}
+          <div className="flex flex-wrap items-center gap-2 px-4 pt-4 lg:px-0">
+            {pieza.fuente && (
+              <>
+                <span className="text-xs tracking-[0.2em] text-humo uppercase">Vista</span>
+                {(["cuaderno", "edicion"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setVista(v)}
+                    className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
+                      vista === v ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
+                    }`}
+                  >
+                    {v === "cuaderno" ? "el cuaderno" : "edición completa"}
+                  </button>
+                ))}
+                {vista === "edicion" && (
+                  <span className="text-xs text-humo">
+                    la partitura original, con lo que nuestra transcripción
+                    todavía no tiene — lo que suena sigue siendo lo nuestro
+                  </span>
+                )}
+              </>
+            )}
+            <button
+              onClick={() => window.print()}
+              className={`${chip(false)} flex items-center gap-1.5 lg:w-full lg:justify-center`}
+            >
+              <Icono de="imprimir" /> Imprimir
+            </button>
+          </div>
+
+          {/* Manos y compases: qué se toca. */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-borde/60 px-4 py-3 lg:mt-3 lg:flex-col lg:items-stretch lg:gap-3 lg:px-0">
+            <span className="flex items-center gap-1.5 whitespace-nowrap lg:flex-wrap">
+              <span className="mr-1 text-xs tracking-[0.2em] text-humo uppercase">Manos</span>
+              {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    parar();
+                    setManos(m);
+                  }}
+                  className={chip(manos === m)}
+                >
+                  {m === "ambas" ? "las dos" : m}
+                </button>
+              ))}
+            </span>
+
+            {/* El pedazo: practicar sólo un rango de compases, con repetición. */}
+            {totalCompases > 1 && (
+              <span className="flex items-center gap-1.5 whitespace-nowrap text-sm text-humo lg:flex-wrap">
+                <span className="mr-1 text-xs tracking-[0.2em] uppercase">Compases</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalCompases}
+                  value={recorte ? recorte.desde + 1 : 1}
+                  onChange={(e) => {
+                    parar();
+                    const desde = Math.min(
+                      Math.max(Number(e.target.value) - 1, 0),
+                      totalCompases - 1,
+                    );
+                    const hasta = Math.max(recorte?.hasta ?? totalCompases - 1, desde);
+                    setRecorte({ desde, hasta });
+                    setDesdeCompas(desde);
+                  }}
+                  className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
+                  aria-label="Desde el compás"
+                />
+                <span>al</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalCompases}
+                  value={recorte ? recorte.hasta + 1 : totalCompases}
+                  onChange={(e) => {
+                    parar();
+                    const hasta = Math.min(
+                      Math.max(Number(e.target.value) - 1, 0),
+                      totalCompases - 1,
+                    );
+                    const desde = Math.min(recorte?.desde ?? 0, hasta);
+                    setRecorte({ desde, hasta });
+                    setDesdeCompas(desde);
+                  }}
+                  className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
+                  aria-label="Hasta el compás"
+                />
               </span>
             )}
-          </>
-        )}
-        <button
-          onClick={() => window.print()}
-          className={`${chip(false)} ml-auto flex items-center gap-1.5`}
-        >
-          <Icono de="imprimir" /> Imprimir
-        </button>
-      </div>
-
-      {vista === "edicion" && pieza.fuente ? (
-        <div className="p-4 print:partitura-papel">
-          <EdicionCompleta fuente={pieza.fuente} />
-        </div>
-      ) : (
-        <div className="overflow-x-auto p-4 print:partitura-papel">
-          <Pentagrama
-            derecha={pieza.derecha}
-            izquierda={pieza.izquierda}
-            compas={pieza.compas}
-            tonalidad={pieza.tonalidad}
-            sonando={siguiendo ? (momentoActual?.t ?? null) : sonando}
-            apagada={
-              manos === "derecha" ? "izquierda" : manos === "izquierda" ? "derecha" : undefined
-            }
-            rango={recorte ?? undefined}
-            onCompas={(c) => {
-              setDesdeCompas(c);
-              if (siguiendo) {
-                setI(indiceDelCompas(momentos, c));
-                puestasRef.current = new Set();
-              } else {
-                tocar(c);
-              }
-            }}
-          />
-          <p className="mt-2 text-xs text-humo print:hidden">
-            ¿Una nota no se deja leer? Primero decidí cuál te parece que es, y
-            después apoyale el mouse o el dedo: te la sopla — y si con lo demás
-            que suena forma un acorde conocido, también.
-          </p>
-        </div>
-      )}
-
-      {/* Qué se toca (manos y compases) scrollea con la página: en el celular
-          la barra pegajosa con todo adentro se comía media pantalla. Sólo
-          queda pegado lo que se usa mientras suena: tocar, seguir, bpm. */}
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-borde/60 px-4 py-3 print:hidden">
-        <span className="flex items-center gap-1.5 whitespace-nowrap">
-          <span className="mr-1 text-xs tracking-[0.2em] text-humo uppercase">Manos</span>
-          {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
-            <button
-              key={m}
-              onClick={() => {
-                parar();
-                setManos(m);
-              }}
-              className={chip(manos === m)}
-            >
-              {m === "ambas" ? "las dos" : m}
-            </button>
-          ))}
-        </span>
-
-        {/* El pedazo: practicar sólo un rango de compases, con repetición. */}
-        {totalCompases > 1 && (
-          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm text-humo">
-            <span className="mr-1 text-xs tracking-[0.2em] uppercase">Compases</span>
-            <input
-              type="number"
-              min={1}
-              max={totalCompases}
-              value={recorte ? recorte.desde + 1 : 1}
-              onChange={(e) => {
-                parar();
-                const desde = Math.min(
-                  Math.max(Number(e.target.value) - 1, 0),
-                  totalCompases - 1,
-                );
-                const hasta = Math.max(recorte?.hasta ?? totalCompases - 1, desde);
-                setRecorte({ desde, hasta });
-                setDesdeCompas(desde);
-              }}
-              className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
-              aria-label="Desde el compás"
-            />
-            <span>al</span>
-            <input
-              type="number"
-              min={1}
-              max={totalCompases}
-              value={recorte ? recorte.hasta + 1 : totalCompases}
-              onChange={(e) => {
-                parar();
-                const hasta = Math.min(
-                  Math.max(Number(e.target.value) - 1, 0),
-                  totalCompases - 1,
-                );
-                const desde = Math.min(recorte?.desde ?? 0, hasta);
-                setRecorte({ desde, hasta });
-                setDesdeCompas(desde);
-              }}
-              className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
-              aria-label="Hasta el compás"
-            />
-          </span>
-        )}
-        {recorte && (
-          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm text-humo">
-            {
-              <>
+            {recorte && (
+              <span className="flex items-center gap-1.5 whitespace-nowrap text-sm text-humo lg:flex-wrap">
                 <button onClick={() => setRepetir(!repetir)} className={chip(repetir)}>
                   ⟳ en loop
                 </button>
@@ -504,151 +481,202 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
                 >
                   toda la pieza
                 </button>
-              </>
-            }
-          </span>
-        )}
-      </div>
-
-      {/* Los controles de sonar quedan pegados al pie de la ventana mientras
-          la partitura sigue para abajo. */}
-      <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur print:hidden">
-
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
-        {tocando ? (
-          <button
-            onClick={parar}
-            className="rounded-full bg-brasa px-5 py-2 font-bold text-noche transition hover:brightness-110"
-          >
-            ■ Parar
-          </button>
-        ) : (
-          <button
-            onClick={() => tocar(desdeCompas)}
-            disabled={cargando}
-            className="rounded-full bg-menta px-5 py-2 font-bold text-noche transition hover:brightness-110 disabled:opacity-60"
-          >
-            {cargando ? "…" : "▶ Escucharla"}
-          </button>
-        )}
-
-        <button
-          onClick={siguiendo ? () => setSiguiendo(false) : arrancarSeguimiento}
-          className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-            siguiendo ? "bg-brasa text-noche" : "bg-uva text-noche hover:brightness-110"
-          }`}
-        >
-          {siguiendo ? (
-            "■ Dejar de seguirme"
-          ) : (
-            <>
-              <Icono de={hayTeclado ? "piano" : "dedo"} /> Seguime
-            </>
-          )}
-        </button>
-
-        <button
-          onClick={() => setMetronomo(!metronomo)}
-          className={chip(metronomo)}
-          title="Un compás de clicks para entrar, y el pulso marcado mientras suena"
-        >
-          <Icono de="metronomo" /> metrónomo
-        </button>
-
-        {desdeCompas > 0 && (
-          <span className="whitespace-nowrap rounded-full bg-carta-2 px-3 py-1.5 font-mono text-xs text-humo">
-            desde el compás {desdeCompas + 1}
-            <button
-              onClick={() => setDesdeCompas(0)}
-              className="ml-2 underline decoration-dotted underline-offset-2 hover:text-tiza"
-            >
-              al principio
-            </button>
-          </span>
-        )}
-
-        <label className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm text-humo">
-          <span className="font-mono">{bpm} bpm</span>
-          <input
-            type="range"
-            min={30}
-            max={160}
-            value={bpm}
-            onChange={(e) => setBpm(Number(e.target.value))}
-            className="w-24 accent-sol sm:w-36"
-          />
-        </label>
-      </div>
-
-      {siguiendo && (
-        <div className="border-t border-borde/60 px-4 pb-4">
-          <div className="mt-3 rounded-2xl bg-noche px-4 py-3 sm:px-5 sm:py-4">
-            {terminada ? (
-              <>
-                <p className="font-display text-2xl font-bold text-menta">
-                  Hasta el final <Icono de="festejo" />
-                </p>
-                <p className="mt-1 text-sm text-humo">
-                  {errores === 0
-                    ? "Sin una nota de más."
-                    : `Con ${errores} ${errores === 1 ? "nota" : "notas"} que no iban.`}
-                </p>
-                <button
-                  onClick={arrancarSeguimiento}
-                  className="mt-3 rounded-full bg-menta px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
-                >
-                  Otra vez
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-                  <div>
-                    <p className="text-xs tracking-[0.2em] text-humo uppercase">
-                      Compás
-                    </p>
-                    <p className="font-display text-3xl font-black text-sol">
-                      {(momentoActual?.compas ?? 0) + 1}
-                      <span className="text-base text-humo">/{totalCompases}</span>
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs tracking-[0.2em] text-humo uppercase">
-                      Van
-                    </p>
-                    <p className="font-mono text-lg">
-                      {i}/{momentos.length}
-                    </p>
-                  </div>
-                  {errores > 0 && (
-                    <p className="font-mono text-sm text-brasa">
-                      {errores} de más
-                    </p>
-                  )}
-                </div>
-                <p className="mt-2 hidden text-xs text-humo sm:block">
-                  No hay reloj: la partitura avanza cuando tocás todas las notas
-                  de ese instante. La octava no importa. Tocá un compás del
-                  pentagrama para saltar ahí.
-                </p>
-              </>
+              </span>
             )}
           </div>
-        </div>
-      )}
-      </div>
+        </aside>
 
-      {siguiendo && (
-        <div className="px-4 pb-4 print:hidden">
-          <Midi
-            estado={estadoMidi}
-            dispositivos={dispositivos}
-            pista="— tocá la pieza y te sigo"
-            invitacion="¿Tenés un teclado? Conectalo y la partitura te espera a vos"
-            cierre="Con el teclado conectado, la partitura no se va sola: avanza cuando tocás lo que dice, y se queda esperándote si te trabás."
-          />
+        {/* Centro: la partitura. */}
+        <div className="lg:min-w-0 lg:flex-1">
+          {vista === "edicion" && pieza.fuente ? (
+            <div className="p-4 print:partitura-papel">
+              <EdicionCompleta fuente={pieza.fuente} />
+            </div>
+          ) : (
+            <div className="overflow-x-auto p-4 print:partitura-papel">
+              <Pentagrama
+                derecha={pieza.derecha}
+                izquierda={pieza.izquierda}
+                compas={pieza.compas}
+                tonalidad={pieza.tonalidad}
+                sonando={siguiendo ? (momentoActual?.t ?? null) : sonando}
+                apagada={
+                  manos === "derecha" ? "izquierda" : manos === "izquierda" ? "derecha" : undefined
+                }
+                rango={recorte ?? undefined}
+                onCompas={(c) => {
+                  setDesdeCompas(c);
+                  if (siguiendo) {
+                    setI(indiceDelCompas(momentos, c));
+                    puestasRef.current = new Set();
+                  } else {
+                    tocar(c);
+                  }
+                }}
+              />
+              <p className="mt-2 text-xs text-humo print:hidden">
+                ¿Una nota no se deja leer? Primero decidí cuál te parece que es,
+                y después apoyale el mouse o el dedo: te la sopla — y si con lo
+                demás que suena forma un acorde conocido, también.
+              </p>
+            </div>
+          )}
         </div>
-      )}
+
+        {/* Riel derecho: reproducción — tocar, seguir, y cómo te está yendo.
+            En el celular queda pegado al pie de la ventana en vez de flotar al
+            costado, porque ahí no hay costado: es lo que se usa mientras suena,
+            así que tiene que estar siempre a mano del pulgar. */}
+        {/* `contents`: en el celular el <aside> tiene que desaparecer como
+            caja. `position: sticky` no "flota" en el aire — necesita que su
+            padre directo sea alto, porque es contra ESE padre que se mide
+            cuánto puede recorrer antes de despegarse. Con el <aside> como caja
+            propia, su único hijo (la barra de tocar) es casi toda su altura,
+            así que no había margen para pegarse a nada: quedaba tal cual caía
+            en el documento, a catorce mil píxeles de la partitura del Claro de
+            luna. `contents` saca al <aside> del medio en el celular — sus
+            hijos pasan a ser hijos directos de la tarjeta entera, que sí es
+            alta — y en desktop vuelve a ser una caja real para poder ser el
+            riel `sticky`. */}
+        <aside className="contents print:hidden lg:sticky lg:top-20 lg:block lg:w-[230px] lg:shrink-0">
+          <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur lg:static lg:rounded-2xl lg:border lg:bg-carta-2/40 lg:backdrop-blur-none">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:flex-col lg:items-stretch">
+              {tocando ? (
+                <button
+                  onClick={parar}
+                  className="rounded-full bg-brasa px-5 py-2 font-bold text-noche transition hover:brightness-110"
+                >
+                  ■ Parar
+                </button>
+              ) : (
+                <button
+                  onClick={() => tocar(desdeCompas)}
+                  disabled={cargando}
+                  className="rounded-full bg-menta px-5 py-2 font-bold text-noche transition hover:brightness-110 disabled:opacity-60"
+                >
+                  {cargando ? "…" : "▶ Escucharla"}
+                </button>
+              )}
+
+              <button
+                onClick={siguiendo ? () => setSiguiendo(false) : arrancarSeguimiento}
+                className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                  siguiendo ? "bg-brasa text-noche" : "bg-uva text-noche hover:brightness-110"
+                }`}
+              >
+                {siguiendo ? (
+                  "■ Dejar de seguirme"
+                ) : (
+                  <>
+                    <Icono de={hayTeclado ? "piano" : "dedo"} /> Seguime
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => setMetronomo(!metronomo)}
+                className={chip(metronomo)}
+                title="Un compás de clicks para entrar, y el pulso marcado mientras suena"
+              >
+                <Icono de="metronomo" /> metrónomo
+              </button>
+
+              {desdeCompas > 0 && (
+                <span className="whitespace-nowrap rounded-full bg-carta-2 px-3 py-1.5 font-mono text-xs text-humo">
+                  desde el compás {desdeCompas + 1}
+                  <button
+                    onClick={() => setDesdeCompas(0)}
+                    className="ml-2 underline decoration-dotted underline-offset-2 hover:text-tiza"
+                  >
+                    al principio
+                  </button>
+                </span>
+              )}
+
+              <label className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm text-humo lg:ml-0">
+                <span className="font-mono">{bpm} bpm</span>
+                <input
+                  type="range"
+                  min={30}
+                  max={160}
+                  value={bpm}
+                  onChange={(e) => setBpm(Number(e.target.value))}
+                  className="w-24 accent-sol sm:w-36 lg:w-full"
+                />
+              </label>
+            </div>
+
+            {siguiendo && (
+              <div className="border-t border-borde/60 px-4 pb-4">
+                <div className="mt-3 rounded-2xl bg-noche px-4 py-3 sm:px-5 sm:py-4">
+                  {terminada ? (
+                    <>
+                      <p className="font-display text-2xl font-bold text-menta">
+                        Hasta el final <Icono de="festejo" />
+                      </p>
+                      <p className="mt-1 text-sm text-humo">
+                        {errores === 0
+                          ? "Sin una nota de más."
+                          : `Con ${errores} ${errores === 1 ? "nota" : "notas"} que no iban.`}
+                      </p>
+                      <button
+                        onClick={arrancarSeguimiento}
+                        className="mt-3 rounded-full bg-menta px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
+                      >
+                        Otra vez
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+                        <div>
+                          <p className="text-xs tracking-[0.2em] text-humo uppercase">
+                            Compás
+                          </p>
+                          <p className="font-display text-3xl font-black text-sol">
+                            {(momentoActual?.compas ?? 0) + 1}
+                            <span className="text-base text-humo">/{totalCompases}</span>
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs tracking-[0.2em] text-humo uppercase">
+                            Van
+                          </p>
+                          <p className="font-mono text-lg">
+                            {i}/{momentos.length}
+                          </p>
+                        </div>
+                        {errores > 0 && (
+                          <p className="font-mono text-sm text-brasa">
+                            {errores} de más
+                          </p>
+                        )}
+                      </div>
+                      <p className="mt-2 hidden text-xs text-humo sm:block">
+                        No hay reloj: la partitura avanza cuando tocás todas
+                        las notas de ese instante. La octava no importa. Tocá
+                        un compás del pentagrama para saltar ahí.
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {siguiendo && (
+            <div className="px-4 pb-4 lg:px-0 lg:pt-3">
+              <Midi
+                estado={estadoMidi}
+                dispositivos={dispositivos}
+                pista="— tocá la pieza y te sigo"
+                invitacion="¿Tenés un teclado? Conectalo y la partitura te espera a vos"
+                cierre="Con el teclado conectado, la partitura no se va sola: avanza cuando tocás lo que dice, y se queda esperándote si te trabás."
+              />
+            </div>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }
