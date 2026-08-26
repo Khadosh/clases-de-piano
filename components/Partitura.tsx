@@ -42,6 +42,21 @@ const chip = (activo: boolean) =>
     activo ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
   }`;
 
+/**
+ * El botón de una acción primaria (tocar, seguir): mismo molde que `chip`,
+ * un poco más grande, y con uno de los dos únicos acentos de todo el riel —
+ * `sol` para "arrancame" y `brasa` para "esto está pasando, tocá para
+ * parar". Nada de un color por botón: antes cada uno tenía el suyo (verde,
+ * violeta, naranja) y competían todos entre sí.
+ */
+const chipAccion = (estado: "listo" | "activo") =>
+  `rounded-xl px-4 py-2 text-sm font-bold whitespace-nowrap transition ${
+    estado === "activo" ? "bg-brasa text-noche" : "bg-sol text-noche hover:brightness-110"
+  }`;
+
+/** Una etiqueta de sección: bloque en desktop (adentro del riel), en línea en el celular. */
+const etiqueta = "text-xs tracking-[0.2em] text-humo uppercase lg:mb-2 lg:block";
+
 export default function Partitura({ pieza }: { pieza: Pieza }) {
   const [manos, setManos] = useState<Manos>("ambas");
   const [sonando, setSonando] = useState<number | null>(null);
@@ -359,10 +374,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
               ? "Sin una nota de más."
               : `Con ${errores} ${errores === 1 ? "nota" : "notas"} que no iban.`}
           </p>
-          <button
-            onClick={arrancarSeguimiento}
-            className="mt-3 rounded-full bg-menta px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
-          >
+          <button onClick={arrancarSeguimiento} className={`mt-3 ${chipAccion("listo")}`}>
             Otra vez
           </button>
         </>
@@ -445,16 +457,21 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           )}
 
           {/* Sólo en desktop: en el celular este mismo estado vive adentro de
-              la barra de tocar, más abajo. */}
+              la barra de tocar, más abajo. El borde superior dorado es la
+              única marca de que esto está vivo — una sombra no se nota casi
+              nada sobre un fondo ya oscuro. */}
           {estadoSeguimiento && (
-            <div className="hidden print:hidden lg:sticky lg:bottom-4 lg:z-10 lg:mt-3 lg:block lg:shadow-xl">
+            <div className="hidden print:hidden lg:sticky lg:bottom-4 lg:z-10 lg:mt-3 lg:block lg:overflow-hidden lg:rounded-2xl lg:border lg:border-t-2 lg:border-borde lg:border-t-sol">
               {estadoSeguimiento}
             </div>
           )}
         </div>
 
         {/* El riel: toda la configuración y el disparador de reproducción,
-            un único panel. */}
+            un único panel — la misma tarjeta que la partitura (`lg:card`),
+            no dos piezas pegadas con cinta. Adentro, tres secciones con el
+            mismo ritmo: una etiqueta en bloque, sus controles, un borde que
+            separa a la siguiente. */}
         {/* `contents` en el celular: el <aside> tiene que desaparecer como
             caja. `position: sticky` no "flota" en el aire — necesita que su
             padre directo sea alto, porque es contra ESE padre que se mide
@@ -464,28 +481,28 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             documento, a catorce mil píxeles de la partitura del Claro de
             luna. `contents` saca al <aside> del medio en el celular — sus
             hijos pasan a ser hijos directos de la tarjeta entera, que sí es
-            alta — y en desktop vuelve a ser una caja real para poder ser el
-            riel `sticky`. */}
-        <aside className="contents print:hidden lg:sticky lg:top-20 lg:block lg:w-[230px] lg:shrink-0">
+            alta — y en desktop vuelve a ser una caja real, con su propia
+            tarjeta, para poder ser el riel `sticky`. */}
+        <aside className="contents print:hidden lg:sticky lg:top-20 lg:card lg:block lg:w-[230px] lg:shrink-0 lg:overflow-hidden">
           {/* La vista (nuestro cuaderno o la edición completa, si hay de dónde)
               y el botón de imprimir. En el papel no hay ni una cosa ni la
               otra: se elige antes de imprimir, así que las dos quedan afuera
               de la hoja. */}
-          <div className="flex flex-wrap items-center gap-2 px-4 pt-4 lg:px-0">
+          <div className="flex flex-wrap items-center gap-2 px-4 pt-4 lg:p-4">
             {pieza.fuente && (
               <>
-                <span className="text-xs tracking-[0.2em] text-humo uppercase">Vista</span>
-                {(["cuaderno", "edicion"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setVista(v)}
-                    className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
-                      vista === v ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
-                    }`}
-                  >
-                    {v === "cuaderno" ? "el cuaderno" : "edición completa"}
-                  </button>
-                ))}
+                <span className={etiqueta}>Vista</span>
+                <span className="flex flex-wrap gap-2 lg:w-full">
+                  {(["cuaderno", "edicion"] as const).map((v) => (
+                    <button
+                      key={v}
+                      onClick={() => setVista(v)}
+                      className={chip(vista === v)}
+                    >
+                      {v === "cuaderno" ? "el cuaderno" : "edición completa"}
+                    </button>
+                  ))}
+                </span>
                 {vista === "edicion" && (
                   <span className="text-xs text-humo">
                     la partitura original, con lo que nuestra transcripción
@@ -496,75 +513,79 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             )}
             <button
               onClick={() => window.print()}
-              className={`${chip(false)} flex items-center gap-1.5 lg:w-full lg:justify-center`}
+              className={`${chip(false)} flex items-center justify-center gap-1.5 lg:w-full`}
             >
               <Icono de="imprimir" /> Imprimir
             </button>
           </div>
 
           {/* Manos y compases: qué se toca. */}
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-borde/60 px-4 py-3 lg:mt-3 lg:flex-col lg:items-stretch lg:gap-3 lg:px-0">
-            <span className="flex items-center gap-1.5 whitespace-nowrap lg:flex-wrap">
-              <span className="mr-1 text-xs tracking-[0.2em] text-humo uppercase">Manos</span>
-              {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => {
-                    parar();
-                    setManos(m);
-                  }}
-                  className={chip(manos === m)}
-                >
-                  {m === "ambas" ? "las dos" : m}
-                </button>
-              ))}
-            </span>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-borde/60 px-4 py-3 lg:flex-col lg:items-stretch lg:gap-4 lg:p-4">
+            <div>
+              <span className={etiqueta}>Manos</span>
+              <span className="flex flex-wrap gap-2">
+                {(["izquierda", "derecha", "ambas"] as Manos[]).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => {
+                      parar();
+                      setManos(m);
+                    }}
+                    className={chip(manos === m)}
+                  >
+                    {m === "ambas" ? "las dos" : m}
+                  </button>
+                ))}
+              </span>
+            </div>
 
             {/* El pedazo: practicar sólo un rango de compases, con repetición. */}
             {totalCompases > 1 && (
-              <span className="flex items-center gap-1.5 whitespace-nowrap text-sm text-humo lg:flex-wrap">
-                <span className="mr-1 text-xs tracking-[0.2em] uppercase">Compases</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={totalCompases}
-                  value={recorte ? recorte.desde + 1 : 1}
-                  onChange={(e) => {
-                    parar();
-                    const desde = Math.min(
-                      Math.max(Number(e.target.value) - 1, 0),
-                      totalCompases - 1,
-                    );
-                    const hasta = Math.max(recorte?.hasta ?? totalCompases - 1, desde);
-                    setRecorte({ desde, hasta });
-                    setDesdeCompas(desde);
-                  }}
-                  className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
-                  aria-label="Desde el compás"
-                />
-                <span>al</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={totalCompases}
-                  value={recorte ? recorte.hasta + 1 : totalCompases}
-                  onChange={(e) => {
-                    parar();
-                    const hasta = Math.min(
-                      Math.max(Number(e.target.value) - 1, 0),
-                      totalCompases - 1,
-                    );
-                    const desde = Math.min(recorte?.desde ?? 0, hasta);
-                    setRecorte({ desde, hasta });
-                    setDesdeCompas(desde);
-                  }}
-                  className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
-                  aria-label="Hasta el compás"
-                />
-              </span>
+              <div>
+                <span className={etiqueta}>Compases</span>
+                <span className="flex flex-wrap items-center gap-1.5 text-sm text-humo">
+                  <input
+                    type="number"
+                    min={1}
+                    max={totalCompases}
+                    value={recorte ? recorte.desde + 1 : 1}
+                    onChange={(e) => {
+                      parar();
+                      const desde = Math.min(
+                        Math.max(Number(e.target.value) - 1, 0),
+                        totalCompases - 1,
+                      );
+                      const hasta = Math.max(recorte?.hasta ?? totalCompases - 1, desde);
+                      setRecorte({ desde, hasta });
+                      setDesdeCompas(desde);
+                    }}
+                    className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
+                    aria-label="Desde el compás"
+                  />
+                  <span>al</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={totalCompases}
+                    value={recorte ? recorte.hasta + 1 : totalCompases}
+                    onChange={(e) => {
+                      parar();
+                      const hasta = Math.min(
+                        Math.max(Number(e.target.value) - 1, 0),
+                        totalCompases - 1,
+                      );
+                      const desde = Math.min(recorte?.desde ?? 0, hasta);
+                      setRecorte({ desde, hasta });
+                      setDesdeCompas(desde);
+                    }}
+                    className="w-13 rounded-xl bg-carta-2 px-2 py-1.5 text-center font-mono text-sm"
+                    aria-label="Hasta el compás"
+                  />
+                </span>
+              </div>
             )}
             {recorte && (
-              <span className="flex items-center gap-1.5 whitespace-nowrap text-sm text-humo lg:flex-wrap">
+              <span className="flex flex-wrap items-center gap-1.5 text-sm text-humo">
                 <button onClick={() => setRepetir(!repetir)} className={chip(repetir)}>
                   ⟳ en loop
                 </button>
@@ -585,7 +606,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
                     setAcelerando(false);
                     setDesdeCompas(0);
                   }}
-                  className="ml-1 text-xs underline decoration-dotted underline-offset-2 hover:text-tiza"
+                  className="text-xs underline decoration-dotted underline-offset-2 hover:text-tiza"
                 >
                   toda la pieza
                 </button>
@@ -595,21 +616,21 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
           {/* Tocar, seguir, metrónomo, bpm. En el celular esta franja queda
               pegada al pie de la ventana: es lo que se usa mientras suena,
-              así que tiene que estar siempre a mano del pulgar. */}
-          <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur lg:static lg:mt-3 lg:rounded-2xl lg:border lg:bg-carta-2/40 lg:backdrop-blur-none">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:flex-col lg:items-stretch">
+              así que tiene que estar siempre a mano del pulgar. En desktop
+              ya no arma su propia tarjeta —la tarjeta es todo el riel—, es
+              sólo la última sección, separada con el mismo borde que las
+              otras dos. */}
+          <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur lg:static lg:rounded-none lg:border-borde/60 lg:bg-transparent lg:backdrop-blur-none">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:flex-col lg:items-stretch lg:gap-2 lg:p-4">
               {tocando ? (
-                <button
-                  onClick={parar}
-                  className="rounded-full bg-brasa px-5 py-2 font-bold text-noche transition hover:brightness-110"
-                >
+                <button onClick={parar} className={`${chipAccion("activo")} flex justify-center`}>
                   ■ Parar
                 </button>
               ) : (
                 <button
                   onClick={() => tocar(desdeCompas)}
                   disabled={cargando}
-                  className="rounded-full bg-menta px-5 py-2 font-bold text-noche transition hover:brightness-110 disabled:opacity-60"
+                  className={`${chipAccion("listo")} flex justify-center disabled:opacity-60`}
                 >
                   {cargando ? "…" : "▶ Escucharla"}
                 </button>
@@ -617,9 +638,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
               <button
                 onClick={siguiendo ? () => setSiguiendo(false) : arrancarSeguimiento}
-                className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-                  siguiendo ? "bg-brasa text-noche" : "bg-uva text-noche hover:brightness-110"
-                }`}
+                className={`${chipAccion(siguiendo ? "activo" : "listo")} flex items-center justify-center gap-1.5`}
               >
                 {siguiendo ? (
                   "■ Dejar de seguirme"
@@ -632,14 +651,14 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
               <button
                 onClick={() => setMetronomo(!metronomo)}
-                className={chip(metronomo)}
+                className={`${chip(metronomo)} lg:w-full`}
                 title="Un compás de clicks para entrar, y el pulso marcado mientras suena"
               >
                 <Icono de="metronomo" /> metrónomo
               </button>
 
               {desdeCompas > 0 && (
-                <span className="whitespace-nowrap rounded-full bg-carta-2 px-3 py-1.5 font-mono text-xs text-humo">
+                <span className="whitespace-nowrap rounded-xl bg-carta-2 px-3 py-1.5 font-mono text-xs text-humo lg:w-full lg:text-center">
                   desde el compás {desdeCompas + 1}
                   <button
                     onClick={() => setDesdeCompas(0)}
@@ -650,7 +669,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
                 </span>
               )}
 
-              <label className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm text-humo lg:ml-0">
+              <label className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm text-humo lg:ml-0 lg:mt-1">
                 <span className="font-mono">{bpm} bpm</span>
                 <input
                   type="range"
@@ -673,7 +692,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           </div>
 
           {siguiendo && (
-            <div className="px-4 pb-4 lg:px-0 lg:pt-3">
+            <div className="border-t border-borde/60 px-4 py-4 lg:p-4">
               <Midi
                 estado={estadoMidi}
                 dispositivos={dispositivos}
