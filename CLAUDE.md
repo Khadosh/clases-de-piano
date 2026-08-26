@@ -494,16 +494,33 @@ Tres herramientas más, aprendidas de mirar el reproductor de alphaTab:
   con wrap: en el celular los grupos bajan enteros en vez de dejar un chip
   huérfano en la línea siguiente. Todos los toggles usan el mismo `chip()`.
 
-### Los rieles
+### El riel
 
 En desktop, `/partituras/[slug]` rompe el `max-w-5xl` del layout general y usa
-el margen que le sobra a los costados de una partitura angosta: los controles
-—vista/imprimir y manos/compases a la izquierda, tocar/seguir/metrónomo a la
-derecha— viven ahí, en dos `<aside>` con `position: sticky`, así que quedan a
-la vista mientras la partitura sigue para abajo. En el celular, donde no hay
-margen que aprovechar, son las mismas filas de siempre, apiladas arriba y
-abajo del pentagrama —es nada más que `flex-direction`, el contenido es el
-mismo componente.
+el margen que le sobra a los costados de una partitura angosta: **un solo**
+`<aside>` a la derecha —vista/imprimir, manos/compases, tocar/seguir/
+metrónomo/bpm, todo junto— con `position: sticky`, así que queda a la vista
+mientras la partitura sigue para abajo. El margen de la izquierda queda vacío
+a propósito: partir los controles en dos rieles (uno de cada lado) se probó
+primero y quedaba raro, como una configuración a medio terminar de cada lado
+de la hoja; todo en un solo panel se lee de una vez, de arriba abajo, como un
+panel de control.
+
+**El estado de "seguirte" no vive en ese panel: vive pegado al pie de la
+partitura.** Es información sobre lo que estás tocando —qué compás, cuántas
+van, los errores— no un control, y mezclado entre los botones quedaba
+perdido. En desktop es su propio `sticky` clavado al fondo de la columna de
+la partitura (no del panel), así que sigue a la vista mientras tocás sin
+competir con las manos/compases. `estadoSeguimiento` es un solo bloque de
+JSX armado una vez en el cuerpo del componente y usado en los dos lugares —el
+riel en desktop, adentro de la barra de tocar en el celular— para que las dos
+copias jamás se desincronicen.
+
+En el celular, donde no hay margen que aprovechar, todo vuelve a ser lo de
+siempre: filas apiladas arriba y abajo del pentagrama, con la barra de
+tocar —controles y estado juntos, como antes de que existiera el riel—
+pegada al pie de la ventana. Es nada más que `flex-direction` y un par de
+`lg:hidden`/`hidden lg:block`; el contenido es el mismo componente.
 
 Dos trampas de CSS que costaron caro, las dos con el mismo síntoma —el
 elemento pegado al pie deja de estar pegado, y en vez de flotar se va con el

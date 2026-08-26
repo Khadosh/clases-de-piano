@@ -343,22 +343,130 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
     puestasRef.current = new Set();
   };
 
+  // El estado de "seguirte" —compás, cuántas van, errores— aparece en dos
+  // lugares distintos según el tamaño de pantalla (pegado al pie de la
+  // partitura en desktop, adentro de la barra de tocar en el celular), pero
+  // es el mismo contenido en los dos: se arma acá una sola vez.
+  const estadoSeguimiento = siguiendo && (
+    <div className="rounded-2xl bg-noche px-4 py-3 sm:px-5 sm:py-4">
+      {terminada ? (
+        <>
+          <p className="font-display text-2xl font-bold text-menta">
+            Hasta el final <Icono de="festejo" />
+          </p>
+          <p className="mt-1 text-sm text-humo">
+            {errores === 0
+              ? "Sin una nota de más."
+              : `Con ${errores} ${errores === 1 ? "nota" : "notas"} que no iban.`}
+          </p>
+          <button
+            onClick={arrancarSeguimiento}
+            className="mt-3 rounded-full bg-menta px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
+          >
+            Otra vez
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
+            <div>
+              <p className="text-xs tracking-[0.2em] text-humo uppercase">Compás</p>
+              <p className="font-display text-3xl font-black text-sol">
+                {(momentoActual?.compas ?? 0) + 1}
+                <span className="text-base text-humo">/{totalCompases}</span>
+              </p>
+            </div>
+            <div>
+              <p className="text-xs tracking-[0.2em] text-humo uppercase">Van</p>
+              <p className="font-mono text-lg">
+                {i}/{momentos.length}
+              </p>
+            </div>
+            {errores > 0 && (
+              <p className="font-mono text-sm text-brasa">{errores} de más</p>
+            )}
+          </div>
+          <p className="mt-2 hidden text-xs text-humo sm:block">
+            No hay reloj: la partitura avanza cuando tocás todas las notas de
+            ese instante. La octava no importa. Tocá un compás del pentagrama
+            para saltar ahí.
+          </p>
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div ref={caja} className="card">
       {/* En desktop hay mucho margen vacío a los costados de una partitura
-          angosta, así que ahí viven los controles: dos rieles flotantes (uno
-          de configuración, uno de reproducción) que quedan a la vista mientras
-          la partitura sigue para abajo — `sticky`, no fijos, así que dejan de
-          seguir al terminarse el sistema. En el celular no hay margen que
-          aprovechar, y estos mismos bloques vuelven a apilarse como filas: es
-          nada más que un cambio de `flex-direction`, el contenido es el mismo. */}
+          angosta, así que ahí vive un único riel de controles —vista,
+          manos, compases, tocar, seguir— flotando (`sticky`) mientras la
+          partitura sigue para abajo. El estado de "seguirte" no va en el
+          riel: es información sobre LA PARTITURA, así que queda pegado a
+          su pie, no a los botones. En el celular no hay margen que
+          aprovechar y las dos cosas vuelven a ser lo de siempre: todo
+          apilado, con la barra de tocar (control + estado juntos) pegada
+          al pie de la ventana. */}
       <div className="lg:flex lg:items-start lg:gap-6">
-        {/* Riel izquierdo: configuración — qué mirar y qué tocar. */}
-        {/* `contents` en el celular: el <aside> desaparece como caja y sus
-            hijos quedan directamente adentro de la tarjeta entera, que es
-            donde tienen que estar — ver la nota grande de más abajo, en el
-            riel derecho, sobre por qué esto le hace falta al sticky. */}
-        <aside className="contents print:hidden lg:sticky lg:top-20 lg:block lg:w-[210px] lg:shrink-0">
+        {/* Centro: la partitura y, en desktop, su estado de seguimiento. */}
+        <div className="lg:min-w-0 lg:flex-1">
+          {vista === "edicion" && pieza.fuente ? (
+            <div className="p-4 print:partitura-papel">
+              <EdicionCompleta fuente={pieza.fuente} />
+            </div>
+          ) : (
+            <div className="overflow-x-auto p-4 print:partitura-papel">
+              <Pentagrama
+                derecha={pieza.derecha}
+                izquierda={pieza.izquierda}
+                compas={pieza.compas}
+                tonalidad={pieza.tonalidad}
+                sonando={siguiendo ? (momentoActual?.t ?? null) : sonando}
+                apagada={
+                  manos === "derecha" ? "izquierda" : manos === "izquierda" ? "derecha" : undefined
+                }
+                rango={recorte ?? undefined}
+                onCompas={(c) => {
+                  setDesdeCompas(c);
+                  if (siguiendo) {
+                    setI(indiceDelCompas(momentos, c));
+                    puestasRef.current = new Set();
+                  } else {
+                    tocar(c);
+                  }
+                }}
+              />
+              <p className="mt-2 text-xs text-humo print:hidden">
+                ¿Una nota no se deja leer? Primero decidí cuál te parece que es,
+                y después apoyale el mouse o el dedo: te la sopla — y si con lo
+                demás que suena forma un acorde conocido, también.
+              </p>
+            </div>
+          )}
+
+          {/* Sólo en desktop: en el celular este mismo estado vive adentro de
+              la barra de tocar, más abajo. */}
+          {estadoSeguimiento && (
+            <div className="hidden print:hidden lg:sticky lg:bottom-4 lg:z-10 lg:mt-3 lg:block lg:shadow-xl">
+              {estadoSeguimiento}
+            </div>
+          )}
+        </div>
+
+        {/* El riel: toda la configuración y el disparador de reproducción,
+            un único panel. */}
+        {/* `contents` en el celular: el <aside> tiene que desaparecer como
+            caja. `position: sticky` no "flota" en el aire — necesita que su
+            padre directo sea alto, porque es contra ESE padre que se mide
+            cuánto puede recorrer antes de despegarse. Con el <aside> como
+            caja propia, su contenido es casi toda su altura, así que no
+            había margen para pegarse a nada: quedaba tal cual caía en el
+            documento, a catorce mil píxeles de la partitura del Claro de
+            luna. `contents` saca al <aside> del medio en el celular — sus
+            hijos pasan a ser hijos directos de la tarjeta entera, que sí es
+            alta — y en desktop vuelve a ser una caja real para poder ser el
+            riel `sticky`. */}
+        <aside className="contents print:hidden lg:sticky lg:top-20 lg:block lg:w-[230px] lg:shrink-0">
           {/* La vista (nuestro cuaderno o la edición completa, si hay de dónde)
               y el botón de imprimir. En el papel no hay ni una cosa ni la
               otra: se elige antes de imprimir, así que las dos quedan afuera
@@ -484,62 +592,11 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
               </span>
             )}
           </div>
-        </aside>
 
-        {/* Centro: la partitura. */}
-        <div className="lg:min-w-0 lg:flex-1">
-          {vista === "edicion" && pieza.fuente ? (
-            <div className="p-4 print:partitura-papel">
-              <EdicionCompleta fuente={pieza.fuente} />
-            </div>
-          ) : (
-            <div className="overflow-x-auto p-4 print:partitura-papel">
-              <Pentagrama
-                derecha={pieza.derecha}
-                izquierda={pieza.izquierda}
-                compas={pieza.compas}
-                tonalidad={pieza.tonalidad}
-                sonando={siguiendo ? (momentoActual?.t ?? null) : sonando}
-                apagada={
-                  manos === "derecha" ? "izquierda" : manos === "izquierda" ? "derecha" : undefined
-                }
-                rango={recorte ?? undefined}
-                onCompas={(c) => {
-                  setDesdeCompas(c);
-                  if (siguiendo) {
-                    setI(indiceDelCompas(momentos, c));
-                    puestasRef.current = new Set();
-                  } else {
-                    tocar(c);
-                  }
-                }}
-              />
-              <p className="mt-2 text-xs text-humo print:hidden">
-                ¿Una nota no se deja leer? Primero decidí cuál te parece que es,
-                y después apoyale el mouse o el dedo: te la sopla — y si con lo
-                demás que suena forma un acorde conocido, también.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Riel derecho: reproducción — tocar, seguir, y cómo te está yendo.
-            En el celular queda pegado al pie de la ventana en vez de flotar al
-            costado, porque ahí no hay costado: es lo que se usa mientras suena,
-            así que tiene que estar siempre a mano del pulgar. */}
-        {/* `contents`: en el celular el <aside> tiene que desaparecer como
-            caja. `position: sticky` no "flota" en el aire — necesita que su
-            padre directo sea alto, porque es contra ESE padre que se mide
-            cuánto puede recorrer antes de despegarse. Con el <aside> como caja
-            propia, su único hijo (la barra de tocar) es casi toda su altura,
-            así que no había margen para pegarse a nada: quedaba tal cual caía
-            en el documento, a catorce mil píxeles de la partitura del Claro de
-            luna. `contents` saca al <aside> del medio en el celular — sus
-            hijos pasan a ser hijos directos de la tarjeta entera, que sí es
-            alta — y en desktop vuelve a ser una caja real para poder ser el
-            riel `sticky`. */}
-        <aside className="contents print:hidden lg:sticky lg:top-20 lg:block lg:w-[230px] lg:shrink-0">
-          <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur lg:static lg:rounded-2xl lg:border lg:bg-carta-2/40 lg:backdrop-blur-none">
+          {/* Tocar, seguir, metrónomo, bpm. En el celular esta franja queda
+              pegada al pie de la ventana: es lo que se usa mientras suena,
+              así que tiene que estar siempre a mano del pulgar. */}
+          <div className="sticky bottom-0 z-10 rounded-b-[inherit] border-t border-borde/60 bg-noche-2/95 backdrop-blur lg:static lg:mt-3 lg:rounded-2xl lg:border lg:bg-carta-2/40 lg:backdrop-blur-none">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 lg:flex-col lg:items-stretch">
               {tocando ? (
                 <button
@@ -606,60 +663,11 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
               </label>
             </div>
 
-            {siguiendo && (
-              <div className="border-t border-borde/60 px-4 pb-4">
-                <div className="mt-3 rounded-2xl bg-noche px-4 py-3 sm:px-5 sm:py-4">
-                  {terminada ? (
-                    <>
-                      <p className="font-display text-2xl font-bold text-menta">
-                        Hasta el final <Icono de="festejo" />
-                      </p>
-                      <p className="mt-1 text-sm text-humo">
-                        {errores === 0
-                          ? "Sin una nota de más."
-                          : `Con ${errores} ${errores === 1 ? "nota" : "notas"} que no iban.`}
-                      </p>
-                      <button
-                        onClick={arrancarSeguimiento}
-                        className="mt-3 rounded-full bg-menta px-4 py-2 text-sm font-bold text-noche transition hover:brightness-110"
-                      >
-                        Otra vez
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2">
-                        <div>
-                          <p className="text-xs tracking-[0.2em] text-humo uppercase">
-                            Compás
-                          </p>
-                          <p className="font-display text-3xl font-black text-sol">
-                            {(momentoActual?.compas ?? 0) + 1}
-                            <span className="text-base text-humo">/{totalCompases}</span>
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs tracking-[0.2em] text-humo uppercase">
-                            Van
-                          </p>
-                          <p className="font-mono text-lg">
-                            {i}/{momentos.length}
-                          </p>
-                        </div>
-                        {errores > 0 && (
-                          <p className="font-mono text-sm text-brasa">
-                            {errores} de más
-                          </p>
-                        )}
-                      </div>
-                      <p className="mt-2 hidden text-xs text-humo sm:block">
-                        No hay reloj: la partitura avanza cuando tocás todas
-                        las notas de ese instante. La octava no importa. Tocá
-                        un compás del pentagrama para saltar ahí.
-                      </p>
-                    </>
-                  )}
-                </div>
+            {/* Sólo en el celular: en desktop este mismo estado ya se ve
+                pegado al pie de la partitura, arriba. */}
+            {estadoSeguimiento && (
+              <div className="border-t border-borde/60 px-4 pb-4 lg:hidden">
+                <div className="mt-3">{estadoSeguimiento}</div>
               </div>
             )}
           </div>
