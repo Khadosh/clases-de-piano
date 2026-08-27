@@ -81,6 +81,7 @@ export type HerramientaSuelta =
   | "funciones"
   | "inventor"
   | "melodia"
+  | "encima"
   | "cadencias"
   | "paralelas"
   | "semitonos";
@@ -177,7 +178,13 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     titulo: "Ponerle melodía a los acordes",
     emoji: "🎼",
     bajada:
-      "El puente con las partituras: elegís o armás una progresión y arriba va una melodía simple, escrita en pentagrama y sonando junto con los acordes. La puede componer la app —siguiendo las reglas de la clase, para escuchar que alcanzan— o la escribís vos pulso por pulso, y te dice qué fue cada nota: del acorde, de paso o en el aire.",
+      "El método completo de la clase 4: armás la progresión —con los préstamos de las menores, el Fm incluido—, elegís las guías que reciben a cada acorde, y la melodía la compone la app o la escribís vos con figuras y silencios. El veredicto puntúa sin corregir: del acorde, de paso o en el aire, más los aterrizajes, la respiración y la variedad.",
+  },
+  encima: {
+    titulo: "Tocarla encima",
+    emoji: "🎹",
+    bajada:
+      "La progresión suena en loop —con cuenta previa y metrónomo— y la melodía la ponés vos, en el piano de verdad o en el teclado de la pantalla. Cada nota se juzga en vivo contra el acorde que suena, y la primera de cada compás es el aterrizaje.",
   },
   cadencias: {
     titulo: "Las cadencias, con nombre",
@@ -228,6 +235,7 @@ const AREA_DE: Record<string, AreaId> = {
   funciones: "acordes",
   inventor: "acordes",
   melodia: "acordes",
+  encima: "acordes",
   "notas-guia": "acordes",
   cadencias: "acordes",
   paralelas: "acordes",
@@ -375,6 +383,10 @@ export function catalogo(): Entrada[] {
             bajada:
               "El renglón de la clase 4: arriba la nota que recibe a cada acorde, abajo el cifrado. Tocá las columnas, escuchá el renglón entero — la fila de arriba, sola, ya es casi una melodía.",
           });
+          // Tocarla encima es la mitad de los dedos del mismo método: cuelga
+          // de acá porque recién con las guías vistas tiene sentido juzgar
+          // los aterrizajes sobre el loop.
+          sumarSuelta("encima", lesson);
           break;
         case "cadencias":
           sumarSuelta("cadencias", lesson);

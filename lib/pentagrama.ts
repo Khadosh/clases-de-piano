@@ -85,8 +85,16 @@ export interface NotaEnPapel {
  * es la que no lleva ningún signo. Si ninguna sirve, la nota es ajena a la
  * tonalidad y se escribe con la letra más cercana, con su alteración: subiendo
  * se prefiere el sostenido y bajando el bemol, que es la costumbre.
+ *
+ * `bemoles` da vuelta esa costumbre para las ajenas: los préstamos de las
+ * menores paralelas son siempre bemoles (el La♭ del Fm en Do mayor), y sin
+ * esto la armadura de Do los escribía Sol♯ — la tecla, no el nombre.
  */
-export function escribirEnPapel(midi: number, armadura: number): NotaEnPapel {
+export function escribirEnPapel(
+  midi: number,
+  armadura: number,
+  bemoles = false,
+): NotaEnPapel {
   const alterArmadura = alterDeArmadura(armadura);
   const pc = mod12(midi);
 
@@ -98,7 +106,7 @@ export function escribirEnPapel(midi: number, armadura: number): NotaEnPapel {
 
   // Ajena a la tonalidad: se escribe con signo. En armaduras con bemoles se
   // baja la de arriba, en las de sostenidos se sube la de abajo.
-  const haciaBemol = armadura < 0;
+  const haciaBemol = armadura < 0 || bemoles;
   for (let letra = 0; letra < 7; letra++) {
     const natural = LETRAS_PC[letra];
     const alter = haciaBemol ? -1 : 1;

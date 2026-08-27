@@ -10,6 +10,9 @@
  * Sin dependencias de React ni de nada: se prueba con `npm run test:grados`.
  */
 
+import { ESCALAS, escalaPorId, triadasDeEscala } from "./escalas.ts";
+import { chordSymbol, identificarAcorde, mod12 } from "./music.ts";
+
 /** Semitonos desde la tónica hasta cada grado de la escala mayor. */
 export const GRADOS_MAYOR = [0, 2, 4, 5, 7, 9, 11] as const;
 
@@ -176,6 +179,113 @@ export function cadenciaAlFinal(
   if (n >= 2 && cola(2) === "4,5") return "rota";
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Los préstamos melódicos (clase 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * Un acorde de una secuencia: un grado del campo mayor (el número pelado, como
+ * siempre) o un préstamo — el mismo grado, pero con el acorde que le sale a
+ * una de las escalas menores paralelas.
+ *
+ * El préstamo no se muda de tonalidad: se toma el acorde, se lo usa, y se
+ * devuelve. Y **la función la pone el grado, no la calidad**: el Fm sigue
+ * siendo el IV —subdominante— aunque venga de la menor. Por eso la regla de
+ * oro y las cadencias miran `gradoDe()` y no se enteran del préstamo.
+ */
+export type AcordeDeLaSecuencia = number | { grado: number; deEscala: string };
+
+export const gradoDe = (a: AcordeDeLaSecuencia): number =>
+  typeof a === "number" ? a : a.grado;
+
+export const esPrestado = (a: AcordeDeLaSecuencia): boolean =>
+  typeof a !== "number";
+
+const escalaDelAcorde = (a: AcordeDeLaSecuencia) =>
+  escalaPorId(typeof a === "number" ? "mayor" : a.deEscala)!;
+
+/**
+ * La fundamental del acorde sobre Do, en semitonos desde la tónica.
+ *
+ * Es donde el préstamo se nota: el grado es el mismo pero la fundamental
+ * puede correrse — el bIII prestado vive en Mi♭ (3), no en Mi (4). Sale de la
+ * escala del acorde, no de la mayor.
+ */
+export function raizDelAcorde(a: AcordeDeLaSecuencia): number {
+  return mod12(escalaDelAcorde(a).grados[gradoDe(a)]);
+}
+
+/**
+ * Los intervalos del acorde desde su fundamental, en semitonos.
+ *
+ * Para los diatónicos es la receta de la tríada del grado; para los prestados
+ * sale de apilar nota-sí-nota-no en la escala menor que corresponda — la misma
+ * cuenta de `triadasDeEscala`, mirada desde la fundamental.
+ */
+export function intervalosDelAcorde(a: AcordeDeLaSecuencia): number[] {
+  const triada = triadasDeEscala(0, escalaDelAcorde(a))[gradoDe(a)];
+  return triada.map((s) => s - triada[0]);
+}
+
+/** Las teclas del acorde, desde la fundamental (en MIDI) que se le pida. */
+export function midisDelAcorde(a: AcordeDeLaSecuencia, fundamental: number): number[] {
+  return intervalosDelAcorde(a).map((iv) => fundamental + iv);
+}
+
+/** Las clases de altura del acorde, sobre la tónica Do. */
+export function clasesDelAcorde(a: AcordeDeLaSecuencia): Set<number> {
+  return new Set(midisDelAcorde(a, raizDelAcorde(a)).map(mod12));
+}
+
+/** El cifrado del acorde en Do: "F" el diatónico, "Fm" el prestado. */
+export function cifradoDelAcorde(a: AcordeDeLaSecuencia): string {
+  const id = identificarAcorde(midisDelAcorde(a, 48 + raizDelAcorde(a)));
+  return id ? chordSymbol(id.root, id.quality) : "?";
+}
+
+export interface Prestamo {
+  grado: number;
+  deEscala: string;
+  cifrado: string;
+  /** De qué escala se pide, para la etiqueta de la paleta. */
+  origen: string;
+}
+
+/**
+ * El catálogo de préstamos: los acordes de las tres menores paralelas que NO
+ * están en el campo mayor, sin repetir (el Cm de la natural y el de la
+ * armónica son el mismo acorde: se ofrece una vez, con el origen más simple).
+ * El Fm va primero porque es el recomendado de la clase; el resto en orden de
+ * grado. No es una tabla escrita a mano: sale de la misma cuenta que el
+ * bloque de paralelas, así que no puede discrepar de lo que la clase muestra.
+ */
+export const PRESTAMOS: Prestamo[] = (() => {
+  const mayor = escalaPorId("mayor")!;
+  const camposMayor = triadasDeEscala(0, mayor).map((t) =>
+    [...t.map(mod12)].sort((x, y) => x - y).join(","),
+  );
+  const out: Prestamo[] = [];
+  const vistos = new Set<string>(camposMayor);
+  for (const escala of ESCALAS) {
+    if (escala.id === "mayor") continue;
+    triadasDeEscala(0, escala).forEach((t, grado) => {
+      const clave = [...t.map(mod12)].sort((x, y) => x - y).join(",");
+      if (vistos.has(clave)) return;
+      vistos.add(clave);
+      out.push({
+        grado,
+        deEscala: escala.id,
+        cifrado: cifradoDelAcorde({ grado, deEscala: escala.id }),
+        origen: escala.nombre.toLowerCase(),
+      });
+    });
+  }
+  return out.sort((a, b) => {
+    const estrella = (p: Prestamo) => (p.cifrado === "Fm" ? -1 : 0);
+    return estrella(a) - estrella(b) || a.grado - b.grado;
+  });
+})();
 
 // ---------------------------------------------------------------------------
 // Las cadencias con nombre y apellido (clase 4)

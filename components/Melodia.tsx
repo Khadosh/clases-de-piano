@@ -3,38 +3,40 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Icono from "./Icono";
 import Pentagrama from "./Pentagrama";
+import FiguraSVG from "./FiguraSVG";
+import SelectorDeAcordes from "./SelectorDeAcordes";
 import {
-  FUNCION_DE_GRADO,
-  GRADOS_MAYOR,
   PROGRESIONES,
-  TONALIDAD_MAYOR,
-  cadenciaAlFinal,
-  raizDelGrado,
-  rachaDeFuncion,
-  type Funcion,
+  cifradoDelAcorde,
+  esPrestado,
+  midisDelAcorde,
+  raizDelAcorde,
+  type AcordeDeLaSecuencia,
 } from "@/lib/grados";
 import {
-  analizarMelodia,
+  analizarEscrita,
+  candidatosDelAcorde,
   componerMelodia,
   esDelAcorde,
-  eventosDeMelodiaEscrita,
-  lugaresDeMelodia,
-  posicionDeLugar,
-  resumenDeMelodia,
+  eventosEscritos,
+  figuraEntra,
+  midiDeNota,
+  mismaNota,
+  posicionEscrita,
+  resumenDeEscrita,
+  sugerirGuias,
+  type EventoEscrito,
+  type NotaMelodia,
 } from "@/lib/melodia";
-import {
-  LETRAS_ES,
-  chordPitches,
-  chordSymbol,
-  qualityById,
-  scaleDegreeToPitch,
-} from "@/lib/music";
+import { LETRAS_ES } from "@/lib/music";
+import { figuraQueDivide } from "@/lib/ritmo";
 import { ubicar, duracionDeEvento, type Evento } from "@/lib/pentagrama";
 import {
   getAudioContext,
   notaOff,
   notaOn,
   pararTodo,
+  playChord,
   playNote,
   wakeAudio,
 } from "@/lib/audio";
@@ -42,17 +44,18 @@ import {
 /**
  * Ponerle melodía a los acordes: el puente entre la sala y las partituras.
  *
- * Los acordes se arman como en el inventor de secuencias —grados de Do mayor,
- * pintados por función— y arriba va una melodía simple que sale **escrita en
- * pentagrama** y suena junta con ellos. La melodía tiene dos autores posibles,
- * que son los dos lados del mismo ejercicio:
+ * Desde la clase 4 el ejercicio es el método completo del profe, en tres
+ * pasos que son los tres paneles:
  *
- * - **La app compone** siguiendo las reglas de la clase (nota del acorde en
- *   los pulsos fuertes, pasos por la escala entre medio, final largo en la
- *   casa). Sirve para *escuchar* que las reglas alcanzan para que suene bien.
- * - **La escribís vos**, pulso por pulso, y el veredicto te dice qué fue cada
- *   nota: del acorde, de paso, o en el aire. No corrige, puntúa — igual que
- *   el enlace: muchas melodías distintas están igual de bien.
+ * 1. **Los acordes** — grados de Do mayor, ahora también con los préstamos de
+ *    las menores paralelas (el Fm de la tarea).
+ * 2. **Las guías** — la nota con la que la melodía recibe a cada acorde,
+ *    elegida antes de escribir una sola nota. Es la fila de arriba del
+ *    renglón del cuaderno de papel.
+ * 3. **La melodía** — la compone la app (con las guías puestas, si las hay) o
+ *    la escribís vos, ahora con figuras y silencios: sin ritmo no hay
+ *    cantabile. El veredicto puntúa y no corrige: del acorde, de paso o en
+ *    el aire, más los aterrizajes en las guías, la respiración y la variedad.
  *
  * Las reglas y el generador viven en `lib/melodia.ts` y se prueban con
  * `npm run test:melodia`; acá sólo hay interfaz y sonido.
@@ -66,12 +69,6 @@ const BAJO = 48;
 /** Más de ocho compases no entran cómodos ni en el pentagrama ni en el oído. */
 const MAX_COMPASES = 8;
 
-const COLOR: Record<Funcion, { chip: string; suave: string }> = {
-  reposo: { chip: "bg-menta text-noche", suave: "bg-menta/15 text-menta" },
-  subdominante: { chip: "bg-sol text-noche", suave: "bg-sol/15 text-sol" },
-  dominante: { chip: "bg-brasa text-noche", suave: "bg-brasa/15 text-brasa" },
-};
-
 const VEREDICTO = {
   acorde: { clase: "bg-menta/15 text-menta", nombre: "del acorde" },
   paso: { clase: "bg-sol/15 text-sol", nombre: "de paso" },
@@ -83,41 +80,49 @@ const chip = (activo: boolean) =>
     activo ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
   }`;
 
+/** El nombre de una nota de melodía: La♭, Do′. */
+const nombreDeNota = (n: NotaMelodia) =>
+  `${LETRAS_ES[((n.d % 7) + 7) % 7]}${n.b ? "♭" : ""}${n.d >= 7 ? "′" : ""}`;
+
+/** Cuántos segundos suena cada figura al escribirla, para escucharla al poner. */
+const DURACION_AL_ESCRIBIR: Record<number, number> = { 1: 1.8, 2: 1.3, 4: 0.7, 8: 0.35 };
+
 export default function Melodia() {
   // La progresión de arranque es la cadencia clásica: melodía fácil de colgar.
-  const [grados, setGrados] = useState<number[]>([...PROGRESIONES[2].grados]);
+  const [acordes, setAcordes] = useState<AcordeDeLaSecuencia[]>([...PROGRESIONES[2].grados]);
+  const [guias, setGuias] = useState<(NotaMelodia | null)[]>([]);
   const [autor, setAutor] = useState<"app" | "vos">("app");
   const [semilla, setSemilla] = useState(1);
-  const [escritas, setEscritas] = useState<number[]>([]);
+  const [semillaGuias, setSemillaGuias] = useState(1);
+  const [escrita, setEscrita] = useState<EventoEscrito[]>([]);
+  const [figura, setFigura] = useState(4);
   const [sonando, setSonando] = useState<number | null>(null);
   const [tocando, setTocando] = useState(false);
   const [cargando, setCargando] = useState(false);
   const pararRef = useRef<(() => void) | null>(null);
 
-  const acordeDe = (g: number) => {
-    const quality = qualityById(TONALIDAD_MAYOR[g].triada)!;
-    return { quality, root: raizDelGrado(0, g) };
-  };
+  const guiasDe = (c: number) => guias[c] ?? null;
+  const hayGuias = guias.some((g) => g);
+  const conPrestamos = acordes.some(esPrestado);
 
-  /** El acompañamiento: la tríada de cada grado, una redonda por compás. */
+  /** El acompañamiento: la tríada de cada acorde, una redonda por compás. */
   const izquierda = useMemo<Evento[]>(
     () =>
-      grados.map((g) => {
-        // La fundamental cerca de Do3: La y Si bajan una octava para que el
-        // bajo no se trepe al pentagrama de arriba.
-        const salto = GRADOS_MAYOR[g];
-        const root = BAJO + (salto <= 7 ? salto : salto - 12);
-        return { midis: chordPitches(root, acordeDe(g).quality), divide: 1 };
+      acordes.map((a) => {
+        // La fundamental cerca de Do3: las agudas bajan una octava para que
+        // el bajo no se trepe al pentagrama de arriba.
+        const salto = raizDelAcorde(a);
+        return { midis: midisDelAcorde(a, BAJO + (salto <= 7 ? salto : salto - 12)), divide: 1 };
       }),
-    [grados],
+    [acordes],
   );
 
   const melodia = useMemo<Evento[]>(
     () =>
       autor === "app"
-        ? componerMelodia(grados, semilla)
-        : eventosDeMelodiaEscrita(escritas, grados.length),
-    [autor, grados, semilla, escritas],
+        ? componerMelodia(acordes, semilla, guias.length ? guias : undefined)
+        : eventosEscritos(escrita),
+    [autor, acordes, semilla, guias, escrita],
   );
 
   // ---- Sonar ---------------------------------------------------------------
@@ -138,7 +143,7 @@ export default function Melodia() {
    */
   const tocar = async (conMelodia: boolean) => {
     parar();
-    if (grados.length === 0) return;
+    if (acordes.length === 0) return;
     // Se agenda todo junto, así que hay que esperar el piano de verdad.
     setCargando(true);
     await wakeAudio();
@@ -176,7 +181,7 @@ export default function Melodia() {
     despachar();
     const timer = setInterval(despachar, 25);
 
-    const fin = grados.length; // un compás de 4/4 es una redonda
+    const fin = acordes.length; // un compás de 4/4 es una redonda
     let raf = 0;
     const mirar = () => {
       const t = (ctx.currentTime - arranque) / segundosPorRedonda;
@@ -200,119 +205,146 @@ export default function Melodia() {
 
   // ---- Los acordes ----------------------------------------------------------
 
-  const cambiarAcordes = (nuevos: number[]) => {
+  const cambiarAcordes = (nuevos: AcordeDeLaSecuencia[]) => {
     parar();
-    setGrados(nuevos);
-    setEscritas([]);
+    setAcordes(nuevos);
+    setEscrita([]);
+    // Las guías elegidas sobreviven mientras su compás siga existiendo con el
+    // mismo acorde; al cambiar la progresión entera, se resetean solas porque
+    // la guía de un acorde que ya no está no promete nada.
+    setGuias((g) =>
+      nuevos.map((a, i) => {
+        const previa = g[i] ?? null;
+        return previa && esDelAcorde(previa, a) ? previa : null;
+      }),
+    );
   };
 
-  const racha = rachaDeFuncion(grados);
-  const cadencia = cadenciaAlFinal(grados);
+  // ---- Las guías -------------------------------------------------------------
+
+  const elegirGuia = (c: number, n: NotaMelodia) => {
+    parar();
+    wakeAudio();
+    const actual = guiasDe(c);
+    const nueva = actual && mismaNota(actual, n) ? null : n;
+    if (nueva) {
+      playChord(midisDelAcorde(acordes[c], BAJO + raizDelAcorde(acordes[c])), 1.1);
+      playNote(midiDeNota(n), 1.1);
+    }
+    setGuias((g) => acordes.map((_, i) => (i === c ? nueva : (g[i] ?? null))));
+  };
 
   // ---- La melodía escrita ----------------------------------------------------
 
-  const lugares = lugaresDeMelodia(grados.length);
-  const completa = escritas.length >= lugares;
-  const posicion = completa ? null : posicionDeLugar(escritas.length, grados.length);
-  const veredictos = analizarMelodia(escritas, grados);
-  const resumen = completa ? resumenDeMelodia(escritas, grados) : null;
+  const pos = posicionEscrita(escrita, acordes.length);
+  const veredictos = analizarEscrita(escrita, acordes);
+  const resumen = pos.completa ? resumenDeEscrita(escrita, acordes, guias) : null;
+  const acordeActual = acordes[pos.compas];
 
-  const escribir = (d: number) => {
-    if (completa) return;
+  /** Las figuras de la paleta; en el último compás manda la redonda final. */
+  const PALETA = [2, 4, 8];
+  const figuraElegida = pos.esUltimo ? 1 : figura;
+  const puedeEscribir = !pos.completa && figuraEntra(escrita, figuraElegida, acordes.length);
+
+  const escribir = (n: NotaMelodia | null) => {
+    if (!puedeEscribir) return;
     parar();
     wakeAudio();
-    playNote(scaleDegreeToPitch(d), posicion?.esFinal ? 1.8 : 0.7);
-    setEscritas((s) => [...s, d]);
+    if (n) playNote(midiDeNota(n), DURACION_AL_ESCRIBIR[figuraElegida] ?? 0.7);
+    setEscrita((s) => [...s, { nota: n, divide: figuraElegida }]);
   };
+
+  /** Los candidatos con bemol del acorde actual, para ofrecerlos al escribir. */
+  const bemolesDelActual =
+    autor === "vos" && !pos.completa && acordeActual !== undefined
+      ? candidatosDelAcorde(acordeActual).filter((n) => n.b && n.d <= 7)
+      : [];
 
   return (
     <div className="card overflow-hidden">
-      {/* 1. Los acordes: la mitad que ya sabés armar. */}
+      {/* 1. Los acordes: la mitad que ya sabés armar, préstamos incluidos. */}
       <div className="border-b border-borde/60 p-5">
         <p className="text-xs tracking-[0.2em] text-humo uppercase">
           Primero, los acordes · en Do mayor
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-1.5">
-          {PROGRESIONES.map((p) => (
-            <button
-              key={p.nombre}
-              onClick={() => cambiarAcordes([...p.grados])}
-              className={chip(p.grados.join(",") === grados.join(","))}
-            >
-              {p.nombre}
-            </button>
-          ))}
+        <div className="mt-3">
+          <SelectorDeAcordes acordes={acordes} onCambiar={cambiarAcordes} max={MAX_COMPASES} />
         </div>
-        <p className="mt-4 mb-2 text-sm text-humo">
-          O armá la tuya grado por grado, como en el inventor:
-        </p>
-        <div className="flex flex-wrap items-center gap-1.5">
-          {TONALIDAD_MAYOR.map((grado, g) => {
-            const { quality, root } = acordeDe(g);
-            return (
-              <button
-                key={g}
-                onClick={() => {
-                  if (grados.length >= MAX_COMPASES) return;
-                  cambiarAcordes([...grados, g]);
-                }}
-                disabled={grados.length >= MAX_COMPASES}
-                className={`rounded-xl px-3 py-1.5 text-center transition hover:brightness-110 disabled:opacity-40 ${COLOR[FUNCION_DE_GRADO[g]].chip}`}
-              >
-                <span className="block font-mono text-sm font-bold">{grado.cifra}</span>
-                <span className="block text-[11px] opacity-80">
-                  {chordSymbol(root, quality)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {grados.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center gap-1.5">
-            {grados.map((g, n) => {
-              const { quality, root } = acordeDe(g);
-              return (
-                <span
-                  key={n}
-                  className={`rounded-xl px-3 py-1.5 font-mono text-sm font-bold ${COLOR[FUNCION_DE_GRADO[g]].suave}`}
-                >
-                  {TONALIDAD_MAYOR[g].cifra}
-                  <span className="ml-1.5 text-[11px] opacity-75">
-                    {chordSymbol(root, quality)}
-                  </span>
-                </span>
-              );
-            })}
-            <button
-              onClick={() => cambiarAcordes(grados.slice(0, -1))}
-              className="ml-2 rounded-full bg-carta-2 px-3 py-1.5 text-xs font-semibold text-humo transition hover:text-tiza"
-            >
-              ↩ sacar el último
-            </button>
-          </div>
-        )}
-        {grados.length >= MAX_COMPASES && (
-          <p className="mt-2 text-xs text-humo">
-            Hasta {MAX_COMPASES} compases: más que eso ya no es un ejercicio, es
-            una obra.
-          </p>
-        )}
-        {racha >= 4 && (
-          <p className="mt-3 rounded-xl bg-brasa/15 px-4 py-2 text-sm text-brasa">
-            Cuatro funciones iguales seguidas: la regla de oro pide variar.
-          </p>
-        )}
-        {cadencia && (
-          <p className="mt-3 text-sm text-menta">
-            El final forma una cadencia{" "}
-            {cadencia === "autentica" ? "auténtica" : cadencia === "rota" ? "rota" : "plagal"}
-            : la melodía va a tener dónde aterrizar.
-          </p>
-        )}
       </div>
 
-      {/* 2. La melodía: quién la escribe. */}
+      {/* 2. Las guías: la nota que recibe a cada acorde, como en el papel. */}
+      {acordes.length > 0 && (
+        <div className="border-b border-borde/60 p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs tracking-[0.2em] text-humo uppercase">
+              Después, las guías
+            </span>
+            <span className="ml-auto flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  parar();
+                  setGuias(sugerirGuias(acordes, semillaGuias));
+                  setSemillaGuias((s) => s + 1);
+                }}
+                className={chip(false)}
+              >
+                <Icono de="dado" /> sugerime
+              </button>
+              {hayGuias && (
+                <button
+                  onClick={() => { parar(); setGuias([]); }}
+                  className="rounded-full bg-carta-2 px-3 py-1.5 text-xs font-semibold text-humo transition hover:text-tiza"
+                >
+                  borrar
+                </button>
+              )}
+            </span>
+          </div>
+          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-humo">
+            El método de la clase 4: antes de inventar nada, elegí{" "}
+            <strong className="text-tiza">la nota con la que la melodía va a
+            recibir a cada acorde</strong>. Tocá una para prometerla (y
+            escucharla sobre su acorde); son opcionales, pero con guías el
+            veredicto también mira los aterrizajes.
+          </p>
+          <div className="mt-3 overflow-x-auto">
+            <div className="flex min-w-max gap-1.5">
+              {acordes.map((a, c) => (
+                <div
+                  key={c}
+                  className="min-w-[84px] rounded-xl border border-borde/60 bg-carta-2 px-2 py-2 text-center"
+                >
+                  <p className="mb-1.5 font-mono text-xs font-bold text-humo">
+                    {cifradoDelAcorde(a)}
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-1">
+                    {candidatosDelAcorde(a)
+                      .filter((n) => n.d <= 7)
+                      .map((n) => {
+                        const elegida = guiasDe(c) && mismaNota(guiasDe(c)!, n);
+                        return (
+                          <button
+                            key={nombreDeNota(n)}
+                            onClick={() => elegirGuia(c, n)}
+                            className={`rounded-lg px-1.5 py-1 text-xs font-bold transition ${
+                              elegida
+                                ? "bg-sol text-noche"
+                                : "bg-noche/50 text-humo hover:text-tiza"
+                            }`}
+                          >
+                            {nombreDeNota(n)}
+                          </button>
+                        );
+                      })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. La melodía: quién la escribe. */}
       <div className="border-b border-borde/60 p-5">
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs tracking-[0.2em] text-humo uppercase">
@@ -331,11 +363,16 @@ export default function Melodia() {
         {autor === "app" ? (
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
             <p className="max-w-2xl text-sm leading-relaxed text-humo">
-              Compone con las reglas de la clase y nada más: en los pulsos{" "}
+              Compone con las reglas de las clases y nada más: en los pulsos{" "}
               <strong className="text-tiza">1 y 3, una nota del acorde</strong>;
               entre medio, <strong className="text-tiza">pasos por la escala</strong>;
-              y el final, largo y en la casa. Escuchala: las reglas solas ya
-              suenan a música.
+              respiraciones en el pulso débil; el final, largo y en la casa
+              {hayGuias && (
+                <>
+                  ; y <strong className="text-tiza">tus guías, respetadas</strong>
+                </>
+              )}
+              . Escuchala: las reglas solas ya suenan a música.
             </p>
             <button
               onClick={() => {
@@ -350,71 +387,123 @@ export default function Melodia() {
         ) : (
           <div className="mt-3">
             <p className="max-w-2xl text-sm leading-relaxed text-humo">
-              Una nota por pulso, y el último compás es una redonda. Las mismas
-              reglas te sirven de brújula: en los pulsos fuertes conviene una
-              del acorde (van marcadas), y entre medio caminá de a un paso — pero
-              la melodía es tuya, acá se puntúa y no se corrige.
+              Ahora con el ritmo de verdad: elegí la figura, después la nota — o
+              un silencio, que la frase tiene que{" "}
+              <strong className="text-tiza">respirar</strong>. Cada figura tiene
+              que entrar en su compás, y el último es la redonda del final. Se
+              puntúa y no se corrige: la melodía es tuya.
             </p>
 
-            {posicion && (
-              <p className="mt-4 text-sm">
-                <span className="rounded-full bg-carta-2 px-3 py-1 font-mono text-xs text-humo">
-                  compás {posicion.compas + 1} · {posicion.esFinal ? "la redonda final" : `pulso ${posicion.pulso + 1}`}
-                </span>{" "}
-                <span className="text-humo">
-                  sobre{" "}
-                  <strong className="text-tiza">
-                    {chordSymbol(acordeDe(grados[posicion.compas]).root, acordeDe(grados[posicion.compas]).quality)}
-                  </strong>
-                  {posicion.pulso === 0 || posicion.pulso === 2 || posicion.esFinal
-                    ? " — pulso fuerte: mejor una del acorde"
-                    : " — pulso débil: cualquier paso vale"}
-                </span>
-              </p>
-            )}
+            {!pos.completa && (
+              <>
+                <p className="mt-4 text-sm">
+                  <span className="rounded-full bg-carta-2 px-3 py-1 font-mono text-xs text-humo">
+                    compás {pos.compas + 1} · {pos.esUltimo ? "la redonda final" : `pulso ${Math.floor(pos.dentro * 4) + 1}`}
+                  </span>{" "}
+                  <span className="text-humo">
+                    sobre{" "}
+                    <strong className="text-tiza">{cifradoDelAcorde(acordeActual)}</strong>
+                    {guiasDe(pos.compas) && pos.dentro === 0 && (
+                      <> — la guía prometida es <strong className="text-sol">{nombreDeNota(guiasDe(pos.compas)!)}</strong></>
+                    )}
+                  </span>
+                </p>
 
-            {!completa && posicion && (
-              <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                {Array.from({ length: 8 }, (_, d) => {
-                  const delAcorde = esDelAcorde(d, grados[posicion.compas]);
-                  return (
+                {/* La paleta de figuras, como en cualquier editor: primero la
+                    duración, después la altura. */}
+                {!pos.esUltimo && (
+                  <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                    <span className="mr-1 text-xs tracking-[0.2em] text-humo uppercase">Figura</span>
+                    {PALETA.map((d) => {
+                      const entra = figuraEntra(escrita, d, acordes.length);
+                      return (
+                        <button
+                          key={d}
+                          onClick={() => setFigura(d)}
+                          disabled={!entra}
+                          title={figuraQueDivide(d)?.nombre}
+                          className={`flex h-11 w-11 items-center justify-center rounded-xl transition disabled:opacity-30 ${
+                            figura === d ? "bg-tiza text-noche" : "bg-carta-2 text-tiza hover:bg-borde"
+                          }`}
+                        >
+                          <FiguraSVG figura={figuraQueDivide(d)!} alto={26} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  {Array.from({ length: 8 }, (_, d) => {
+                    const nota: NotaMelodia = { d };
+                    const delAcorde = acordeActual !== undefined && esDelAcorde(nota, acordeActual);
+                    return (
+                      <button
+                        key={d}
+                        onClick={() => escribir(nota)}
+                        disabled={!puedeEscribir}
+                        className={`min-w-12 rounded-xl px-2.5 py-2 text-center text-sm font-bold transition hover:brightness-110 disabled:opacity-40 ${
+                          delAcorde
+                            ? "bg-menta/25 text-menta ring-1 ring-menta/50"
+                            : "bg-carta-2 text-humo hover:text-tiza"
+                        }`}
+                      >
+                        {nombreDeNota(nota)}
+                      </button>
+                    );
+                  })}
+                  {/* Los bemoles que presta el acorde de este compás: el La♭
+                      del Fm aparece recién cuando el Fm está sonando abajo. */}
+                  {bemolesDelActual.map((n) => (
                     <button
-                      key={d}
-                      onClick={() => escribir(d)}
-                      className={`min-w-12 rounded-xl px-2.5 py-2 text-center text-sm font-bold transition hover:brightness-110 ${
-                        delAcorde
-                          ? "bg-menta/25 text-menta ring-1 ring-menta/50"
-                          : "bg-carta-2 text-humo hover:text-tiza"
-                      }`}
+                      key={nombreDeNota(n)}
+                      onClick={() => escribir(n)}
+                      disabled={!puedeEscribir}
+                      className="min-w-12 rounded-xl bg-uva/25 px-2.5 py-2 text-center text-sm font-bold text-uva ring-1 ring-uva/50 transition hover:brightness-110 disabled:opacity-40"
                     >
-                      {LETRAS_ES[d % 7]}
-                      {d === 7 && <span className="opacity-60">′</span>}
+                      {nombreDeNota(n)}
                     </button>
-                  );
-                })}
-              </div>
+                  ))}
+                  {!pos.esUltimo && (
+                    <button
+                      onClick={() => escribir(null)}
+                      disabled={!puedeEscribir}
+                      className="min-w-12 rounded-xl bg-noche/60 px-2.5 py-2 text-center text-sm font-bold text-humo transition hover:text-tiza disabled:opacity-40"
+                      title="Un silencio con la figura elegida: la frase respira"
+                    >
+                      silencio
+                    </button>
+                  )}
+                </div>
+              </>
             )}
 
-            {escritas.length > 0 && (
+            {escrita.length > 0 && (
               <>
                 <div className="mt-4 flex flex-wrap items-center gap-1.5">
-                  {escritas.map((d, i) => (
+                  {escrita.map((e, i) => (
                     <span
                       key={i}
-                      className={`rounded-lg px-2 py-1 font-mono text-xs font-bold ${VEREDICTO[veredictos[i]].clase}`}
+                      className={`flex items-center gap-1 rounded-lg px-2 py-1 font-mono text-xs font-bold ${
+                        e.nota
+                          ? VEREDICTO[veredictos[i] ?? "acorde"].clase
+                          : "bg-noche/60 text-humo"
+                      }`}
                     >
-                      {LETRAS_ES[d % 7]}
-                      {d === 7 && "′"}
+                      {e.nota ? nombreDeNota(e.nota) : "—"}
+                      <span className="opacity-60">
+                        <FiguraSVG figura={figuraQueDivide(e.divide)!} alto={13} />
+                      </span>
                     </span>
                   ))}
                   <button
-                    onClick={() => { parar(); setEscritas((s) => s.slice(0, -1)); }}
+                    onClick={() => { parar(); setEscrita((s) => s.slice(0, -1)); }}
                     className="ml-1 rounded-full bg-carta-2 px-3 py-1 text-xs font-semibold text-humo transition hover:text-tiza"
                   >
                     ↩ sacar la última
                   </button>
                   <button
-                    onClick={() => { parar(); setEscritas([]); }}
+                    onClick={() => { parar(); setEscrita([]); }}
                     className="rounded-full bg-carta-2 px-3 py-1 text-xs font-semibold text-humo transition hover:text-tiza"
                   >
                     borrar todo
@@ -434,17 +523,27 @@ export default function Melodia() {
                 <p className="font-display text-lg font-bold text-menta">
                   Melodía completa
                 </p>
-                <p className="mt-1 text-sm text-humo">
+                <p className="mt-1 text-sm leading-relaxed text-humo">
                   {resumen.fuertesBien} de {resumen.fuertes} pulsos fuertes en
                   nota del acorde
+                  {resumen.aterrizajes > 0 &&
+                    ` · ${resumen.aterrizajesBien} de ${resumen.aterrizajes} aterrizajes en la guía prometida`}
                   {resumen.deAire > 0 &&
                     ` · ${resumen.deAire} ${resumen.deAire === 1 ? "nota" : "notas"} en el aire`}
                   {" · "}
                   {resumen.terminaEnCasa
-                    ? "y termina en la fundamental: en la casa."
+                    ? "termina en la fundamental: en la casa."
                     : resumen.terminaEnAcorde
-                      ? "y termina en una nota del acorde."
-                      : "y termina afuera del acorde — escuchá cómo queda pidiendo una más."}
+                      ? "termina en una nota del acorde."
+                      : "termina afuera del acorde — escuchá cómo queda pidiendo una más."}
+                </p>
+                <p className="mt-1 text-sm text-humo">
+                  {resumen.respira
+                    ? "Respira — hay silencios entre las frases. "
+                    : "No respira: ni un silencio de punta a punta, que era justo lo de la tarea. "}
+                  {resumen.varia
+                    ? "Y varía las figuras: eso es la rítmica del cantabile."
+                    : "Y va toda en la misma figura — probá mezclar duraciones."}
                 </p>
                 <p className="mt-1 text-xs text-humo/70">
                   Ahora escuchala abajo, con los acordes. Si algo suena raro, el
@@ -456,8 +555,8 @@ export default function Melodia() {
         )}
       </div>
 
-      {/* 3. El resultado, escrito como partitura y sonando junto. */}
-      {grados.length > 0 && (
+      {/* 4. El resultado, escrito como partitura y sonando junto. */}
+      {acordes.length > 0 && (
         <>
           <div className="overflow-x-auto p-4">
             <Pentagrama
@@ -466,6 +565,7 @@ export default function Melodia() {
               compas={COMPAS}
               tonalidad={TONALIDAD}
               sonando={sonando}
+              bemoles={conPrestamos}
             />
           </div>
           <div className="flex flex-wrap items-center gap-2 border-t border-borde/60 px-4 py-3">
@@ -480,7 +580,7 @@ export default function Melodia() {
               <button
                 onClick={() => tocar(true)}
                 disabled={cargando}
-                className="rounded-full bg-menta px-5 py-2 font-bold text-noche transition hover:brightness-110 disabled:opacity-60"
+                className="rounded-full bg-sol px-5 py-2 font-bold text-noche transition hover:brightness-110 disabled:opacity-60"
               >
                 {cargando ? "…" : "▶ Escucharla"}
               </button>

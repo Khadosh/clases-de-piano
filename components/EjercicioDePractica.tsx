@@ -11,6 +11,7 @@ import CompasQuiz from "./CompasQuiz";
 import Funciones from "./Funciones";
 import InventorDeSecuencias from "./InventorDeSecuencias";
 import Melodia from "./Melodia";
+import Encima from "./Encima";
 import NotasGuia from "./NotasGuia";
 import Cadencias from "./Cadencias";
 import Paralelas from "./Paralelas";
@@ -60,6 +61,8 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <InventorDeSecuencias />;
         case "melodia":
           return <Melodia />;
+        case "encima":
+          return <Encima />;
         case "cadencias":
           return <Cadencias />;
         case "paralelas":

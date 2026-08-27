@@ -100,6 +100,21 @@ probar("en Do♯ menor el sol♯ es letra Sol y no La♭", () => {
   assert.equal(n.alter, 1);
 });
 
+probar("con la preferencia de bemoles, la misma tecla es La♭ y no Sol♯", () => {
+  // El La♭ del Fm prestado en Do mayor: sin la preferencia salía Sol♯ — la
+  // tecla, no el nombre. Los préstamos de las menores son siempre bemoles.
+  const n = escribirEnPapel(68, 0, true);
+  assert.equal(n.letra, 5); // La
+  assert.equal(n.alter, -1);
+  const sinPreferencia = escribirEnPapel(68, 0);
+  assert.equal(sinPreferencia.letra, 4); // Sol
+  assert.equal(sinPreferencia.alter, 1);
+  // Y a una nota que la armadura ya escribe, la preferencia no la toca.
+  const diatonica = escribirEnPapel(64, 0, true); // Mi4
+  assert.equal(diatonica.letra, 2);
+  assert.equal(diatonica.alter, 0);
+});
+
 probar("una nota ajena a la tonalidad se escribe con signo", () => {
   // Si♭ en Do mayor: no está en la armadura, así que lleva bemol.
   const n = escribirEnPapel(70, 0);

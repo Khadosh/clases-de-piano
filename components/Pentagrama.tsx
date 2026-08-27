@@ -115,6 +115,7 @@ export default function Pentagrama({
   onCompas,
   apagada,
   rango,
+  bemoles,
 }: {
   derecha: Voces;
   izquierda: Voces;
@@ -128,6 +129,8 @@ export default function Pentagrama({
   apagada?: "derecha" | "izquierda";
   /** Sólo estos compases (ambos inclusive), para practicar un pedazo. */
   rango?: { desde: number; hasta: number };
+  /** Las notas ajenas se escriben con bemol: para la música con préstamos. */
+  bemoles?: boolean;
 }) {
   const caja = useRef<HTMLDivElement>(null);
   // Arranca sin medir a propósito. Cuántos compases entran por renglón depende
@@ -149,8 +152,8 @@ export default function Pentagrama({
 
   const { sistemas, totalCompases } = useMemo(
     () =>
-      disponer({ derecha, izquierda, compas, armadura, ancho: ancho ?? 760, rango }),
-    [derecha, izquierda, compas, armadura, ancho, rango],
+      disponer({ derecha, izquierda, compas, armadura, ancho: ancho ?? 760, rango, bemoles }),
+    [derecha, izquierda, compas, armadura, ancho, rango, bemoles],
   );
 
   // **El renglón que suena se trae solo a la vista.** En una pieza larga, a los
@@ -853,6 +856,7 @@ function disponer({
   armadura,
   ancho,
   rango,
+  bemoles,
 }: {
   derecha: Voces;
   izquierda: Voces;
@@ -860,6 +864,7 @@ function disponer({
   armadura: number;
   ancho: number;
   rango?: { desde: number; hasta: number };
+  bemoles?: boolean;
 }) {
   // Cada pentagrama con sus voces ya ubicadas en el tiempo. Con un rango, las
   // voces se recortan a esos compases **sin renumerar**: el compás 5 sigue
@@ -889,7 +894,7 @@ function disponer({
   for (const p of pentagramas) {
     for (const v of p.voces) {
       const cabezasDeLaFila = v.flatMap((n) =>
-        n.midis.map((m) => ({ nota: escribirEnPapel(m, armadura), compas: n.compas })),
+        n.midis.map((m) => ({ nota: escribirEnPapel(m, armadura, bemoles), compas: n.compas })),
       );
       const signos = signosDe(cabezasDeLaFila, armadura);
       let k = 0;
@@ -985,7 +990,7 @@ function disponer({
           16 +
           (nota.dentro / largoCompas) * (caja.ancho - 26 - aireDe(nota.compas)) +
           corrimiento(nota.compas, nota.dentro);
-        const escritas = nota.midis.map((m) => escribirEnPapel(m, armadura));
+        const escritas = nota.midis.map((m) => escribirEnPapel(m, armadura, bemoles));
         const signos = signosPorNota.get(nota) ?? escritas.map(() => null);
         const cabezas = escritas.map((e, i) => {
           const altura = alturaEnPentagrama(e, clave);

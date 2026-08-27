@@ -11,9 +11,15 @@ import {
   CADENCIAS_CON_NOMBRE,
   FUNCION_DE_GRADO,
   GRADOS_MAYOR,
+  PRESTAMOS,
   PROGRESIONES,
   TONALIDAD_MAYOR,
   cadenciaAlFinal,
+  cifradoDelAcorde,
+  clasesDelAcorde,
+  esPrestado,
+  gradoDe,
+  intervalosDelAcorde,
   rachaDeFuncion,
   raizDelGrado,
   violaLaReglaDeOro,
@@ -246,6 +252,40 @@ probar("las cadencias con nombre usan grados que existen y no se repiten", () =>
     formas.add(c.grados.join(","));
   }
   assert.equal(formas.size, CADENCIAS_CON_NOMBRE.length, "hay una forma repetida");
+});
+
+// ---- Los préstamos melódicos de la clase 4 ---------------------------------
+
+probar("el préstamo estrella es el Fm: el IV de la menor, primero en la lista", () => {
+  const fm = PRESTAMOS[0];
+  assert.equal(fm.cifrado, "Fm");
+  assert.equal(fm.grado, 3);
+  assert.equal(FUNCION_DE_GRADO[fm.grado], "subdominante"); // la función la pone el grado
+});
+
+probar("los préstamos son los acordes de las menores que el campo mayor no tiene", () => {
+  // De los apuntes: Cm, Ddim, Eb, Eb+, Fm, Gm, Ab, Bb y Adim. Ni uno diatónico
+  // (el G de la armónica y el Bdim son los del campo mayor: no se prestan) ni
+  // uno repetido (el Cm está en las tres menores y se ofrece una vez).
+  const cifrados = PRESTAMOS.map((p) => p.cifrado).sort();
+  assert.deepEqual(cifrados, ["Ab", "Adim", "Bb", "Cm", "Ddim", "Eb", "Ebaug", "Fm", "Gm"]);
+  assert.equal(new Set(cifrados).size, PRESTAMOS.length);
+});
+
+probar("el Fm prestado tiene las notas del Fm de verdad y la fundamental del IV", () => {
+  const fm = { grado: 3, deEscala: "menor-natural" };
+  assert.deepEqual(intervalosDelAcorde(fm), [0, 3, 7]); // receta menor
+  assert.deepEqual([...clasesDelAcorde(fm)].sort((a, b) => a - b), [0, 5, 8]); // Fa La♭ Do
+  assert.equal(gradoDe(fm), 3);
+  assert.equal(esPrestado(fm), true);
+  assert.equal(esPrestado(3), false);
+  assert.equal(cifradoDelAcorde(3), "F"); // el mismo grado sin préstamo
+});
+
+probar("la regla de oro no se entera del préstamo: mira grados", () => {
+  // I – IV – iv(prestado) – I leído en grados es 0,3,3,0: dos subdominantes
+  // seguidos, ninguna racha de cuatro.
+  assert.equal(violaLaReglaDeOro([0, 3, 3, 0].map((g) => g)), false);
 });
 
 probar("el cifrado con barra del renglón de la clase 4: Em/B es la 2ª inversión", () => {
