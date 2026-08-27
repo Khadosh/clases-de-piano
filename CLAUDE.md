@@ -198,6 +198,9 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `compases` | Simples, compuestos y la subdivisión | Máquina de compases con metrónomo y el botón de la constante |
 | `secuencia` | Enlazar una progresión girando los acordes | Teclado con el acorde anterior en gris y el puntaje de cuánto te moviste |
 | `funciones` | Las tres funciones armónicas | El mapa reposo/media/tensión con cada grado sonando y las tres cadencias para escuchar |
+| `notas-guia` | El renglón del papel: la nota que recibe a cada acorde | Columnas guía/acorde sonando de a una o de corrido (acepta cifrados con barra: `Em/B`) |
+| `cadencias` | Las cadencias con nombre y apellido | El mapa para escucharlas + el juego de nombrarlas (datos en `CADENCIAS_CON_NOMBRE`, `lib/grados.ts`) |
+| `paralelas` | La mayor y las tres menores sobre Do, con sus acordes | Las cuatro escalas con lo corrido marcado, el campo armónico de cada una (`triadasDeEscala` + `identificarAcorde`) y el préstamo C→Fm→C |
 
 **Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
 lee como un chorizo. El índice de arriba de la clase se arma solo a partir de

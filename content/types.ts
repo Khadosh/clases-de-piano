@@ -21,6 +21,9 @@ export type Block =
   | CompasesBlock
   | SecuenciaBlock
   | FuncionesBlock
+  | NotasGuiaBlock
+  | CadenciasBlock
+  | ParalelasBlock
   | QuoteBlock;
 
 /**
@@ -187,4 +190,37 @@ export interface SecuenciaBlock {
   intro?: string;
   /** En cifrado, como se escriben en un papel: ["C", "Dm7", "G7", …]. */
   acordes: string[];
+}
+
+/**
+ * El ejercicio de la clase 4: sobre una progresión, la nota con la que la
+ * melodía recibe a cada acorde, escrita arriba como en el cuaderno de papel.
+ */
+export interface NotasGuiaBlock {
+  kind: "notas-guia";
+  title: string;
+  intro?: string;
+  /** Una columna por acorde: la nota guía arriba, el cifrado abajo (con barra si va invertido). */
+  columnas: { guia: string; acorde: string }[];
+}
+
+/**
+ * Las cadencias con nombre y apellido: el mapa para escucharlas y el juego de
+ * la clase (suena una, hay que nombrarla). Los datos viven en `lib/grados.ts`.
+ */
+export interface CadenciasBlock {
+  kind: "cadencias";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * Las armonías paralelas sobre Do: la mayor y las tres menores, cada una con
+ * su escala y los acordes que le salen solos. No lleva datos porque las
+ * recetas son las que son.
+ */
+export interface ParalelasBlock {
+  kind: "paralelas";
+  title: string;
+  intro?: string;
 }

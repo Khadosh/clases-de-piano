@@ -7,7 +7,9 @@ import {
   cantidadDeInversiones,
   chordNameEs,
   chordPitches,
+  chordSymbol,
   deletrearAcorde,
+  identificarAcorde,
   escribirNota,
   invertir,
   notasDeAcorde,
@@ -35,7 +37,13 @@ import {
   rondaCompletar,
   rondaNumero,
 } from "./compasQuiz.ts";
-import { FUNCIONES, FUNCION_DE_GRADO, TONALIDAD_MAYOR } from "./grados.ts";
+import {
+  CADENCIAS_CON_NOMBRE,
+  FUNCIONES,
+  FUNCION_DE_GRADO,
+  TONALIDAD_MAYOR,
+} from "./grados.ts";
+import { ESCALAS, triadasDeEscala } from "./escalas.ts";
 
 /**
  * Las preguntas del examen de cada clase.
@@ -357,6 +365,53 @@ function preguntaFuncion(): Pregunta {
   );
 }
 
+/** Las cadencias con nombre y apellido de la clase 4. */
+function preguntaCadenciaNombre(): Pregunta {
+  const c = pickRandom(CADENCIAS_CON_NOMBRE);
+  const forma = c.grados.map((g) => TONALIDAD_MAYOR[g].cifra).join(" → ");
+  const otras = shuffle(
+    CADENCIAS_CON_NOMBRE.filter((o) => o.nombre !== c.nombre).map((o) => o.nombre),
+  ).slice(0, 3);
+  return conOpciones(
+    "¿Cómo se llama esta cadencia?",
+    c.nombre,
+    otras,
+    `${forma}: ${c.detalle} El apellido lo pone la función del acorde que llega a la tónica; si son tres acordes es compuesta, y si llega el suplente de la familia es una sustitución.`,
+    forma,
+  );
+}
+
+/** El campo armónico de las escalas menores sobre Do (clase 4). */
+function preguntaEscalaMenor(): Pregunta {
+  const escala = pickRandom(ESCALAS.filter((e) => e.id !== "mayor"));
+  const grado = Math.floor(Math.random() * 7);
+  const triadas = triadasDeEscala(0, escala);
+  const nombreDe = (midis: number[]) => {
+    const id = identificarAcorde(midis);
+    return id ? chordSymbol(id.root, id.quality) : "?";
+  };
+  const correcta = nombreDe(triadas[grado]);
+  // Las trampas son acordes del mismo grado en las otras escalas y de grados
+  // vecinos: la pregunta es si sabés qué escala arma qué, no si adivinás.
+  const trampas = new Set<string>();
+  for (const otra of shuffle(ESCALAS)) {
+    const cand = nombreDe(triadasDeEscala(0, otra)[grado]);
+    if (cand !== correcta) trampas.add(cand);
+  }
+  for (const vecino of shuffle([0, 1, 2, 3, 4, 5, 6])) {
+    if (trampas.size >= 3) break;
+    const cand = nombreDe(triadas[vecino]);
+    if (cand !== correcta) trampas.add(cand);
+  }
+  const romano = ["I", "II", "III", "IV", "V", "VI", "VII"][grado];
+  return conOpciones(
+    `En Do ${escala.nombre.toLowerCase()}, ¿qué acorde sale del grado ${romano}?`,
+    correcta,
+    [...trampas].slice(0, 3),
+    `Nota sí, nota no dentro de la propia escala (${escala.receta}): del grado ${romano} sale ${correcta}. Las calidades no se eligen, salen solas.`,
+  );
+}
+
 export interface OpcionesExamen {
   /** Ids de acordes que la clase tocó. Si está vacío, no hay examen. */
   qualityIds: string[];
@@ -370,6 +425,10 @@ export interface OpcionesExamen {
   compases?: boolean;
   /** ¿Vio las funciones armónicas? */
   funciones?: boolean;
+  /** ¿Vio las cadencias con nombre y apellido? */
+  cadencias?: boolean;
+  /** ¿Vio las armonías paralelas y sus escalas menores? */
+  paralelas?: boolean;
   cantidad?: number;
 }
 
@@ -385,6 +444,8 @@ export function generarExamen({
   figuras,
   compases,
   funciones,
+  cadencias,
+  paralelas,
   cantidad = 8,
 }: OpcionesExamen): Pregunta[] {
   const pozo = qualityIds
@@ -410,6 +471,8 @@ export function generarExamen({
     fabricas.push(preguntaPresupuesto);
   }
   if (funciones) fabricas.push(preguntaFuncion);
+  if (cadencias) fabricas.push(preguntaCadenciaNombre);
+  if (paralelas) fabricas.push(preguntaEscalaMenor);
 
   const preguntas: Pregunta[] = [];
   // Se garantiza una de armar y después se completa mezclando.

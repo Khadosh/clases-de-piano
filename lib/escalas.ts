@@ -73,3 +73,20 @@ export function saltosDeEscala(escala: Escala): number[] {
   const notas = [...escala.grados, 12];
   return notas.slice(1).map((n, i) => n - notas[i]);
 }
+
+/**
+ * El campo armónico de una escala: sobre cada grado, una tríada apilando
+ * **nota sí, nota no** dentro de la propia escala — la misma regla de la
+ * clase 3, que ahí sólo se usó con la mayor. Las calidades no se eligen,
+ * salen solas: por eso en la menor armónica el tercer grado da aumentado
+ * (el acorde de la clase 1 que no aparecía nunca, por fin con casa).
+ *
+ * Devuelve las notas en MIDI desde la tónica dada; el nombre de cada acorde
+ * lo pone `identificarAcorde`, que ya sabe todas las recetas.
+ */
+export function triadasDeEscala(tonica: number, escala: Escala): number[][] {
+  const dosOctavas = [...escala.grados, ...escala.grados.map((g) => g + 12)];
+  return escala.grados.map((_, i) =>
+    [dosOctavas[i], dosOctavas[i + 2], dosOctavas[i + 4]].map((s) => tonica + s),
+  );
+}

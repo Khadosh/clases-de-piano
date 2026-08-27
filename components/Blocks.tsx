@@ -6,6 +6,9 @@ import Figuras from "./Figuras";
 import Compases from "./Compases";
 import Enlace from "./Enlace";
 import Funciones from "./Funciones";
+import NotasGuia from "./NotasGuia";
+import Cadencias from "./Cadencias";
+import Paralelas from "./Paralelas";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -190,6 +193,39 @@ export function BlockView({ block }: { block: Block }) {
             <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
           )}
           <Enlace acordes={block.acordes} />
+        </section>
+      );
+
+    case "notas-guia":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <NotasGuia columnas={block.columnas} />
+        </section>
+      );
+
+    case "cadencias":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Cadencias />
+        </section>
+      );
+
+    case "paralelas":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Paralelas />
         </section>
       );
 

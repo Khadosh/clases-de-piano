@@ -8,6 +8,7 @@
 
 import assert from "node:assert/strict";
 import {
+  CADENCIAS_CON_NOMBRE,
   FUNCION_DE_GRADO,
   GRADOS_MAYOR,
   PROGRESIONES,
@@ -22,8 +23,15 @@ import {
   escalaPorId,
   notasDeEscala,
   saltosDeEscala,
+  triadasDeEscala,
 } from "../lib/escalas.ts";
-import { CHORD_QUALITIES, chordSymbol, qualityById } from "../lib/music.ts";
+import {
+  CHORD_QUALITIES,
+  chordSymbol,
+  identificarAcorde,
+  parseCifradoConBajo,
+  qualityById,
+} from "../lib/music.ts";
 
 let bien = 0;
 const mal = [];
@@ -195,6 +203,60 @@ probar("las tres cadencias del cuaderno: V→I auténtica, V→VI rota, V→IV�
   assert.equal(cadenciaAlFinal([0, 4, 5]), "rota");
   assert.equal(cadenciaAlFinal([0, 4, 3, 0]), "plagal");
   assert.equal(cadenciaAlFinal([0, 3]), null);
+});
+
+// ---- Los campos armónicos de la clase 4, contra el cuaderno de papel -------
+//
+// Éstos son los apuntes de la clase tal cual quedaron escritos. Que la cuenta
+// de nota-sí-nota-no dé exactamente lo mismo que lo anotado es la mejor
+// verificación de las dos cosas a la vez: de la regla y de los apuntes.
+
+const nombreDeTriada = (midis) => {
+  const id = identificarAcorde(midis);
+  assert.ok(id, `no se reconoce el acorde ${midis.join(",")}`);
+  return chordSymbol(id.root, id.quality);
+};
+
+probar("el campo de Do mayor: C Dm Em F G Am Bdim", () => {
+  const acordes = triadasDeEscala(0, escalaPorId("mayor")).map(nombreDeTriada);
+  assert.deepEqual(acordes, ["C", "Dm", "Em", "F", "G", "Am", "Bdim"]);
+});
+
+probar("el campo de Do menor antigua: Cm Ddim Eb Fm Gm Ab Bb", () => {
+  const acordes = triadasDeEscala(0, escalaPorId("menor-natural")).map(nombreDeTriada);
+  assert.deepEqual(acordes, ["Cm", "Ddim", "Eb", "Fm", "Gm", "Ab", "Bb"]);
+});
+
+probar("el campo de Do menor armónica: Cm Ddim Eb+ Fm G Ab Bdim", () => {
+  const acordes = triadasDeEscala(0, escalaPorId("menor-armonica")).map(nombreDeTriada);
+  assert.deepEqual(acordes, ["Cm", "Ddim", "Ebaug", "Fm", "G", "Ab", "Bdim"]);
+});
+
+probar("el campo de Do menor melódica: Cm Dm Eb+ F G Adim Bdim", () => {
+  const acordes = triadasDeEscala(0, escalaPorId("menor-melodica")).map(nombreDeTriada);
+  assert.deepEqual(acordes, ["Cm", "Dm", "Ebaug", "F", "G", "Adim", "Bdim"]);
+});
+
+probar("las cadencias con nombre usan grados que existen y no se repiten", () => {
+  const formas = new Set();
+  for (const c of CADENCIAS_CON_NOMBRE) {
+    for (const g of c.grados) assert.ok(g >= 0 && g < 7, c.nombre);
+    // Toda cadencia con nombre termina llegando a algún lado: dos o tres acordes.
+    assert.ok(c.grados.length >= 2 && c.grados.length <= 3, c.nombre);
+    formas.add(c.grados.join(","));
+  }
+  assert.equal(formas.size, CADENCIAS_CON_NOMBRE.length, "hay una forma repetida");
+});
+
+probar("el cifrado con barra del renglón de la clase 4: Em/B es la 2ª inversión", () => {
+  const emB = parseCifradoConBajo("Em/B");
+  assert.equal(emB.chord.root, 4);
+  assert.equal(emB.inversion, 2);
+  const dmA = parseCifradoConBajo("Dm/A");
+  assert.equal(dmA.inversion, 2);
+  assert.equal(parseCifradoConBajo("C").inversion, 0);
+  // Una barra que pide una nota que el acorde no tiene no es un acorde.
+  assert.equal(parseCifradoConBajo("C/D"), null);
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

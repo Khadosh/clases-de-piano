@@ -162,8 +162,9 @@ export const violaLaReglaDeOro = (grados: number[]) => rachaDeFuncion(grados) >=
 
 /**
  * Las cadencias de la clase, mirando el final de la secuencia. La plagal va
- * como la dio el profe (V → IV → I); si el V es parte de la definición o era
- * contexto quedó anotado para preguntar.
+ * como la dio el profe (V → IV → I); en la clase 4 ese nombre se completó:
+ * ésa es la *compuesta* plagal, y la IV → I a secas es la subdominante
+ * auténtica.
  */
 export function cadenciaAlFinal(
   grados: number[],
@@ -175,3 +176,69 @@ export function cadenciaAlFinal(
   if (n >= 2 && cola(2) === "4,5") return "rota";
   return null;
 }
+
+// ---------------------------------------------------------------------------
+// Las cadencias con nombre y apellido (clase 4)
+// ---------------------------------------------------------------------------
+
+export interface Cadencia {
+  /** Índices en `TONALIDAD_MAYOR`: [4, 0] es V → I. */
+  grados: number[];
+  nombre: string;
+  /** El porqué del nombre, para la pista y la explicación del examen. */
+  detalle: string;
+}
+
+/**
+ * El sistema de nombres del profe: **el apellido lo pone la función del
+ * acorde que llega a la tónica**. Si llega el V es dominante, si llega el IV
+ * es subdominante; si el que llega no es el principal de su familia (el IIm
+ * en lugar del IV) es una *sustitución*; y si son tres acordes, la cadencia
+ * es *compuesta*.
+ *
+ * La rota va como quedó anotada en clase — V → IIIm — con la duda registrada
+ * en la clase 4: la rota de la clase 3 era V → VIm, y el IIIm es el otro
+ * primo del I. Hasta preguntar, acá viven las dos.
+ */
+export const CADENCIAS_CON_NOMBRE: Cadencia[] = [
+  {
+    grados: [4, 0],
+    nombre: "Dominante auténtica",
+    detalle: "V → I. La tensión resuelve derecho a la casa: la más famosa de todas.",
+  },
+  {
+    grados: [3, 0],
+    nombre: "Subdominante auténtica (plagal)",
+    detalle: "IV → I. La media tensión llega a la casa sin pasar por el V: la llegada blanda.",
+  },
+  {
+    grados: [1, 0],
+    nombre: "Subdominante con sustitución",
+    detalle:
+      "IIm → I. Llega un subdominante, pero no el principal: el IIm sustituye al IV — misma familia, otro color.",
+  },
+  {
+    grados: [4, 2],
+    nombre: "Rota",
+    detalle:
+      "V → IIIm. El V promete la casa y cae en un primo del reposo. En la clase 3 la rota caía en el VIm; el IIIm es el otro primo.",
+  },
+  {
+    grados: [4, 5],
+    nombre: "Rota (al VIm)",
+    detalle:
+      "V → VIm. La rota de la clase 3: promete el I y aterriza en el relativo menor.",
+  },
+  {
+    grados: [1, 4, 0],
+    nombre: "Compuesta auténtica",
+    detalle:
+      "IIm → V → I. Tres acordes, las tres funciones: media tensión, tensión, casa. La del jazz.",
+  },
+  {
+    grados: [4, 3, 0],
+    nombre: "Compuesta plagal",
+    detalle:
+      "V → IV → I. La plagal de la clase 3, ahora con nombre completo: el V no resuelve, se ablanda pasando por el IV.",
+  },
+];

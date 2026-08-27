@@ -11,6 +11,9 @@ import CompasQuiz from "./CompasQuiz";
 import Funciones from "./Funciones";
 import InventorDeSecuencias from "./InventorDeSecuencias";
 import Melodia from "./Melodia";
+import NotasGuia from "./NotasGuia";
+import Cadencias from "./Cadencias";
+import Paralelas from "./Paralelas";
 import ExerciseRunner from "./ExerciseRunner";
 import Figuras from "./Figuras";
 import HandsSwap from "./HandsSwap";
@@ -37,6 +40,8 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
       return <EnlaceSorteo acordesDeLaClase={e.block.acordes} />;
     case "nomenclature":
       return <NomenclatureQuiz qualityIds={acordes} />;
+    case "notas-guia":
+      return <NotasGuia columnas={e.block.columnas} />;
     case "suelta":
       switch (e.id) {
         case "laboratorio":
@@ -55,6 +60,10 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <InventorDeSecuencias />;
         case "melodia":
           return <Melodia />;
+        case "cadencias":
+          return <Cadencias />;
+        case "paralelas":
+          return <Paralelas />;
         case "que-compas":
           return <CompasQuiz modo="numero" />;
         case "completar-compas":

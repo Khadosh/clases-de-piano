@@ -495,6 +495,31 @@ export function parseCifrado(sym: string): Chord | null {
   return quality ? { root, quality } : null;
 }
 
+/**
+ * Un cifrado con barra: "Em/B" es Mi menor con el Si en el bajo, o sea su
+ * segunda inversión. La barra dice qué nota va abajo; de ahí se calcula qué
+ * inversión es. Un cifrado sin barra es la inversión cero, y una barra que
+ * pide una nota que el acorde no tiene devuelve null: mejor enterarse que
+ * tocar cualquier cosa.
+ */
+export function parseCifradoConBajo(
+  sym: string,
+): { chord: Chord; inversion: number } | null {
+  const [base, bajo] = sym.split("/").map((s) => s.trim());
+  const chord = parseCifrado(base);
+  if (!chord) return null;
+  if (!bajo) return { chord, inversion: 0 };
+  const m = /^([A-G])([#b]?)$/.exec(bajo);
+  if (!m) return null;
+  const i = LETRAS_EN.indexOf(m[1] as (typeof LETRAS_EN)[number]);
+  if (i < 0) return null;
+  const pcBajo = mod12(LETRAS_PC[i] + (m[2] === "#" ? 1 : m[2] === "b" ? -1 : 0));
+  const inversion = intervalsOf(chord.quality).findIndex(
+    (iv) => mod12(chord.root + iv) === pcBajo,
+  );
+  return inversion < 0 ? null : { chord, inversion };
+}
+
 export interface AcordeIdentificado {
   root: PitchClass;
   quality: ChordQuality;

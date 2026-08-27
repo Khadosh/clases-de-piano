@@ -6,6 +6,7 @@ import type {
   HandsBlock,
   Lesson,
   NomenclatureBlock,
+  NotasGuiaBlock,
   SecuenciaBlock,
 } from "@/content/types";
 
@@ -80,6 +81,8 @@ export type HerramientaSuelta =
   | "funciones"
   | "inventor"
   | "melodia"
+  | "cadencias"
+  | "paralelas"
   | "semitonos";
 
 /** Lo que comparten todas: dónde va, de qué clase salió y cómo se llama su URL. */
@@ -98,6 +101,7 @@ export type Entrada = Comun &
     | { tipo: "exercise"; block: ExerciseBlock }
     | { tipo: "hands"; block: HandsBlock }
     | { tipo: "secuencia"; block: SecuenciaBlock }
+    | { tipo: "notas-guia"; block: NotasGuiaBlock }
     | { tipo: "nomenclature"; block: NomenclatureBlock }
     | { tipo: "suelta"; id: HerramientaSuelta }
   );
@@ -175,6 +179,18 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     bajada:
       "El puente con las partituras: elegís o armás una progresión y arriba va una melodía simple, escrita en pentagrama y sonando junto con los acordes. La puede componer la app —siguiendo las reglas de la clase, para escuchar que alcanzan— o la escribís vos pulso por pulso, y te dice qué fue cada nota: del acorde, de paso o en el aire.",
   },
+  cadencias: {
+    titulo: "Las cadencias, con nombre",
+    emoji: "🏠",
+    bajada:
+      "El juego de la clase 4: suena una cadencia y hay que nombrarla — dominante auténtica, subdominante con sustitución, compuesta plagal. Con los grados a la vista para aprender los nombres, o a oído solo para lo difícil.",
+  },
+  paralelas: {
+    titulo: "Las armonías paralelas",
+    emoji: "🪜",
+    bajada:
+      "La mayor y las tres menores sobre el mismo Do, cada una con los acordes que le salen solos — y el préstamo estrella para escuchar: el Fm metido en Do mayor.",
+  },
   "que-compas": {
     titulo: "¿Qué compás es?",
     emoji: "🧮",
@@ -212,6 +228,9 @@ const AREA_DE: Record<string, AreaId> = {
   funciones: "acordes",
   inventor: "acordes",
   melodia: "acordes",
+  "notas-guia": "acordes",
+  cadencias: "acordes",
+  paralelas: "acordes",
   nomenclature: "lectura",
   semitonos: "lectura",
 };
@@ -343,6 +362,25 @@ export function catalogo(): Entrada[] {
           // por eso cuelga de acá: recién con las funciones vistas tiene
           // sentido hablar de dónde aterriza una melodía.
           sumarSuelta("melodia", lesson);
+          break;
+        case "notas-guia":
+          out.push({
+            tipo: "notas-guia",
+            area,
+            lesson,
+            block,
+            slug: unico("notas-guia", lesson),
+            titulo: "Las notas guía",
+            emoji: "✍️",
+            bajada:
+              "El renglón de la clase 4: arriba la nota que recibe a cada acorde, abajo el cifrado. Tocá las columnas, escuchá el renglón entero — la fila de arriba, sola, ya es casi una melodía.",
+          });
+          break;
+        case "cadencias":
+          sumarSuelta("cadencias", lesson);
+          break;
+        case "paralelas":
+          sumarSuelta("paralelas", lesson);
           break;
         case "semitonos":
           sumarSuelta("semitonos", lesson);

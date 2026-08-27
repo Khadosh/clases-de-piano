@@ -119,7 +119,7 @@ const lesson: Lesson = {
   ],
 
   openQuestions: [
-    "La plagal quedó anotada como V → IV → I, pero la plagal de los libros es IV → I a secas. ¿El V es parte de la definición o era el contexto del ejemplo? Va como la dio Quique hasta preguntarle.",
+    "La plagal quedó anotada como V → IV → I, pero la plagal de los libros es IV → I a secas. Respondida en la clase 4: la de tres acordes es la cadencia compuesta plagal, y la IV → I a secas es la subdominante auténtica.",
     "En una de las secuencias del papel no me queda claro si el cuarto acorde es F7 o F∆ (y si el B lleva ° o ∅). La cargué aparte de la clase hasta confirmar el cifrado.",
     "¿Reposo incluye al IIIm siempre, o Quique lo va a matizar después? Es el primo raro de la familia: comparte dos notas con el I pero también dos con el V.",
   ],
