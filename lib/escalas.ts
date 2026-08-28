@@ -85,8 +85,21 @@ export function saltosDeEscala(escala: Escala): number[] {
  * lo pone `identificarAcorde`, que ya sabe todas las recetas.
  */
 export function triadasDeEscala(tonica: number, escala: Escala): number[][] {
+  return apilarTerceras(tonica, escala, 3);
+}
+
+/**
+ * Lo mismo con una tercera más: las cuatriadas de la clase 2, deducidas de la
+ * escala en vez de escritas. Sobre la mayor salen solas maj7 · m7 · m7 · maj7
+ * · 7 · m7 · m7♭5 — la tabla de `TONALIDAD_MAYOR`, que así no puede discrepar.
+ */
+export function cuatriadasDeEscala(tonica: number, escala: Escala): number[][] {
+  return apilarTerceras(tonica, escala, 4);
+}
+
+function apilarTerceras(tonica: number, escala: Escala, notas: number): number[][] {
   const dosOctavas = [...escala.grados, ...escala.grados.map((g) => g + 12)];
   return escala.grados.map((_, i) =>
-    [dosOctavas[i], dosOctavas[i + 2], dosOctavas[i + 4]].map((s) => tonica + s),
+    Array.from({ length: notas }, (_, n) => tonica + dosOctavas[i + 2 * n]),
   );
 }

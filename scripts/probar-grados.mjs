@@ -17,6 +17,7 @@ import {
   cadenciaAlFinal,
   cifradoDelAcorde,
   clasesDelAcorde,
+  conSeptima,
   esPrestado,
   gradoDe,
   intervalosDelAcorde,
@@ -26,6 +27,7 @@ import {
 } from "../lib/grados.ts";
 import {
   ESCALAS,
+  cuatriadasDeEscala,
   escalaPorId,
   notasDeEscala,
   saltosDeEscala,
@@ -286,6 +288,35 @@ probar("la regla de oro no se entera del préstamo: mira grados", () => {
   // I – IV – iv(prestado) – I leído en grados es 0,3,3,0: dos subdominantes
   // seguidos, ninguna racha de cuatro.
   assert.equal(violaLaReglaDeOro([0, 3, 3, 0].map((g) => g)), false);
+});
+
+// ---- Las séptimas en la secuencia ------------------------------------------
+
+probar("las cuatriadas deducidas de la mayor son la tabla de TONALIDAD_MAYOR", () => {
+  // La tabla dice maj7 · min7 · min7 · maj7 · dom7 · min7 · m7b5; apilar una
+  // tercera más en la escala tiene que dar exactamente eso, grado por grado.
+  cuatriadasDeEscala(60, escalaPorId("mayor")).forEach((notas, g) => {
+    const id = identificarAcorde(notas);
+    assert.equal(id.quality.id, TONALIDAD_MAYOR[g].cuatriada, TONALIDAD_MAYOR[g].cifra);
+  });
+});
+
+probar("el V con séptima es G7, con el Fa adentro", () => {
+  const v7 = { grado: 4, septima: true };
+  assert.deepEqual(intervalosDelAcorde(v7), [0, 4, 7, 10]); // la receta dominante
+  assert.equal(cifradoDelAcorde(v7), "G7");
+  assert.ok(clasesDelAcorde(v7).has(5)); // el Fa: la nota del color
+  assert.equal(conSeptima(v7), true);
+  assert.equal(esPrestado(v7), false); // séptima no es préstamo
+  assert.equal(gradoDe(v7), 4); // y la función la sigue poniendo el grado
+});
+
+probar("los cifrados de las otras cuatriadas salen solos", () => {
+  assert.equal(cifradoDelAcorde({ grado: 0, septima: true }), "Cmaj7");
+  assert.equal(cifradoDelAcorde({ grado: 1, septima: true }), "Dm7");
+  assert.equal(cifradoDelAcorde({ grado: 6, septima: true }), "Bm7b5");
+  assert.equal(conSeptima(4), false);
+  assert.equal(conSeptima({ grado: 3, deEscala: "menor-natural" }), false);
 });
 
 probar("el cifrado con barra del renglón de la clase 4: Em/B es la 2ª inversión", () => {

@@ -10,7 +10,7 @@
  * Sin dependencias de React ni de nada: se prueba con `npm run test:grados`.
  */
 
-import { ESCALAS, escalaPorId, triadasDeEscala } from "./escalas.ts";
+import { ESCALAS, cuatriadasDeEscala, escalaPorId, triadasDeEscala } from "./escalas.ts";
 import { chordSymbol, identificarAcorde, mod12 } from "./music.ts";
 
 /** Semitonos desde la tónica hasta cada grado de la escala mayor. */
@@ -186,24 +186,31 @@ export function cadenciaAlFinal(
 
 /**
  * Un acorde de una secuencia: un grado del campo mayor (el número pelado, como
- * siempre) o un préstamo — el mismo grado, pero con el acorde que le sale a
- * una de las escalas menores paralelas.
+ * siempre), o el mismo grado vestido distinto — como préstamo de una de las
+ * escalas menores paralelas (`deEscala`), o como cuatriada (`septima`, la de
+ * la clase 2: el V se vuelve G7, el ii se vuelve Dm7).
  *
  * El préstamo no se muda de tonalidad: se toma el acorde, se lo usa, y se
  * devuelve. Y **la función la pone el grado, no la calidad**: el Fm sigue
- * siendo el IV —subdominante— aunque venga de la menor. Por eso la regla de
- * oro y las cadencias miran `gradoDe()` y no se enteran del préstamo.
+ * siendo el IV —subdominante— aunque venga de la menor, y el G7 sigue siendo
+ * el V. Por eso la regla de oro y las cadencias miran `gradoDe()` y no se
+ * enteran ni del préstamo ni de la séptima.
  */
-export type AcordeDeLaSecuencia = number | { grado: number; deEscala: string };
+export type AcordeDeLaSecuencia =
+  | number
+  | { grado: number; deEscala?: string; septima?: boolean };
 
 export const gradoDe = (a: AcordeDeLaSecuencia): number =>
   typeof a === "number" ? a : a.grado;
 
 export const esPrestado = (a: AcordeDeLaSecuencia): boolean =>
-  typeof a !== "number";
+  typeof a !== "number" && a.deEscala !== undefined;
+
+export const conSeptima = (a: AcordeDeLaSecuencia): boolean =>
+  typeof a !== "number" && !!a.septima;
 
 const escalaDelAcorde = (a: AcordeDeLaSecuencia) =>
-  escalaPorId(typeof a === "number" ? "mayor" : a.deEscala)!;
+  escalaPorId(typeof a === "number" || !a.deEscala ? "mayor" : a.deEscala)!;
 
 /**
  * La fundamental del acorde sobre Do, en semitonos desde la tónica.
@@ -221,11 +228,14 @@ export function raizDelAcorde(a: AcordeDeLaSecuencia): number {
  *
  * Para los diatónicos es la receta de la tríada del grado; para los prestados
  * sale de apilar nota-sí-nota-no en la escala menor que corresponda — la misma
- * cuenta de `triadasDeEscala`, mirada desde la fundamental.
+ * cuenta de `triadasDeEscala`, mirada desde la fundamental. Con `septima` se
+ * apila una tercera más y la calidad sale sola: dominante en el V, maj7 en el
+ * I, sin tabla.
  */
 export function intervalosDelAcorde(a: AcordeDeLaSecuencia): number[] {
-  const triada = triadasDeEscala(0, escalaDelAcorde(a))[gradoDe(a)];
-  return triada.map((s) => s - triada[0]);
+  const apilar = conSeptima(a) ? cuatriadasDeEscala : triadasDeEscala;
+  const notas = apilar(0, escalaDelAcorde(a))[gradoDe(a)];
+  return notas.map((s) => s - notas[0]);
 }
 
 /** Las teclas del acorde, desde la fundamental (en MIDI) que se le pida. */

@@ -178,7 +178,7 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     titulo: "Ponerle melodía a los acordes",
     emoji: "🎼",
     bajada:
-      "El método completo de la clase 4: armás la progresión —con los préstamos de las menores, el Fm incluido—, elegís las guías que reciben a cada acorde, y la melodía la compone la app o la escribís vos con figuras y silencios. El veredicto puntúa sin corregir: del acorde, de paso o en el aire, más los aterrizajes, la respiración y la variedad.",
+      "El método completo de la clase 4: armás la progresión —tríadas o con séptima, y con los préstamos de las menores, el Fm incluido—, elegís las guías que reciben a cada acorde, y la melodía la compone la app o la escribís vos con figuras y silencios. El veredicto puntúa sin corregir: del acorde, de paso o en el aire, más los aterrizajes, la respiración y la variedad.",
   },
   encima: {
     titulo: "Tocarla encima",

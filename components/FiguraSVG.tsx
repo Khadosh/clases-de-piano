@@ -4,6 +4,7 @@ import {
   tienePlica,
   type Figura,
 } from "@/lib/ritmo";
+import { GLIFOS, semiAncho } from "@/lib/glifos";
 
 /**
  * Una figura dibujada a mano, como el teclado.
@@ -84,6 +85,69 @@ export default function FiguraSVG({
       ))}
       {conPuntillo && (
         <circle cx={CX + RX + 7} cy={CY} r={2.1} fill={color} />
+      )}
+    </svg>
+  );
+}
+
+/**
+ * El silencio de una figura, para los botones de la paleta.
+ *
+ * Es el mismo dibujo del pentagrama —los glifos de Gonville de la negra para
+ * abajo, los rectángulos de redonda y blanca— apoyado en un pedacito de
+ * tercera línea, que es la que dice de qué lado cuelga cada rectángulo. Sale
+ * del mismo número que todo lo demás: una figura nueva trae su silencio sola.
+ */
+export function SilencioSVG({
+  figura,
+  color = "currentColor",
+  alto = 30,
+  className = "",
+}: {
+  figura: Figura;
+  color?: string;
+  alto?: number;
+  className?: string;
+}) {
+  // El lienzo en píxeles de pentagrama (ESPACIO = 8, como los glifos ya
+  // escalados): la tercera línea va en y = 18, centrada en el lienzo.
+  const LINEA = 18;
+  const CX = 15;
+  const ganchos = banderasDe(figura);
+  const glifo =
+    figura.divide === 4
+      ? GLIFOS.silencioNegra
+      : ganchos === 1
+        ? GLIFOS.silencioCorchea
+        : ganchos === 2
+          ? GLIFOS.silencioSemicorchea
+          : GLIFOS.silencioFusa;
+
+  return (
+    <svg
+      viewBox="0 0 30 36"
+      height={alto}
+      className={className}
+      role="img"
+      aria-label={`silencio de ${figura.nombre}`}
+    >
+      <line x1={4} y1={LINEA} x2={26} y2={LINEA} stroke={color} strokeWidth={1} opacity={0.35} />
+      {figura.divide <= 2 ? (
+        // Colgada de la línea (redonda) o apoyada encima (blanca).
+        <rect
+          x={CX - 5}
+          y={figura.divide === 1 ? LINEA : LINEA - 3.2}
+          width={10}
+          height={3.2}
+          fill={color}
+        />
+      ) : (
+        <path
+          d={glifo.d}
+          fill={color}
+          fillRule="evenodd"
+          transform={`translate(${CX - semiAncho(glifo) * 8} ${LINEA}) scale(8)`}
+        />
       )}
     </svg>
   );

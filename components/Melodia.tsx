@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Icono from "./Icono";
 import Pentagrama from "./Pentagrama";
-import FiguraSVG from "./FiguraSVG";
+import FiguraSVG, { SilencioSVG } from "./FiguraSVG";
 import SelectorDeAcordes from "./SelectorDeAcordes";
 import {
   PROGRESIONES,
@@ -388,9 +388,10 @@ export default function Melodia() {
           <div className="mt-3">
             <p className="max-w-2xl text-sm leading-relaxed text-humo">
               Ahora con el ritmo de verdad: elegí la figura, después la nota — o
-              un silencio, que la frase tiene que{" "}
-              <strong className="text-tiza">respirar</strong>. Cada figura tiene
-              que entrar en su compás, y el último es la redonda del final. Se
+              el <strong className="text-tiza">silencio</strong>, que la frase
+              tiene que respirar. El contratiempo se escribe así: silencio de
+              corchea, y la nota en la corchea que sigue. Cada figura tiene que
+              entrar en su compás, y el último es la redonda del final. Se
               puntúa y no se corrige: la melodía es tuya.
             </p>
 
@@ -468,9 +469,10 @@ export default function Melodia() {
                     <button
                       onClick={() => escribir(null)}
                       disabled={!puedeEscribir}
-                      className="min-w-12 rounded-xl bg-noche/60 px-2.5 py-2 text-center text-sm font-bold text-humo transition hover:text-tiza disabled:opacity-40"
-                      title="Un silencio con la figura elegida: la frase respira"
+                      className="flex items-center gap-1.5 rounded-xl border border-dashed border-borde bg-noche/60 px-3 py-1.5 text-center text-sm font-bold text-humo transition hover:border-tiza/50 hover:text-tiza disabled:opacity-40"
+                      title="Un silencio con la figura elegida: la frase respira, y el contratiempo arranca acá"
                     >
+                      <SilencioSVG figura={figuraQueDivide(figuraElegida)!} alto={24} />
                       silencio
                     </button>
                   )}
@@ -490,10 +492,16 @@ export default function Melodia() {
                           : "bg-noche/60 text-humo"
                       }`}
                     >
-                      {e.nota ? nombreDeNota(e.nota) : "—"}
-                      <span className="opacity-60">
-                        <FiguraSVG figura={figuraQueDivide(e.divide)!} alto={13} />
-                      </span>
+                      {e.nota ? (
+                        <>
+                          {nombreDeNota(e.nota)}
+                          <span className="opacity-60">
+                            <FiguraSVG figura={figuraQueDivide(e.divide)!} alto={13} />
+                          </span>
+                        </>
+                      ) : (
+                        <SilencioSVG figura={figuraQueDivide(e.divide)!} alto={15} />
+                      )}
                     </span>
                   ))}
                   <button

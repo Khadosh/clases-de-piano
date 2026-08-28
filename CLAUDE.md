@@ -96,7 +96,7 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 | **¿Qué compás es?** | Un compás lleno que cierra justo y hay que ponerle el número. `lib/compasQuiz.ts`. |
 | **Completá el compás** | El número puesto y falta la figura que cierra la cuenta. El mismo componente que el anterior, con la pregunta dada vuelta. |
 | **Inventar secuencias** | La tarea de la clase 3 jugable: grados con las funciones pintadas, la regla de oro avisando en la cuarta igual seguida (sin borrar nada: la secuencia es tuya), y las cadencias detectadas al cierre. `lib/grados.ts`. |
-| **Ponerle melodía a los acordes** | El método completo de la clase 4 en tres pasos: la progresión (con los préstamos de las menores), las guías que reciben a cada acorde, y la melodía — compuesta por la app o escrita con figuras y silencios. Veredicto por nota más aterrizajes, respiración y variedad. `lib/melodia.ts`. |
+| **Ponerle melodía a los acordes** | El método completo de la clase 4 en tres pasos: la progresión (tríadas o con séptima, y con los préstamos de las menores), las guías que reciben a cada acorde, y la melodía — compuesta por la app o escrita con figuras y silencios. Veredicto por nota más aterrizajes, respiración y variedad. `lib/melodia.ts`. |
 | **Tocarla encima** | La mitad de los dedos del mismo método: la progresión en loop con cuenta previa y metrónomo, y la melodía la tocás vos (MIDI o pantalla). Veredicto en vivo contra el acorde que suena; la primera nota de cada compás es el aterrizaje. |
 
 De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
@@ -152,7 +152,11 @@ Tres decisiones del modelo que costaron y conviene no revisitar:
 Los préstamos viven en `lib/grados.ts` (`AcordeDeLaSecuencia`, `PRESTAMOS` —
 deducidos de `triadasDeEscala`, nunca tabla a mano) y **la función la pone el
 grado, no el préstamo**: el Fm sigue siendo subdominante y la regla de oro ni
-se entera. `npm run test:melodia` verifica las promesas sobre todas las
+se entera. El mismo objeto acepta `septima: true` —la cuatriada de la clase 2,
+apilada por `cuatriadasDeEscala` y nunca tabla a mano tampoco— y la paleta del
+selector la ofrece con un toggle tríadas/con séptima que se puede cambiar en el
+medio: C · G · G7 · C se arma así. `test:grados` clava que las cuatriadas
+deducidas coinciden grado por grado con la tabla de `TONALIDAD_MAYOR`. `npm run test:melodia` verifica las promesas sobre todas las
 progresiones × 25 semillas — préstamos y guías incluidos: si se afirma que
 las reglas alcanzan para que suene bien, más vale que se cumplan siempre y no
 en la pasada que salió linda. El pentagrama y el reproductor son los de las
@@ -747,7 +751,9 @@ Con eso no hay tabla de casos en ningún lado:
 - Las figuras se **dibujan** solas (`components/FiguraSVG.tsx`): cabeza llena de
   la negra para abajo, plica de la blanca para abajo, y las banderas son los
   pasos que hay desde la negra. Si aparece una figura nueva se dibuja sin tocar
-  el componente. Los símbolos de Unicode (𝅘𝅥𝅮) no se usan: casi ninguna fuente
+  el componente. Su silencio también (`SilencioSVG`, mismo archivo): el dibujo
+  del pentagrama —glifos de Gonville, rectángulos de redonda y blanca— apoyado
+  en un pedacito de línea, para los botones de la paleta. Los símbolos de Unicode (𝅘𝅥𝅮) no se usan: casi ninguna fuente
   los trae y en el celular salen cuadraditos.
 - Los dos números tienen **dos lecturas** y las dos hacen falta. Cómo se cuenta
   (3/4 son tres tiempos de negra) y **cuánto entra** (3/4 son tres negras de

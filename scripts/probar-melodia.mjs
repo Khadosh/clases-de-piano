@@ -293,6 +293,36 @@ probar("el La♭ escrito sobre el Fm es del acorde, y sobre el F es aire", () =>
   assert.equal(sobreMayor[1], "aire");
 });
 
+probar("el Fa sobre G7 es del acorde: la séptima cuenta como nota propia", () => {
+  const v7 = { grado: 4, septima: true };
+  assert.equal(esDelAcorde({ d: 3 }, v7), true); // Fa, la nota del color
+  assert.equal(esDelAcorde({ d: 3 }, 4), false); // sobre el G a secas, no
+  // Y por eso es candidata a guía del V7, cosa que sobre la tríada no era.
+  assert.ok(candidatosDelAcorde(v7).some((n) => mismaNota(n, { d: 3 })));
+  // La escritura lo ve igual: sol-fa-mi-re sobre G7 arranca con dos propias.
+  const frase = [N(4, 4), N(3, 4), N(2, 4), N(1, 4), N(0, 1)];
+  assert.deepEqual(analizarEscrita(frase, [v7, 0]).slice(0, 2), ["acorde", "acorde"]);
+});
+
+probar("componer sobre cuatriadas cumple las mismas promesas", () => {
+  const acordes = [0, { grado: 1, septima: true }, { grado: 4, septima: true }, 0];
+  for (const semilla of SEMILLAS) {
+    const eventos = componerMelodia(acordes, semilla);
+    assert.equal(compasesIncompletos(eventos, COMPAS).length, 0);
+    for (const u of ubicar(eventos, COMPAS)) {
+      if (u.midis.length === 0) continue;
+      const fuerte = Math.abs(u.dentro) < HOLGURA || Math.abs(u.dentro - 0.5) < HOLGURA;
+      if (fuerte) {
+        const a = acordes[Math.min(u.compas, acordes.length - 1)];
+        assert.ok(
+          esDelAcorde(notaDeTecla(u.midis[0]), a),
+          `semilla ${semilla}: pulso fuerte fuera del acorde`,
+        );
+      }
+    }
+  }
+});
+
 console.log(`${bien} bien, ${mal.length} mal`);
 if (mal.length) {
   for (const m of mal) console.log("  ✗ " + m);
