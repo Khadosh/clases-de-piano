@@ -54,9 +54,10 @@ export default async function PiezaPage({
           No sirve en el papel: si algo no cierra, se pregunta mirando la pantalla. */}
       <div className="mt-6 rounded-2xl border border-borde bg-carta-2/40 px-5 py-4 text-sm text-humo print:hidden">
         <p>
-          <strong className="text-tiza">{pieza.hasta}</strong> La obra es de
-          dominio público; la transcripción la escribimos nosotros a mano y de
-          memoria, así que puede tener errores.
+          <strong className="text-tiza">{pieza.hasta}</strong>{" "}
+          {pieza.propia
+            ? "La obra es de acá — se compuso en estas clases — y la transcripción salió de su grabación, así que las notas son las que se tocaron."
+            : "La obra es de dominio público; la transcripción la escribimos nosotros a mano y de memoria, así que puede tener errores."}
         </p>
         {pieza.revisar && <p className="mt-2">{pieza.revisar}</p>}
         <p className="mt-2 text-humo/70">

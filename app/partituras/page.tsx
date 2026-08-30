@@ -5,7 +5,7 @@ import { PIEZAS } from "@/content/partituras";
 export const metadata: Metadata = {
   title: "Partituras",
   description:
-    "Piezas de dominio público escritas como datos: se leen, suenan y te siguen mientras las tocás.",
+    "Piezas escritas como datos: se leen, suenan y te siguen mientras las tocás.",
 };
 
 /**
@@ -15,11 +15,15 @@ export const metadata: Metadata = {
  */
 export default function PartiturasPage() {
   const piezas = [...PIEZAS].sort((a, b) => a.dificultad - b.dificultad);
+  const propias = piezas.filter((p) => p.propia).length;
   return (
     <div className="pt-10">
       <header className="mb-10">
         <p className="text-xs tracking-[0.25em] text-humo uppercase">
-          {piezas.length} piezas · dominio público
+          {piezas.length} piezas ·{" "}
+          {propias === 0
+            ? "dominio público"
+            : `${piezas.length - propias} de dominio público y ${propias === 1 ? "una propia" : `${propias} propias`}`}
         </p>
         <h1 className="font-display mt-2 text-5xl font-black tracking-tight sm:text-6xl">
           Partituras

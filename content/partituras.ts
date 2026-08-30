@@ -39,6 +39,8 @@ export interface Pieza {
   sobre: string;
   /** Hasta dónde llega lo transcripto. */
   hasta: string;
+  /** Compuesta acá: la obra es del cuaderno, no del dominio público. */
+  propia?: boolean;
   /** Lo que habría que chequear. Se muestra al pie, sin culpa. */
   revisar?: string;
   /**
@@ -70,7 +72,9 @@ const Sol2 = 43, Si2 = 47;
 const Do3 = 48, Re3 = 50, Mi3 = 52, Sol3 = 55, La3 = 57, Si3 = 59;
 const Re2 = 38;
 const Do4 = 60, Re4 = 62, Mi4 = 64, Fa4 = 65, Sol4 = 67, La4 = 69, Si4 = 71;
-const Do5 = 72, Re5 = 74, Mi5 = 76, Fa5 = 77;
+const Do5 = 72, Re5 = 74, Mi5 = 76, Fa5 = 77, Sol5 = 79;
+// Las de la vuelta de Joaquín.
+const Fa2 = 41, Fa3 = 53;
 
 // Las del Claro de luna, en Do♯ menor.
 const Fas1 = 30, La1 = 33, Dos2 = 37, Fas2 = 42, La2 = 45, Dos3 = 49;
@@ -992,6 +996,57 @@ export const PIEZAS: Pieza[] = [
       n(64, 16), silencio(16), silencio(16), n(64, 16), n(76, 16), silencio(16),
       silencio(16), n(75, 16), n(76, 16), silencio(16), silencio(16), n(75, 16),
       n(76, 16), silencio(16), silencio(8), silencio(4, { puntillo: true }),
+    ],
+  },
+
+  {
+    slug: "la-vuelta-en-do",
+    titulo: "La vuelta en Do",
+    compositor: "Joaquín",
+    anio: "2026",
+    // 12/8 porque es lo que se tocó: doce corcheas parejas por compás, el
+    // pulso de a tres — el compuesto de la clase, sin un solo tresillo.
+    compas: { numerador: 12, denominador: 8 },
+    tonalidad: { tonica: 0, modo: "mayor" },
+    bpm: 104,
+    dificultad: 2,
+    propia: true,
+    sobre:
+      "La primera pieza propia del cuaderno, improvisada y grabada el mismo día en que la vuelta empezó a salir. Es la progresión de los doo-wop de los cincuenta —I · VIm · IV · V— con la izquierda arpegiando en corcheas y una sola nota quieta arriba: el mismo Do es la fundamental del Do, la tercera del Lam y la quinta del Fa, tres acordes recibiendo a la misma guía. Sobre el Sol la melodía por fin camina —Sol, Fa, Mi, Re— y el Do de la llegada cae justo con la vuelta a la casa. Los Re y Fa cortitos del final de cada compás van a contratiempo, como se tocaron.",
+    hasta: "La vuelta dos veces y el cierre. La toma real da cuatro vueltas: las que faltan repiten éstas.",
+    revisar:
+      "Transcripta de la grabación MIDI de la página de grabar (30 de agosto), cuantizada a la corchea pareja: el pulso de la toma arranca en ~104 y termina en ~124 — el entusiasmo del final no cabe en el papel. Las vueltas tres y cuatro traen variantes mínimas de la bajada del Sol que no quedaron escritas.",
+    derecha: [
+      ...repetir(
+        [
+          // Do, Lam y Fa: el Do tenido casi el compás entero, y el
+          // contratiempo en la última corchea anticipando el acorde que viene.
+          n(Do5, 2, { puntillo: true }), n(Do5, 4, { puntillo: true, ligada: true }), n(Do5, 4, { ligada: true }), n(Re5, 8),
+          n(Do5, 2, { puntillo: true }), n(Do5, 4, { puntillo: true, ligada: true }), n(Do5, 4, { ligada: true }), n(Re5, 8),
+          n(Do5, 2, { puntillo: true }), n(Do5, 4, { puntillo: true, ligada: true }), n(Do5, 4, { ligada: true }), n(Fa5, 8),
+          // Sol: la bajada Sol–Fa–Mi–Re tejida entre los pulsos.
+          n(Re5, 4, { puntillo: true }), n(Re5, 4, { ligada: true }), n(Sol5, 8), n(Fa5, 4), n(Mi5, 8), n(Re5, 4), n(Mi5, 8),
+        ],
+        2,
+      ),
+      // El cierre: el Do agudo llega con el acorde armado de la izquierda.
+      silencio(2, { puntillo: true }), n(Do5, 2, { puntillo: true }),
+    ],
+    izquierda: [
+      ...repetir(
+        [
+          // Cada acorde arpegiado igual: fundamental, tercera, quinta,
+          // octava y de vuelta — la misma mano trasladada de acorde en acorde.
+          ...repetir([n(Do3, 8), n(Mi3, 8), n(Sol3, 8), n(Do4, 8), n(Sol3, 8), n(Mi3, 8)], 2),
+          ...repetir([n(La2, 8), n(Do3, 8), n(Mi3, 8), n(La3, 8), n(Mi3, 8), n(Do3, 8)], 2),
+          ...repetir([n(Fa2, 8), n(La2, 8), n(Do3, 8), n(Fa3, 8), n(Do3, 8), n(La2, 8)], 2),
+          ...repetir([n(Sol2, 8), n(Si2, 8), n(Re3, 8), n(Sol3, 8), n(Re3, 8), n(Si2, 8)], 2),
+        ],
+        2,
+      ),
+      // Media vuelta más de arpegio y el acorde entero, plantado.
+      n(Do3, 8), n(Mi3, 8), n(Sol3, 8), n(Do4, 8), n(Sol3, 8), n(Mi3, 8),
+      n([Do3, Mi3, Sol3, Do4], 2, { puntillo: true }),
     ],
   },
 ];

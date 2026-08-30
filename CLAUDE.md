@@ -473,6 +473,14 @@ tardíos. Por eso cada pieza declara `hasta` (hasta dónde llega) y `revisar` (q
 hay que chequear), y las dos cosas se muestran al pie. Es la misma regla que
 `openQuestions`: la duda anotada es mejor que el invento en silencio.
 
+**También hay piezas propias.** Una improvisación de Joaquín grabada en
+`/grabar` se puede transcribir de su JSON (los tiempos dicen compás y
+subdivisión; los note-on no traen duración, así que las figuras las decide el
+editor) y entra como cualquier otra, con `propia: true`: el pie deja de decir
+"dominio público" y el índice las cuenta aparte. La primera es La vuelta en Do,
+en 12/8 porque es lo que se tocó — doce corcheas parejas de a tres, sin
+tresillos.
+
 **Se puede tocar de a una mano.** Es lo primero que se estudia —una mano por
 vez y recién después las dos juntas—, así que el selector está arriba de todo y
 manda sobre las tres cosas: qué suena, qué te sigue y qué se dibuja. La mano
