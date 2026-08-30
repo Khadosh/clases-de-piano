@@ -72,7 +72,7 @@ const Sol2 = 43, Si2 = 47;
 const Do3 = 48, Re3 = 50, Mi3 = 52, Sol3 = 55, La3 = 57, Si3 = 59;
 const Re2 = 38;
 const Do4 = 60, Re4 = 62, Mi4 = 64, Fa4 = 65, Sol4 = 67, La4 = 69, Si4 = 71;
-const Do5 = 72, Re5 = 74, Mi5 = 76, Fa5 = 77, Sol5 = 79;
+const Do5 = 72, Re5 = 74, Mi5 = 76, Fa5 = 77;
 // Las de la vuelta de Joaquín.
 const Fa2 = 41, Fa3 = 53;
 
@@ -1012,25 +1012,26 @@ export const PIEZAS: Pieza[] = [
     dificultad: 2,
     propia: true,
     sobre:
-      "La primera pieza propia del cuaderno, improvisada y grabada el mismo día en que la vuelta empezó a salir. Es la progresión de los doo-wop de los cincuenta —I · VIm · IV · V— con la izquierda arpegiando en corcheas y una sola nota quieta arriba: el mismo Do es la fundamental del Do, la tercera del Lam y la quinta del Fa, tres acordes recibiendo a la misma guía. Sobre el Sol la melodía por fin camina —Sol, Fa, Mi, Re— y el Do de la llegada cae justo con la vuelta a la casa. Los Re y Fa cortitos del final de cada compás van a contratiempo, como se tocaron.",
-    hasta: "La vuelta dos veces y el cierre. La toma real da cuatro vueltas: las que faltan repiten éstas.",
+      "La primera pieza propia del cuaderno, improvisada y grabada el mismo día en que la vuelta empezó a salir, con sus dos secciones. Es la progresión de los doo-wop de los cincuenta —I · VIm · IV · V— con la izquierda arpegiando en corcheas. En la vuelta quieta la melodía es una sola nota: el mismo Do es la fundamental del Do, la tercera del Lam y la quinta del Fa, tres acordes recibiendo a la misma guía. En la vuelta que sube las guías trepan —Do, Mi, Fa, Sol, una por acorde— y las corcheas de contratiempo del final de cada compás las conectan por grado conjunto. Las dos cierran igual: la bajada Sol–Fa–Mi–Re, y el Do de la llegada cayendo justo con la vuelta a la casa.",
+    hasta: "Entera: la vuelta quieta, la vuelta que sube y el cierre.",
     revisar:
-      "Transcripta de la grabación MIDI de la página de grabar (30 de agosto), cuantizada a la corchea pareja: el pulso de la toma arranca en ~104 y termina en ~124 — el entusiasmo del final no cabe en el papel. Las vueltas tres y cuatro traen variantes mínimas de la bajada del Sol que no quedaron escritas.",
+      "Transcripta de las grabaciones MIDI de la página de grabar (30 de agosto), cuantizada a la corchea pareja. La primera toma repetía la vuelta quieta cuatro veces, con la melodía una octava arriba y el pulso apurándose de ~104 a ~124; la forma final —quieta, sube, cierre— es la de la tercera toma, y quedó ésa.",
     derecha: [
-      ...repetir(
-        [
-          // Do, Lam y Fa: el Do tenido casi el compás entero, y el
-          // contratiempo en la última corchea anticipando el acorde que viene.
-          n(Do5, 2, { puntillo: true }), n(Do5, 4, { puntillo: true, ligada: true }), n(Do5, 4, { ligada: true }), n(Re5, 8),
-          n(Do5, 2, { puntillo: true }), n(Do5, 4, { puntillo: true, ligada: true }), n(Do5, 4, { ligada: true }), n(Re5, 8),
-          n(Do5, 2, { puntillo: true }), n(Do5, 4, { puntillo: true, ligada: true }), n(Do5, 4, { ligada: true }), n(Fa5, 8),
-          // Sol: la bajada Sol–Fa–Mi–Re tejida entre los pulsos.
-          n(Re5, 4, { puntillo: true }), n(Re5, 4, { ligada: true }), n(Sol5, 8), n(Fa5, 4), n(Mi5, 8), n(Re5, 4), n(Mi5, 8),
-        ],
-        2,
-      ),
-      // El cierre: el Do agudo llega con el acorde armado de la izquierda.
-      silencio(2, { puntillo: true }), n(Do5, 2, { puntillo: true }),
+      // La vuelta quieta: el Do tenido casi el compás entero, y el
+      // contratiempo en la última corchea anticipando lo que viene.
+      n(Do4, 2, { puntillo: true }), n(Do4, 4, { puntillo: true, ligada: true }), n(Do4, 4, { ligada: true }), n(Re4, 8),
+      n(Do4, 2, { puntillo: true }), n(Do4, 4, { puntillo: true, ligada: true }), n(Do4, 4, { ligada: true }), n(Mi4, 8),
+      n(Do4, 2, { puntillo: true }), n(Do4, 4, { puntillo: true, ligada: true }), n(Do4, 4, { ligada: true }), n(Fa4, 8),
+      // Sol: la bajada Sol–Fa–Mi–Re tejida entre los pulsos.
+      n(Re4, 4, { puntillo: true }), n(Re4, 4, { ligada: true }), n(Sol4, 8), n(Fa4, 4), n(Mi4, 8), n(Re4, 4), n(Mi4, 8),
+      // La vuelta que sube: las guías trepando Do → Mi → Fa → Sol, y la
+      // misma bajada cerrando el arco.
+      n(Do4, 2, { puntillo: true }), n(Do4, 4, { puntillo: true, ligada: true }), n(Do4, 4, { ligada: true }), n(Re4, 8),
+      n(Mi4, 2, { puntillo: true }), n(Mi4, 4, { puntillo: true, ligada: true }), n(Mi4, 4, { ligada: true }), n(Re4, 8),
+      n(Fa4, 2, { puntillo: true }), n(Fa4, 4, { puntillo: true, ligada: true }), n(Fa4, 4, { ligada: true }), n(Mi4, 8),
+      n(Sol4, 4, { puntillo: true }), n(Sol4, 4, { ligada: true }), n(Sol4, 8), n(Fa4, 4), n(Mi4, 8), n(Re4, 4), n(Mi4, 8),
+      // El cierre: el Do del arpegio rodado queda arriba, en la mano que canta.
+      n(Do4, 2, { puntillo: true }), n(Do4, 2, { puntillo: true }),
     ],
     izquierda: [
       ...repetir(
@@ -1044,9 +1045,10 @@ export const PIEZAS: Pieza[] = [
         ],
         2,
       ),
-      // Media vuelta más de arpegio y el acorde entero, plantado.
+      // Media vuelta más de arpegio y el acorde plantado — su Do de arriba
+      // está escrito en la derecha, que es adonde llega el rodado.
       n(Do3, 8), n(Mi3, 8), n(Sol3, 8), n(Do4, 8), n(Sol3, 8), n(Mi3, 8),
-      n([Do3, Mi3, Sol3, Do4], 2, { puntillo: true }),
+      n([Do3, Mi3, Sol3], 2, { puntillo: true }),
     ],
   },
 ];
