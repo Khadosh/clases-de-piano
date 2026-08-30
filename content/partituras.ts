@@ -1051,6 +1051,89 @@ export const PIEZAS: Pieza[] = [
       n([Do3, Mi3, Sol3], 2, { puntillo: true }),
     ],
   },
+
+  {
+    slug: "cuesta-abajo-en-inversion",
+    titulo: "Cuesta abajo en inversión",
+    compositor: "Joaquín",
+    anio: "2026",
+    // 2/4 porque la célula de cuatro corcheas ES el compás: la armonía cambia
+    // de célula en célula, y las frases de tres y de cuatro compases quedan
+    // como se tocaron en vez de partir un 4/4 por la mitad.
+    compas: { numerador: 2, denominador: 4 },
+    tonalidad: { tonica: 0, modo: "mayor" },
+    bpm: 104,
+    dificultad: 2,
+    propia: true,
+    sobre:
+      "La segunda pieza propia, y la primera que se anima a los acordes con barra: el bajo baja —Do, Si, La— y quien lo sostiene son las inversiones del renglón de la clase 4. Las dos vueltas comparten ese camino y se separan en el fondo: la primera descansa en Lam y la segunda pone Dm/A sobre el mismo La del bajo —mismo bajo, otra función— y guarda el Fa, su nota más tensa, para el Si disminuido que pide la vuelta a casa. Arriba el Mi vuelve a contratiempo mientras las guías cambian con cada acorde. El título es el chiste y es la verdad: acá lo que baja es el bajo.",
+    hasta: "Entera: las dos vueltas con su giro distinto y el cierre.",
+    revisar:
+      "Transcripta de la grabación MIDI de la página de grabar (30 de agosto), cuantizada a la corchea. Las frases no miden todas lo mismo —el Lam dura tres compases y el Dm/A cuatro— y así se tocó: no es un error de cuenta. Alguna nota fantasma de la toma, apretada casi sin sonar, quedó afuera.",
+    derecha: [
+      // La anacrusa: el Mi entra una corchea antes que todo.
+      silencio(4, { puntillo: true }), n(Mi4, 8),
+      // Vuelta 1 · Do: el suspiro Re–Do, con el Mi de contratiempo.
+      n(Re4, 4, { puntillo: true }), n(Do4, 8),
+      n(Do4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      n(Re4, 4, { puntillo: true }), n(Do4, 8),
+      n(Do4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      // Em/B: la guía baja al Si; el Mi insiste.
+      n(Si3, 4, { puntillo: true }), n(Mi4, 8),
+      n(Mi4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      n(Si3, 4, { puntillo: true }), n(Mi4, 8),
+      n(Mi4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      // Lam: la vuelta 1 descansa en el Do largo.
+      n(Do4, 2),
+      n(Do4, 2, { ligada: true }),
+      n(Do4, 4, { puntillo: true, ligada: true }), n(Do4, 8),
+      // Si°: el Re tenido pide la casa; el Mi de paso la anuncia.
+      n(Re4, 2),
+      n(Re4, 2, { ligada: true }),
+      n(Re4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      // Vuelta 2 · Do: el mismo suspiro, dado vuelta — primero el Do.
+      n(Do4, 2),
+      n(Do4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      n(Re4, 4, { puntillo: true }), n(Do4, 8),
+      n(Do4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      // Em/B, como en la vuelta 1.
+      n(Si3, 4, { puntillo: true }), n(Mi4, 8),
+      n(Mi4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      n(Si3, 4, { puntillo: true }), n(Mi4, 8),
+      n(Mi4, 4, { puntillo: true, ligada: true }), n(Do4, 8),
+      // Dm/A — el giro: mismo La en el bajo, otro acorde, y la guía es Re.
+      n(Re4, 2),
+      n(Re4, 2, { ligada: true }),
+      n(Re4, 2, { ligada: true }),
+      n(Re4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      // Si°: el Fa — la nota del tritono, la más tensa de toda la pieza —
+      // guardado para acá, y resuelto por grado: Fa, Mi, Do.
+      n(Fa4, 2),
+      n(Fa4, 2, { ligada: true }),
+      n(Fa4, 4, { puntillo: true, ligada: true }), n(Mi4, 8),
+      // El cierre: el Do llega, respira dos compases y el rodado lo confirma.
+      n(Do4, 2),
+      n(Do4, 2, { ligada: true }),
+      n(Do4, 2),
+    ],
+    izquierda: [
+      // La anacrusa es de la melodía: la izquierda espera su compás.
+      silencio(2),
+      // Cada acorde es una célula de cuatro corcheas —fundamental, tercera,
+      // quinta, tercera— y la armonía cambia de célula en célula.
+      ...repetir([n(Do3, 8), n(Mi3, 8), n(Sol3, 8), n(Mi3, 8)], 4),
+      ...repetir([n(Si2, 8), n(Mi3, 8), n(Sol3, 8), n(Mi3, 8)], 4),
+      ...repetir([n(La2, 8), n(Do3, 8), n(Mi3, 8), n(Do3, 8)], 3),
+      ...repetir([n(Si2, 8), n(Re3, 8), n(Fa3, 8), n(Re3, 8)], 3),
+      ...repetir([n(Do3, 8), n(Mi3, 8), n(Sol3, 8), n(Mi3, 8)], 4),
+      ...repetir([n(Si2, 8), n(Mi3, 8), n(Sol3, 8), n(Mi3, 8)], 4),
+      ...repetir([n(La2, 8), n(Re3, 8), n(Fa3, 8), n(Re3, 8)], 4),
+      ...repetir([n(Si2, 8), n(Re3, 8), n(Fa3, 8), n(Re3, 8)], 3),
+      ...repetir([n(Do3, 8), n(Mi3, 8), n(Sol3, 8), n(Mi3, 8)], 2),
+      // El rodado final, corto: sube y se queda.
+      n(Do3, 8), n(Mi3, 8), n(Sol3, 4),
+    ],
+  },
 ];
 
 /** Repite un grupo de eventos, que es como está escrita la música de verdad. */
