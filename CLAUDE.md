@@ -98,6 +98,7 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 | **Inventar secuencias** | La tarea de la clase 3 jugable: grados con las funciones pintadas, la regla de oro avisando en la cuarta igual seguida (sin borrar nada: la secuencia es tuya), y las cadencias detectadas al cierre. `lib/grados.ts`. |
 | **Ponerle melodía a los acordes** | El método completo de la clase 4 en tres pasos: la progresión (tríadas o con séptima, y con los préstamos de las menores), las guías que reciben a cada acorde, y la melodía — compuesta por la app o escrita con figuras y silencios. Veredicto por nota más aterrizajes, respiración y variedad. `lib/melodia.ts`. |
 | **Tocarla encima** | La mitad de los dedos del mismo método: la progresión en loop con cuenta previa y metrónomo, y la melodía la tocás vos (MIDI o pantalla). Veredicto en vivo contra el acorde que suena; la primera nota de cada compás es el aterrizaje. |
+| **La grilla** | La escala en columnas, los acordes de la vuelta en filas, un punto donde la nota cae parada. Es la imagen de un curso de armonía pop que Joaquín hace aparte, y es lo mismo que las fichas verdes de la melodía visto todo junto: la nota que puede quedarse quieta salta a la vista. Los nombres de las funciones son los de Quique; los apodos del pop (casa mayor, casa menor, tensión, el que eleva) van de alias en I, VIm, V y IV. |
 
 De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
 con dos enunciados, porque son la misma ronda: se propone algo, lo armás, se

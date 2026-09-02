@@ -47,7 +47,7 @@ const SUFIJO_ROMANO: Record<string, string> = {
 };
 
 /** La cifra romana del acorde, con el préstamo en minúscula de verdad: iv. */
-function cifraDe(a: AcordeDeLaSecuencia): string {
+export function cifraDe(a: AcordeDeLaSecuencia): string {
   const base = (() => {
     const cifra = TONALIDAD_MAYOR[gradoDe(a)].cifra;
     if (!esPrestado(a)) return cifra;

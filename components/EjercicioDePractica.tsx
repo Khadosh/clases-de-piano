@@ -12,6 +12,7 @@ import Funciones from "./Funciones";
 import InventorDeSecuencias from "./InventorDeSecuencias";
 import Melodia from "./Melodia";
 import Encima from "./Encima";
+import Grilla from "./Grilla";
 import NotasGuia from "./NotasGuia";
 import Cadencias from "./Cadencias";
 import Paralelas from "./Paralelas";
@@ -63,6 +64,8 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <Melodia />;
         case "encima":
           return <Encima />;
+        case "grilla":
+          return <Grilla />;
         case "cadencias":
           return <Cadencias />;
         case "paralelas":

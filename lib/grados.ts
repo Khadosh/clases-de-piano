@@ -82,12 +82,12 @@ export const PROGRESIONES: Progresion[] = [
   {
     nombre: "vi – IV – I – V",
     grados: [5, 3, 0, 4],
-    porQue: "La de las canciones de guitarra alrededor del fogón. Los mismos cuatro acordes de arriba, empezando por el menor.",
+    porQue: "La de las canciones de guitarra alrededor del fogón —Zombie, de los Cranberries, es ésta—. Los mismos cuatro acordes de arriba, empezando por el menor: por eso suena oscura.",
   },
   {
     nombre: "I – V – vi – IV",
     grados: [0, 4, 5, 3],
-    porQue: "La misma vuelta que la anterior corrida de lugar, y suena completamente distinta. De ahí que el orden importe.",
+    porQue: "La misma vuelta que la anterior corrida de lugar, y suena completamente distinta —Let It Go, de Frozen, es ésta—. Arranca en la casa y suena a puerta que se abre. De ahí que el orden importe.",
   },
   {
     nombre: "iii – vi – ii – V – I",

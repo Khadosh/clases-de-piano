@@ -82,6 +82,7 @@ export type HerramientaSuelta =
   | "inventor"
   | "melodia"
   | "encima"
+  | "grilla"
   | "cadencias"
   | "paralelas"
   | "semitonos";
@@ -186,6 +187,12 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     bajada:
       "La progresión suena en loop —con cuenta previa y metrónomo— y la melodía la ponés vos, en el piano de verdad o en el teclado de la pantalla. Cada nota se juzga en vivo contra el acorde que suena, y la primera de cada compás es el aterrizaje.",
   },
+  grilla: {
+    titulo: "La grilla: qué nota cae parada",
+    emoji: "🧮",
+    bajada:
+      "La escala en columnas, los acordes de la vuelta en filas, y un punto donde la nota cae parada en el acorde. Es lo que la melodía te muestra de a un compás, visto todo junto: ahí se ve la nota que puede quedarse quieta mientras la armonía gira, y la que va a tener que moverse.",
+  },
   cadencias: {
     titulo: "Las cadencias, con nombre",
     emoji: "🏠",
@@ -236,6 +243,7 @@ const AREA_DE: Record<string, AreaId> = {
   inventor: "acordes",
   melodia: "acordes",
   encima: "acordes",
+  grilla: "acordes",
   "notas-guia": "acordes",
   cadencias: "acordes",
   paralelas: "acordes",
@@ -383,6 +391,10 @@ export function catalogo(): Entrada[] {
             bajada:
               "El renglón de la clase 4: arriba la nota que recibe a cada acorde, abajo el cifrado. Tocá las columnas, escuchá el renglón entero — la fila de arriba, sola, ya es casi una melodía.",
           });
+          // La grilla es el renglón de las guías visto para todas las notas a
+          // la vez: en qué acordes cae parada cada una. Cuelga de acá porque
+          // es la misma pregunta —qué nota recibe a cada acorde— dada vuelta.
+          sumarSuelta("grilla", lesson);
           // Tocarla encima es la mitad de los dedos del mismo método: cuelga
           // de acá porque recién con las guías vistas tiene sentido juzgar
           // los aterrizajes sobre el loop.
