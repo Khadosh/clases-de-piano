@@ -5,12 +5,14 @@ const lesson: Lesson = {
   date: "2026-09-02",
   title: "Acordes de paso: los dominantes secundarios",
   summary:
-    "La lógica del G7 → C aplicada a cada acorde de la escala: los dominantes secundarios como puente entre acordes, los efectivos que se van del campo, y la melodía que camina por grado conjunto.",
+    "La lógica del G7 → C aplicada a cada acorde de la escala: los dominantes secundarios y los disminuidos como acordes de paso, los efectivos que se van del campo, y la melodía que hace puentes por grado conjunto entre las cordales.",
   tags: [
     "dominantes secundarios",
     "acordes de paso",
     "dominantes efectivos",
+    "disminuidos de paso",
     "campo armónico",
+    "notas cordales",
     "grado conjunto",
     "cantabile",
   ],
@@ -27,7 +29,7 @@ const lesson: Lesson = {
       title: "Conectar los acordes",
       emoji: "🧲",
       intro:
-        "Entre dos acordes de una secuencia se puede meter un tercero que no es de la secuencia: un *acorde de paso*. Hay dos opciones — los dominantes secundarios y los acordes disminuidos — y la clase se fue casi entera en la primera.",
+        "Entre dos acordes de una secuencia se puede meter un tercero que no es de la secuencia: un *acorde de paso*. Hay dos opciones — los dominantes secundarios (X7) y los acordes disminuidos (X°) — y las dos apuntan al mismo lugar: al acorde que viene.",
     },
     {
       kind: "prose",
@@ -38,17 +40,17 @@ const lesson: Lesson = {
       kind: "dominantes-secundarios",
       title: "La tabla de Do mayor",
       intro:
-        "Cada X7 con el acorde adonde lleva, para escuchar la llegada de a una — fijate en la nota pintada, que es la que Do mayor no tiene. Después, la vuelta: elegí una progresión y metele los de paso, con y sin, que es donde se entiende para qué están.",
+        "Cada X7 con el acorde adonde lleva, para escuchar la llegada de a una — fijate en la nota pintada, que es la que Do mayor no tiene. El interruptor pasa a la otra opción, los disminuidos, que llegan a los mismos lugares desde un semitono abajo. Después, la vuelta: arranca con la del cuaderno tal cual, y cualquier otra se puede llenar de a uno, con y sin, que es donde se entiende para qué están.",
     },
     {
       kind: "prose",
       title: "Los que llevan a otro campo: los efectivos",
-      text: "En la lista de la clase faltaba uno. El F7 se arma igual que los demás, pero cae en *Si♭*, que no está en Do mayor: lleva indefectiblemente a otro campo armónico. A ésos Quique los llamó *dominantes efectivos*: toda dominante que te saca del campo es efectiva.\n\nQuedó nombrado sin entrar en detalle, con una vuelta de tuerca para pensar: los secundarios se convierten en efectivos *cambiando el mayor por menor y viceversa* en el acorde de llegada. El A7 que lleva a Dm es secundario; si lo hacés llegar a *D* mayor, ese D ya no es de Do mayor, y el mismo A7 pasó a ser efectivo. En la tabla está el botón para oír las dos llegadas y comparar.",
+      text: "En la lista de la clase faltaba uno. El F7 se arma igual que los demás, pero cae en *Si♭*, que no está en Do mayor: lleva indefectiblemente a otro campo armónico. A ésos Quique los llamó *dominantes efectivos*: toda dominante que te saca del campo es efectiva. En el cuaderno quedaron tres: F7 → B♭, G7 → Cm, D7 → Gm.\n\nY una vuelta de tuerca, nombrada sin entrar en detalle: los secundarios se convierten en efectivos *cambiando el mayor por menor y viceversa* en el acorde de llegada. E7 → A, A7 → D, B7 → E, C7 → Fm: el mismo X7 de la tabla, pero llegando a un acorde que Do mayor no tiene. En la tabla está el botón para oír las dos llegadas y comparar.",
     },
     {
       kind: "prose",
       title: "La otra opción: los disminuidos",
-      text: "Los acordes disminuidos son la segunda manera de conectar acordes. Quedó dicho que existen como acorde de paso y que se usan para lo mismo, pero el cómo —sobre qué nota se arman y hacia dónde van— quedó para la próxima. Está anotado abajo para preguntar.",
+      text: "El acorde disminuido es la segunda manera de conectar, y la regla es una sola: el *X° es el VII° del acorde adonde se llega*. Es el Bdim → C de la escala, mudado a cualquier destino: para llegar a Sol se pone el séptimo grado de Sol, que es Fa♯°; para llegar a Do, el Si°. Un semitono abajo, y resuelve para arriba.\n\nEl ejemplo de la clase junta las dos opciones, con el acorde de paso entre paréntesis adentro del compás anterior:\n\n*| C | Em (C7) | F | Dm (F♯°) | G | Am (A7) | Dm | G (B°) | C |*\n\nEl C7 prepara al F, el Fa♯° al G, el A7 al Dm y el B° al C. Está armado en la vuelta de arriba para escucharlo con y sin.",
     },
 
     // -----------------------------------------------------------------------
@@ -57,12 +59,35 @@ const lesson: Lesson = {
       title: "La melodía, otra vez",
       emoji: "🎼",
       intro:
-        "Sobre lo que llevé, dos ideas: cómo ir de una nota cordal a la siguiente, y qué mirar cuando algo te gusta.",
+        "Sobre lo que llevé, dos ideas: cómo ir de una nota cordal a la siguiente, y qué mirar cuando algo te gusta. Y un renglón nuevo, con un dominante secundario y un préstamo adentro.",
+    },
+    {
+      kind: "prose",
+      title: "Las cordales, sí o sí",
+      text: "Las notas escritas arriba de cada acorde son *notas cordales*: notas del acorde, y sí o sí hay que tocarlas cuando cambia el acorde. Es el método de la clase 4 dicho más fuerte — la guía no es una sugerencia, es el lugar donde la melodía tiene que estar en el cambio.",
+    },
+    {
+      kind: "notas-guia",
+      title: "El renglón de la clase",
+      intro:
+        "El renglón que quedó en el cuaderno: la guía arriba, el acorde abajo. Fijate en el E7 antes del Am —un dominante secundario en el medio de la vuelta— y en el Fm del final, el préstamo de la clase 4, recibido por su La♭.",
+      columnas: [
+        { guia: "E", acorde: "C" },
+        { guia: "E", acorde: "Em/B" },
+        { guia: "G", acorde: "Am7" },
+        { guia: "F", acorde: "Bdim" },
+        { guia: "G", acorde: "C" },
+        { guia: "C", acorde: "F" },
+        { guia: "B", acorde: "E7" },
+        { guia: "A", acorde: "Am" },
+        { guia: "Ab", acorde: "Fm" },
+        { guia: "C", acorde: "C" },
+      ],
     },
     {
       kind: "prose",
       title: "Puentes por grado conjunto",
-      text: "Para ir de una nota del acorde a otra, la melodía puede hacer *puentes* con las notas del medio: caminar por grado conjunto —de a un escalón de la escala— en vez de saltar directo. No es que los saltos estén prohibidos, pero son los menos. La idea de fondo sigue siendo la de la clase 4: pensar siempre una melodía *cantabile*, que se pueda cantar — y lo que se canta, en general, camina.",
+      text: "Para ir de una nota cordal a la siguiente, la melodía hace una *melodía de conexión*, un *puente* entre las dos: caminar por grado conjunto —de a un escalón de la escala— en vez de saltar directo. No es que los saltos estén prohibidos, pero son los menos. La idea de fondo sigue siendo la de la clase 4: pensar siempre una melodía *cantabile*, que se pueda cantar — y lo que se canta, en general, camina.",
     },
     {
       kind: "prose",
@@ -72,13 +97,13 @@ const lesson: Lesson = {
   ],
 
   homework: [
-    "Seguir con las melodías sobre secuencias, ahora metiendo dominantes secundarios como acordes de paso entre los acordes: antes de cada acorde, su X7.",
-    "En la melodía, conectar las notas cordales por grado conjunto —puentes, no saltos— y que siga siendo cantabile: frases, respiraciones, figuras distintas.",
+    "Seguir con las melodías sobre secuencias, ahora metiendo acordes de paso entre los acordes: antes de un acorde, su X7 o su X°, como en la vuelta del cuaderno.",
+    "En la melodía, las cordales sí o sí en cada cambio, y entre una y otra un puente por grado conjunto — y que siga siendo cantabile: frases, respiraciones, figuras distintas.",
   ],
 
   openQuestions: [
-    "Los acordes disminuidos como acordes de paso quedaron sólo nombrados: ¿sobre qué nota se arman y hacia dónde llevan? ¿Son el disminuido con séptima (los cuatro de tres semitonos) o la tríada?",
-    "Los dominantes efectivos: quedó la idea de que son los que llevan a otro campo armónico, y que un secundario se vuelve efectivo dando vuelta el mayor/menor de la llegada. ¿Es exactamente eso, o \"efectivo\" nombra algo más?",
+    "El X° de paso está escrito como tríada (Fa♯°, B°). ¿Vale igual con séptima —el disminuido de cuatro notas de la clase 2— o la tríada alcanza?",
+    "Los dominantes efectivos quedaron con ejemplos (F7 → B♭, G7 → Cm, D7 → Gm) y la regla de dar vuelta el mayor/menor. ¿\"Efectivo\" es exactamente \"el que se va del campo\", o nombra algo más?",
     "En la tabla no aparece un dominante para el VII (Bdim). Interpretamos que es porque el X7 que le tocaría, Fa♯7, no se arma sobre ninguna nota de la escala — y porque a un disminuido no se llega. Confirmar.",
     "Los fragmentos que caracterizan a un artista —el giro de acordes o de melodía que uno se apropia—: ¿cómo se llamaban?",
     "La tarea no quedó dicha con todas las letras; la de arriba es lo que se desprende de la clase.",

@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import {
   CADENCIAS_CON_NOMBRE,
+  DISMINUIDOS,
   DOMINANTES,
   FUNCION_DE_GRADO,
   GRADOS_MAYOR,
@@ -20,6 +21,7 @@ import {
   clasesDelAcorde,
   conSeptima,
   destinoDadoVuelta,
+  disminuidoDelGrado,
   dominanteDelGrado,
   esPrestado,
   gradoDe,
@@ -387,6 +389,42 @@ probar("dado vuelta el destino, el secundario se vuelve efectivo: A7 → D, C7 �
   assert.equal(destinoDadoVuelta(a7).cifrado, "D");
   assert.equal(destinoDadoVuelta(c7).cifrado, "Fm");
   assert.equal(destinoDadoVuelta(a7).calidad, "maj");
+});
+
+probar("los efectivos del cuaderno: F7→Bb, G7→Cm, D7→Gm, y E7→A, A7→D, B7→E, C7→Fm", () => {
+  const vuelta = Object.fromEntries(DOMINANTES.map((d) => [d.cifrado, destinoDadoVuelta(d).cifrado]));
+  assert.equal(DOMINANTES.find((d) => d.cifrado === "F7").cifradoDestino, "Bb");
+  assert.equal(vuelta.G7, "Cm");
+  assert.equal(vuelta.D7, "Gm");
+  assert.equal(vuelta.E7, "A");
+  assert.equal(vuelta.B7, "E");
+});
+
+// ---- Los disminuidos de paso: el VII° de adonde se llega ------------------
+
+probar("el disminuido de paso está un semitono abajo de la llegada y es el VII° de ésa", () => {
+  assert.deepEqual(
+    DISMINUIDOS.map((x) => `${x.cifrado}→${x.cifradoDestino}`),
+    ["Edim→F", "F#dim→G", "G#dim→Am", "Adim→Bb", "Bdim→C", "C#dim→Dm", "D#dim→Em"],
+  );
+  for (const x of DISMINUIDOS) assert.equal((x.raizDestino - x.raiz + 12) % 12, 1, x.cifrado);
+});
+
+probar("los del ejemplo de la clase: F#dim antes del G, Bdim antes del C", () => {
+  assert.equal(disminuidoDelGrado(4).cifrado, "F#dim");
+  assert.equal(disminuidoDelGrado(0).cifrado, "Bdim"); // el de la escala, el mismo de siempre
+  assert.deepEqual(disminuidoDelGrado(0).ajenas, []);
+  assert.deepEqual(disminuidoDelGrado(4).ajenas, [6]); // el Fa♯
+  assert.equal(disminuidoDelGrado(6), null);
+});
+
+probar("el disminuido se escribe con la letra de abajo de la llegada: Re♯dim para Mi, no Mi♭dim", () => {
+  const paraEm = disminuidoDelGrado(2);
+  assert.equal(paraEm.cifrado, "D#dim");
+  assert.equal(paraEm.base.letra, 1); // Re
+  assert.equal(paraEm.base.alter, 1);
+  const paraAm = disminuidoDelGrado(5);
+  assert.equal(paraAm.cifrado, "G#dim");
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

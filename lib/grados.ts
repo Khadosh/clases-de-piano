@@ -11,7 +11,16 @@
  */
 
 import { ESCALAS, cuatriadasDeEscala, escalaPorId, triadasDeEscala } from "./escalas.ts";
-import { chordSymbol, identificarAcorde, mod12, qualityById } from "./music.ts";
+import {
+  LETRAS_PC,
+  chordSymbol,
+  escribirNota,
+  identificarAcorde,
+  mod12,
+  qualityById,
+  raizEscrita,
+  type NotaEscrita,
+} from "./music.ts";
 
 /** Semitonos desde la tónica hasta cada grado de la escala mayor. */
 export const GRADOS_MAYOR = [0, 2, 4, 5, 7, 9, 11] as const;
@@ -449,4 +458,63 @@ export function dominanteDelGrado(grado: number): Dominante | null {
 export function destinoDadoVuelta(d: Dominante): { cifrado: string; calidad: string } {
   const calidad = d.calidadDestino === "min" ? "maj" : "min";
   return { cifrado: chordSymbol(d.raizDestino, qualityById(calidad)!), calidad };
+}
+
+// ---------------------------------------------------------------------------
+// Los disminuidos de paso (clase 5)
+// ---------------------------------------------------------------------------
+
+export interface Disminuido {
+  /** La fundamental del X°, en clase de altura: un semitono abajo de adonde llega. */
+  raiz: number;
+  /**
+   * Cómo se escribe esa fundamental. No sale de la tabla de siempre: el que
+   * lleva a Mi es Re♯dim y no Mi♭dim, porque es el séptimo grado de Mi — la
+   * letra es la de abajo de la llegada, y el signo el que haga falta.
+   */
+  base: NotaEscrita;
+  cifrado: string;
+  destino: number | null;
+  raizDestino: number;
+  cifradoDestino: string;
+  calidadDestino: string;
+  /** Las notas del X° que Do mayor no tiene. */
+  ajenas: number[];
+}
+
+/**
+ * La segunda opción de acorde de paso, como quedó en el papel: **X°, el VII°
+ * del acorde adonde se llega**. Es el mismo movimiento que el Bdim → C de la
+ * escala, mudado: para llegar a Sol se pone el séptimo grado de Sol (Fa♯dim),
+ * para llegar a Do el de Do (Bdim). Un semitono abajo y resuelve para arriba.
+ *
+ * Se deduce del dominante del mismo destino, así las dos tablas apuntan a los
+ * mismos lugares y no pueden discrepar.
+ */
+export function disminuidoDePaso(d: Dominante): Disminuido {
+  const llegada = raizEscrita(d.raizDestino);
+  const letra = (llegada.letra + 6) % 7;
+  const raiz = mod12(d.raizDestino - 1);
+  let alter = mod12(raiz - LETRAS_PC[letra]);
+  if (alter > 6) alter -= 12;
+  const base: NotaEscrita = { letra, alter, pc: raiz };
+  const escala = new Set<number>(GRADOS_MAYOR);
+  return {
+    raiz,
+    base,
+    cifrado: `${escribirNota(base, "en")}dim`,
+    destino: d.destino,
+    raizDestino: d.raizDestino,
+    cifradoDestino: d.cifradoDestino,
+    calidadDestino: d.calidadDestino,
+    ajenas: [0, 3, 6].map((iv) => mod12(raiz + iv)).filter((pc) => !escala.has(pc)),
+  };
+}
+
+/** Uno por cada destino de `DOMINANTES`, en el mismo orden. */
+export const DISMINUIDOS: Disminuido[] = DOMINANTES.map(disminuidoDePaso);
+
+/** El disminuido que lleva a un grado del campo: el Fa♯dim para el V. */
+export function disminuidoDelGrado(grado: number): Disminuido | null {
+  return DISMINUIDOS.find((x) => x.destino === grado) ?? null;
 }

@@ -39,6 +39,7 @@ import {
 } from "./compasQuiz.ts";
 import {
   CADENCIAS_CON_NOMBRE,
+  DISMINUIDOS,
   DOMINANTES,
   FUNCIONES,
   FUNCION_DE_GRADO,
@@ -423,7 +424,18 @@ function preguntaEscalaMenor(): Pregunta {
 function preguntaDominante(): Pregunta {
   const d = pickRandom(DOMINANTES);
   const otros = DOMINANTES.filter((o) => o.cifrado !== d.cifrado);
-  if (Math.random() < 0.5) {
+  const dado = Math.random();
+  if (dado < 0.3) {
+    // La otra opción de acorde de paso: el X°, que es el VII° de la llegada.
+    const x = pickRandom(DISMINUIDOS.filter((o) => o.destino !== null));
+    return conOpciones(
+      `En Do mayor, ¿qué disminuido de paso lleva al ${x.cifradoDestino}?`,
+      x.cifrado,
+      shuffle(DISMINUIDOS.filter((o) => o.cifrado !== x.cifrado).map((o) => o.cifrado)).slice(0, 3),
+      `${x.cifrado} → ${x.cifradoDestino}. El disminuido de paso es el VII° del acorde adonde se llega: un semitono abajo, y resuelve para arriba — como el Bdim de la escala resuelve en Do.`,
+    );
+  }
+  if (dado < 0.65) {
     return conOpciones(
       `En Do mayor, ¿qué dominante lleva al ${d.cifradoDestino}?`,
       d.cifrado,

@@ -438,8 +438,13 @@ export function chordPitches(root: Pitch, q: ChordQuality): Pitch[] {
 export function deletrearAcorde(
   root: PitchClass,
   q: ChordQuality,
+  /**
+   * Cómo se escribe la fundamental, cuando el contexto lo sabe mejor que la
+   * tabla: el disminuido que lleva a Mi es Re♯dim y no Mi♭dim, porque es el
+   * séptimo grado de Mi. Sin contexto va la de `raizEscrita`.
+   */
+  base: NotaEscrita = raizEscrita(root),
 ): NotaEscrita[] {
-  const base = raizEscrita(root);
   const bemoles = base.alter < 0;
   return intervalsOf(q).map((iv, i) => {
     const pc = mod12(root + iv);

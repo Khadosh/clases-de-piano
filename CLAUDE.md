@@ -164,15 +164,20 @@ en la pasada que salió linda. El pentagrama y el reproductor son los de las
 partituras: mismo dibujo, mismo esquema de `notaOn`/`notaOff` para que parar
 pueda parar.
 
-**Los dominantes secundarios (clase 5) no entran todavía en
-`AcordeDeLaSecuencia`**, y es a propósito. `DOMINANTES` se deduce sola —sobre
-cada nota de la escala el X7 y adónde cae, a cinco semitonos— y reproduce la
-tabla del profe con el F7 marcado efectivo en vez de omitido. Pero meterlos en
-el selector de la melodía pide que `NotaMelodia` sepa de sostenidos (el Fa♯
+**Los acordes de paso (clase 5) no entran todavía en `AcordeDeLaSecuencia`**,
+y es a propósito. `DOMINANTES` se deduce sola —sobre cada nota de la escala el
+X7 y adónde cae, a cinco semitonos— y reproduce la tabla del profe con el F7
+marcado efectivo en vez de omitido; `DISMINUIDOS` sale de la misma lista, un
+semitono abajo de cada llegada (el X° es el VII° de adonde va). Pero meterlos
+en el selector de la melodía pide que `NotaMelodia` sepa de sostenidos (el Fa♯
 del D7, el Do♯ del A7), y hoy sólo sabe achatar. Es una extensión del modelo
-de la nota, no un acorde más en la paleta, y conviene hacerla de una vez junto
-con los disminuidos de paso cuando la clase los dé. Mientras tanto viven en su
-propio bloque, con la vuelta para escucharlos con y sin.
+de la nota, no un acorde más en la paleta. Mientras tanto viven en su propio
+bloque, con la vuelta para escucharlos con y sin.
+
+**El disminuido de paso se escribe con la letra de abajo de la llegada**, y
+por eso `deletrearAcorde` acepta una `base`: el que lleva a Em es Re♯dim —su
+séptimo grado— y la tabla de raíces preferidas habría dicho Mi♭dim, que es la
+tecla y no el nombre. `test:grados` lo clava.
 
 `npm run test:grados` prueba las dos tablas nuevas contra casos que se pueden
 verificar en cualquier libro: la tonalidad de Do sin alteraciones, la de Sol con
@@ -239,7 +244,7 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `notas-guia` | El renglón del papel: la nota que recibe a cada acorde | Columnas guía/acorde sonando de a una o de corrido (acepta cifrados con barra: `Em/B`) |
 | `cadencias` | Las cadencias con nombre y apellido | El mapa para escucharlas + el juego de nombrarlas (datos en `CADENCIAS_CON_NOMBRE`, `lib/grados.ts`) |
 | `paralelas` | La mayor y las tres menores sobre Do, con sus acordes | Las cuatro escalas con lo corrido marcado, el campo armónico de cada una (`triadasDeEscala` + `identificarAcorde`) y el préstamo C→Fm→C |
-| `dominantes-secundarios` | El X7 de cada grado y adónde lleva | La tabla de Do mayor sonando (con la nota ajena pintada y el destino dado vuelta para oír el efectivo) y la vuelta: una progresión con los de paso metidos de a uno, con y sin (datos en `DOMINANTES`, `lib/grados.ts`) |
+| `dominantes-secundarios` | Los acordes de paso: el X7 y el X° de cada llegada | La tabla de Do mayor sonando con un interruptor dominantes/disminuidos (la nota ajena pintada, el destino dado vuelta para oír el efectivo) y la vuelta: arranca con la del cuaderno y cualquier progresión se llena de a uno, ciclando X7 → X° → nada (datos en `DOMINANTES` y `DISMINUIDOS`, `lib/grados.ts`) |
 
 **Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
 lee como un chorizo. El índice de arriba de la clase se arma solo a partir de

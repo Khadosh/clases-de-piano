@@ -207,10 +207,10 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
       "La mayor y las tres menores sobre el mismo Do, cada una con los acordes que le salen solos — y el préstamo estrella para escuchar: el Fm metido en Do mayor.",
   },
   dominantes: {
-    titulo: "Los dominantes secundarios",
+    titulo: "Los acordes de paso",
     emoji: "🧲",
     bajada:
-      "La tabla de la clase 5 para escucharla: cada X7 de Do mayor con el acorde adonde lleva, la nota ajena que trae marcada en el teclado, y el destino dado vuelta para oír cuándo se va del campo. Y la vuelta: elegís una progresión y le metés los de paso, de a uno, para comparar con y sin.",
+      "La tabla de la clase 5 para escucharla: cada X7 de Do mayor con el acorde adonde lleva y la nota ajena que trae marcada en el teclado, el destino dado vuelta para oír cuándo se va del campo, y con un interruptor la otra opción, el X° que llega a los mismos lugares desde un semitono abajo. Y la vuelta: arranca con la del cuaderno y a cualquier progresión le metés los de paso de a uno, para comparar con y sin.",
   },
   "que-compas": {
     titulo: "¿Qué compás es?",
@@ -397,8 +397,11 @@ export function catalogo(): Entrada[] {
             slug: unico("notas-guia", lesson),
             titulo: "Las notas guía",
             emoji: "✍️",
+            // Cada renglón trae su propia bajada: el de la clase 4 y el de
+            // la 5 no son el mismo, y la ficha tiene que decir cuál es.
             bajada:
-              "El renglón de la clase 4: arriba la nota que recibe a cada acorde, abajo el cifrado. Tocá las columnas, escuchá el renglón entero — la fila de arriba, sola, ya es casi una melodía.",
+              block.intro ??
+              "Arriba la nota que recibe a cada acorde, abajo el cifrado. Tocá las columnas, escuchá el renglón entero — la fila de arriba, sola, ya es casi una melodía.",
           });
           // La grilla es el renglón de las guías visto para todas las notas a
           // la vez: en qué acordes cae parada cada una. Cuelga de acá porque
