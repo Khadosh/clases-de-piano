@@ -263,6 +263,13 @@ const CUERPOS: Record<string, JSX.Element> = {
       <path d="M7 14h10v7H7z" strokeLinejoin="round" />
     </g>
   ),
+  iman: (
+    <g {...S}>
+      <path d="M6 3v9a6 6 0 0 0 12 0V3" />
+      <path d="M10 3v9a2 2 0 0 0 4 0V3" />
+      <path d="M6 7.5h4M14 7.5h4" strokeWidth={1.4} />
+    </g>
+  ),
 };
 
 /** De los emojis que quedaron en los datos, al ícono que los reemplaza. */
@@ -298,6 +305,7 @@ const DE_EMOJI: Record<string, string> = {
   "🔥": "llama",
   "🔁": "loop",
   "🎼": "pentagrama",
+  "🧲": "iman",
 };
 
 export default function Icono({

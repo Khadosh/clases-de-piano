@@ -16,6 +16,7 @@ import Grilla from "./Grilla";
 import NotasGuia from "./NotasGuia";
 import Cadencias from "./Cadencias";
 import Paralelas from "./Paralelas";
+import Dominantes from "./Dominantes";
 import ExerciseRunner from "./ExerciseRunner";
 import Figuras from "./Figuras";
 import HandsSwap from "./HandsSwap";
@@ -70,6 +71,8 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <Cadencias />;
         case "paralelas":
           return <Paralelas />;
+        case "dominantes":
+          return <Dominantes />;
         case "que-compas":
           return <CompasQuiz modo="numero" />;
         case "completar-compas":

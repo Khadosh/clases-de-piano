@@ -85,6 +85,7 @@ export type HerramientaSuelta =
   | "grilla"
   | "cadencias"
   | "paralelas"
+  | "dominantes"
   | "semitonos";
 
 /** Lo que comparten todas: dónde va, de qué clase salió y cómo se llama su URL. */
@@ -205,6 +206,12 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
     bajada:
       "La mayor y las tres menores sobre el mismo Do, cada una con los acordes que le salen solos — y el préstamo estrella para escuchar: el Fm metido en Do mayor.",
   },
+  dominantes: {
+    titulo: "Los dominantes secundarios",
+    emoji: "🧲",
+    bajada:
+      "La tabla de la clase 5 para escucharla: cada X7 de Do mayor con el acorde adonde lleva, la nota ajena que trae marcada en el teclado, y el destino dado vuelta para oír cuándo se va del campo. Y la vuelta: elegís una progresión y le metés los de paso, de a uno, para comparar con y sin.",
+  },
   "que-compas": {
     titulo: "¿Qué compás es?",
     emoji: "🧮",
@@ -247,6 +254,8 @@ const AREA_DE: Record<string, AreaId> = {
   "notas-guia": "acordes",
   cadencias: "acordes",
   paralelas: "acordes",
+  dominantes: "acordes",
+  "dominantes-secundarios": "acordes",
   nomenclature: "lectura",
   semitonos: "lectura",
 };
@@ -405,6 +414,9 @@ export function catalogo(): Entrada[] {
           break;
         case "paralelas":
           sumarSuelta("paralelas", lesson);
+          break;
+        case "dominantes-secundarios":
+          sumarSuelta("dominantes", lesson);
           break;
         case "semitonos":
           sumarSuelta("semitonos", lesson);

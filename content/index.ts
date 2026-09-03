@@ -4,12 +4,13 @@ import clase01 from "@/content/lessons/clase-01";
 import clase02 from "@/content/lessons/clase-02";
 import clase03 from "@/content/lessons/clase-03";
 import clase04 from "@/content/lessons/clase-04";
+import clase05 from "@/content/lessons/clase-05";
 
 /**
  * El índice de clases. Para agregar una clase nueva: crear el archivo en
  * content/lessons/ y sumarlo acá. Nada más.
  */
-export const LESSONS: Lesson[] = [clase01, clase02, clase03, clase04].sort((a, b) => a.n - b.n);
+export const LESSONS: Lesson[] = [clase01, clase02, clase03, clase04, clase05].sort((a, b) => a.n - b.n);
 
 export const lessonBySlug = (slug: string) =>
   LESSONS.find((l) => slugOf(l) === slug);
@@ -44,6 +45,7 @@ export function temarioDe(lesson: Lesson) {
   let funciones = false;
   let cadencias = false;
   let paralelas = false;
+  let dominantes = false;
   for (const b of lesson.blocks) {
     if (b.kind === "chord-lab") {
       b.qualities.forEach((q) => qualityIds.add(q));
@@ -67,6 +69,11 @@ export function temarioDe(lesson: Lesson) {
       // aumentado, que en el mayor no aparecía nunca y acá tiene casa.
       for (const q of ["maj", "min", "dim", "aug"]) qualityIds.add(q);
     }
+    if (b.kind === "dominantes-secundarios") {
+      dominantes = true;
+      // La tabla es toda X7 hacia tríadas del campo: se pueden preguntar.
+      for (const q of ["maj", "min", "dom7"]) qualityIds.add(q);
+    }
     if (b.kind === "notas-guia") {
       // El renglón usa inversiones para el bajo que baja: se pueden preguntar.
       inversiones = true;
@@ -82,6 +89,7 @@ export function temarioDe(lesson: Lesson) {
     funciones,
     cadencias,
     paralelas,
+    dominantes,
   };
 }
 

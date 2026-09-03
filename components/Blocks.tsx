@@ -9,6 +9,7 @@ import Funciones from "./Funciones";
 import NotasGuia from "./NotasGuia";
 import Cadencias from "./Cadencias";
 import Paralelas from "./Paralelas";
+import Dominantes from "./Dominantes";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -226,6 +227,17 @@ export function BlockView({ block }: { block: Block }) {
             <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
           )}
           <Paralelas />
+        </section>
+      );
+
+    case "dominantes-secundarios":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Dominantes />
         </section>
       );
 

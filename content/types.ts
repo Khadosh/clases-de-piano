@@ -24,6 +24,7 @@ export type Block =
   | NotasGuiaBlock
   | CadenciasBlock
   | ParalelasBlock
+  | DominantesBlock
   | QuoteBlock;
 
 /**
@@ -221,6 +222,17 @@ export interface CadenciasBlock {
  */
 export interface ParalelasBlock {
   kind: "paralelas";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * Los dominantes secundarios de la clase 5: la tabla de los X7 sobre cada
+ * nota de Do mayor con adónde lleva cada uno, y la vuelta para meterlos de
+ * paso. No lleva datos porque la tabla se deduce de la escala.
+ */
+export interface DominantesBlock {
+  kind: "dominantes-secundarios";
   title: string;
   intro?: string;
 }

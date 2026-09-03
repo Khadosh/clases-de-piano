@@ -11,7 +11,7 @@
  */
 
 import { ESCALAS, cuatriadasDeEscala, escalaPorId, triadasDeEscala } from "./escalas.ts";
-import { chordSymbol, identificarAcorde, mod12 } from "./music.ts";
+import { chordSymbol, identificarAcorde, mod12, qualityById } from "./music.ts";
 
 /** Semitonos desde la tónica hasta cada grado de la escala mayor. */
 export const GRADOS_MAYOR = [0, 2, 4, 5, 7, 9, 11] as const;
@@ -362,3 +362,91 @@ export const CADENCIAS_CON_NOMBRE: Cadencia[] = [
       "V → IV → I. La plagal de la clase 3, ahora con nombre completo: el V no resuelve, se ablanda pasando por el IV.",
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Los dominantes secundarios (clase 5)
+// ---------------------------------------------------------------------------
+
+export interface Dominante {
+  /** Sobre qué grado de la escala está construido el X7: 0 = C7 en Do. */
+  grado: number;
+  /** La fundamental del X7, en clase de altura desde la tónica. */
+  raiz: number;
+  /** El cifrado del X7: "A7". */
+  cifrado: string;
+  /**
+   * Adónde lleva. Es siempre el acorde a cinco semitonos de la fundamental
+   * —la misma distancia que va de G a C— y es un grado de la escala o no lo
+   * es: cuando lo es, `destino` dice cuál y `cifradoDestino` es su tríada
+   * del campo (Dm, Em…); cuando no, `destino` es null y el cifrado es la
+   * tríada mayor que está afuera (Bb).
+   */
+  destino: number | null;
+  raizDestino: number;
+  cifradoDestino: string;
+  /** La calidad de la tríada de llegada (id de `CHORD_QUALITIES`). */
+  calidadDestino: string;
+  /**
+   * principal: el V7 de siempre, G7 → C. secundario: lleva a otro grado del
+   * campo. efectivo: lleva a un acorde que no está en la escala — a otro
+   * campo armónico, como dijo el profe.
+   */
+  tipo: "principal" | "secundario" | "efectivo";
+  /** Las notas del X7 que la escala mayor no tiene: el Fa♯ del D7. */
+  ajenas: number[];
+}
+
+/** El X7 apilado sobre una fundamental, en clases de altura. */
+const clasesDeDominante = (raiz: number) => [0, 4, 7, 10].map((iv) => mod12(raiz + iv));
+
+/** Adónde lleva un X7: cinco semitonos arriba de su fundamental. */
+export const destinoDeDominante = (raiz: number) => mod12(raiz + 5);
+
+/**
+ * La tabla de la clase 5, deducida y no escrita: sobre cada nota de Do mayor
+ * se apila la fórmula del dominante —mayor con séptima menor, X7— y se mira
+ * adónde cae, a cinco semitonos, como el G7 cae en Do. Seis de los siete caen
+ * en un acorde del campo (C7 → F, D7 → G, E7 → Am, G7 → C, A7 → Dm, B7 → Em);
+ * el F7 cae en Si♭, que no está, y por eso el profe lo dejó afuera de la
+ * lista: ése ya lleva a otro campo armónico.
+ *
+ * Es la misma lógica de la clase 2 —del V sale el único dominante del campo—
+ * mirada al revés: cualquier grado puede tener *su* dominante, prestado de la
+ * tonalidad de ese grado. Y por eso cada X7 trae una nota ajena (`ajenas`):
+ * el Fa♯ del D7 es el Fa♯ de Sol mayor, que es adonde el D7 apunta.
+ */
+export const DOMINANTES: Dominante[] = TONALIDAD_MAYOR.map((_, grado) => {
+  const raiz = raizDelGrado(0, grado);
+  const raizDestino = destinoDeDominante(raiz);
+  const destino = GRADOS_MAYOR.indexOf(raizDestino as (typeof GRADOS_MAYOR)[number]);
+  const escala = new Set<number>(GRADOS_MAYOR);
+  const enElCampo = destino >= 0;
+  const calidadDestino = enElCampo ? TONALIDAD_MAYOR[destino].triada : "maj";
+  return {
+    grado,
+    raiz,
+    cifrado: chordSymbol(raiz, qualityById("dom7")!),
+    destino: enElCampo ? destino : null,
+    raizDestino,
+    cifradoDestino: chordSymbol(raizDestino, qualityById(calidadDestino)!),
+    calidadDestino,
+    tipo: destino === 0 ? "principal" : enElCampo ? "secundario" : "efectivo",
+    ajenas: clasesDeDominante(raiz).filter((pc) => !escala.has(pc)),
+  };
+});
+
+/** El dominante que lleva a un grado del campo: el A7 para el ii. */
+export function dominanteDelGrado(grado: number): Dominante | null {
+  return DOMINANTES.find((d) => d.destino === grado) ?? null;
+}
+
+/**
+ * El destino dado vuelta: si el X7 caía en un menor del campo, la tríada
+ * mayor sobre la misma nota, y al revés. Es lo que el profe dejó nombrado sin
+ * entrar en detalle: cambiando el mayor por menor (o viceversa) el acorde de
+ * llegada se sale de la escala y el secundario pasa a ser *efectivo*.
+ */
+export function destinoDadoVuelta(d: Dominante): { cifrado: string; calidad: string } {
+  const calidad = d.calidadDestino === "min" ? "maj" : "min";
+  return { cifrado: chordSymbol(d.raizDestino, qualityById(calidad)!), calidad };
+}

@@ -9,6 +9,7 @@
 import assert from "node:assert/strict";
 import {
   CADENCIAS_CON_NOMBRE,
+  DOMINANTES,
   FUNCION_DE_GRADO,
   GRADOS_MAYOR,
   PRESTAMOS,
@@ -18,6 +19,8 @@ import {
   cifradoDelAcorde,
   clasesDelAcorde,
   conSeptima,
+  destinoDadoVuelta,
+  dominanteDelGrado,
   esPrestado,
   gradoDe,
   intervalosDelAcorde,
@@ -328,6 +331,62 @@ probar("el cifrado con barra del renglón de la clase 4: Em/B es la 2ª inversi�
   assert.equal(parseCifradoConBajo("C").inversion, 0);
   // Una barra que pide una nota que el acorde no tiene no es un acorde.
   assert.equal(parseCifradoConBajo("C/D"), null);
+});
+
+// ---- Los dominantes secundarios de la clase 5 ------------------------------
+//
+// La tabla tal como quedó en el papel: sobre cada nota de Do mayor el X7 y
+// adónde lleva. El F7 no estaba en la lista del profe porque lleva a Si♭ —
+// otro campo armónico— y acá figura marcado como efectivo, no omitido.
+
+probar("la tabla de la clase: C7→F D7→G E7→Am F7→Bb G7→C A7→Dm B7→Em", () => {
+  assert.deepEqual(
+    DOMINANTES.map((d) => `${d.cifrado}→${d.cifradoDestino}`),
+    ["C7→F", "D7→G", "E7→Am", "F7→Bb", "G7→C", "A7→Dm", "B7→Em"],
+  );
+});
+
+probar("todo dominante lleva a cinco semitonos arriba, como el G7 al Do", () => {
+  for (const d of DOMINANTES) {
+    assert.equal((d.raizDestino - d.raiz + 12) % 12, 5, d.cifrado);
+    // Y su receta es la del dominante: mayor con séptima menor.
+    const id = identificarAcorde([0, 4, 7, 10].map((iv) => 60 + d.raiz + iv));
+    assert.equal(id.quality.id, "dom7", d.cifrado);
+  }
+});
+
+probar("el G7 es el principal, el F7 el efectivo, los otros cinco secundarios", () => {
+  const tipos = Object.fromEntries(DOMINANTES.map((d) => [d.cifrado, d.tipo]));
+  assert.equal(tipos.G7, "principal");
+  assert.equal(tipos.F7, "efectivo");
+  assert.deepEqual(
+    DOMINANTES.filter((d) => d.tipo === "secundario").map((d) => d.cifrado),
+    ["C7", "D7", "E7", "A7", "B7"],
+  );
+});
+
+probar("el dominante de cada grado: A7 para el ii, ninguno para el vii", () => {
+  assert.equal(dominanteDelGrado(1).cifrado, "A7");
+  assert.equal(dominanteDelGrado(0).cifrado, "G7");
+  assert.equal(dominanteDelGrado(3).cifrado, "C7");
+  assert.equal(dominanteDelGrado(6), null); // al Bdim no se llega desde la escala
+});
+
+probar("cada X7 trae la nota que Do mayor no tiene: el Fa♯ del D7", () => {
+  const ajenas = Object.fromEntries(DOMINANTES.map((d) => [d.cifrado, d.ajenas]));
+  assert.deepEqual(ajenas.G7, []); // el principal es todo diatónico
+  assert.deepEqual(ajenas.D7, [6]); // Fa♯
+  assert.deepEqual(ajenas.A7, [1]); // Do♯
+  assert.deepEqual(ajenas.C7, [10]); // Si♭
+  assert.deepEqual(ajenas.B7.sort(), [3, 6]); // Re♯ y Fa♯: el que más lejos se va
+});
+
+probar("dado vuelta el destino, el secundario se vuelve efectivo: A7 → D, C7 → Fm", () => {
+  const a7 = DOMINANTES.find((d) => d.cifrado === "A7");
+  const c7 = DOMINANTES.find((d) => d.cifrado === "C7");
+  assert.equal(destinoDadoVuelta(a7).cifrado, "D");
+  assert.equal(destinoDadoVuelta(c7).cifrado, "Fm");
+  assert.equal(destinoDadoVuelta(a7).calidad, "maj");
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

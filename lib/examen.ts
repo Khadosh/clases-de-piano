@@ -39,9 +39,11 @@ import {
 } from "./compasQuiz.ts";
 import {
   CADENCIAS_CON_NOMBRE,
+  DOMINANTES,
   FUNCIONES,
   FUNCION_DE_GRADO,
   TONALIDAD_MAYOR,
+  destinoDadoVuelta,
 } from "./grados.ts";
 import { ESCALAS, triadasDeEscala } from "./escalas.ts";
 
@@ -412,6 +414,47 @@ function preguntaEscalaMenor(): Pregunta {
   );
 }
 
+/**
+ * Los dominantes secundarios de la clase 5, en las dos direcciones: qué X7
+ * lleva a tal acorde, y adónde lleva tal X7. La segunda mete entre las
+ * trampas el destino dado vuelta (el D en vez del Dm), que es justo la
+ * diferencia entre secundario y efectivo.
+ */
+function preguntaDominante(): Pregunta {
+  const d = pickRandom(DOMINANTES);
+  const otros = DOMINANTES.filter((o) => o.cifrado !== d.cifrado);
+  if (Math.random() < 0.5) {
+    return conOpciones(
+      `En Do mayor, ¿qué dominante lleva al ${d.cifradoDestino}?`,
+      d.cifrado,
+      shuffle(otros.map((o) => o.cifrado)).slice(0, 3),
+      `${d.cifrado} → ${d.cifradoDestino}. La misma lógica del G7 → C: el dominante está cinco semitonos abajo de adonde llega, mayor y con séptima menor.${
+        d.tipo === "principal"
+          ? " Éste es el principal, el V7 de la tonalidad."
+          : d.tipo === "efectivo"
+            ? " El Si♭ no está en Do mayor: por eso el F7 no entra en la lista de los secundarios — lleva a otro campo armónico, es efectivo."
+            : ""
+      }`,
+    );
+  }
+  const trampas = new Set<string>([destinoDadoVuelta(d).cifrado]);
+  for (const o of shuffle(otros)) {
+    if (trampas.size >= 3) break;
+    trampas.add(o.cifradoDestino);
+  }
+  return conOpciones(
+    `En Do mayor, ¿adónde lleva el ${d.cifrado}?`,
+    d.cifradoDestino,
+    [...trampas],
+    `${d.cifrado} → ${d.cifradoDestino}: cinco semitonos arriba de la fundamental, con la calidad que ese grado tiene en la escala.${
+      d.tipo === "efectivo"
+        ? " Y no es un grado de Do mayor: el F7 se va del campo, por eso es efectivo y no secundario."
+        : ` Si llevara al ${destinoDadoVuelta(d).cifrado} se saldría del campo: ahí sería efectivo.`
+    }`,
+    d.cifrado,
+  );
+}
+
 export interface OpcionesExamen {
   /** Ids de acordes que la clase tocó. Si está vacío, no hay examen. */
   qualityIds: string[];
@@ -429,6 +472,8 @@ export interface OpcionesExamen {
   cadencias?: boolean;
   /** ¿Vio las armonías paralelas y sus escalas menores? */
   paralelas?: boolean;
+  /** ¿Vio los dominantes secundarios? */
+  dominantes?: boolean;
   cantidad?: number;
 }
 
@@ -446,6 +491,7 @@ export function generarExamen({
   funciones,
   cadencias,
   paralelas,
+  dominantes,
   cantidad = 8,
 }: OpcionesExamen): Pregunta[] {
   const pozo = qualityIds
@@ -473,6 +519,7 @@ export function generarExamen({
   if (funciones) fabricas.push(preguntaFuncion);
   if (cadencias) fabricas.push(preguntaCadenciaNombre);
   if (paralelas) fabricas.push(preguntaEscalaMenor);
+  if (dominantes) fabricas.push(preguntaDominante);
 
   const preguntas: Pregunta[] = [];
   // Se garantiza una de armar y después se completa mezclando.
