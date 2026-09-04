@@ -3,12 +3,14 @@ import Icono from "@/components/Icono";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { slugOf } from "@/content";
-import { AREAS, buscar, catalogo, type Entrada } from "@/content/practica";
+import { AREAS, aliases, buscar, catalogo, type Entrada } from "@/content/practica";
+import Visita from "@/components/Visita";
 import { rich } from "@/components/Blocks";
 import EjercicioDePractica from "@/components/EjercicioDePractica";
 
 export function generateStaticParams() {
-  return catalogo().map((e) => ({ slug: e.slug }));
+  // Las direcciones alias también se generan: siguen abiertas en algún teléfono.
+  return [...catalogo().map((e) => e.slug), ...Object.keys(aliases())].map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({
@@ -33,7 +35,7 @@ export default async function EjercicioPage({
   const { slug } = await params;
   const encontrado = buscar(slug);
   if (!encontrado) notFound();
-  const { entrada, anterior, siguiente } = encontrado;
+  const { entrada, anterior, siguiente, renglon } = encontrado;
   const area = AREAS.find((a) => a.id === entrada.area);
 
   return (
@@ -71,7 +73,9 @@ export default async function EjercicioPage({
         )}
       </header>
 
-      <EjercicioDePractica e={entrada} />
+      {/* Lo último practicado se anota por el slug real, no por el alias. */}
+      <Visita slug={entrada.slug} />
+      <EjercicioDePractica e={entrada} renglon={renglon} />
 
       <nav className="mt-14 grid gap-3 border-t border-borde pt-6 sm:grid-cols-2">
         <Vecino e={anterior} lado="anterior" />

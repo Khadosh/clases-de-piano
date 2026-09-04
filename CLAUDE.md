@@ -36,27 +36,56 @@ otro la cabeza, otro el metrónomo— y tenerlos todos a la vez no ayuda a
 ninguno. Encima con tres pianos en pantalla el MIDI tenía que adivinar a cuál le
 estabas hablando.
 
-El índice de `/practica` numera las áreas como **pasos de una rutina** —el
-orden ya era ése, ahora está dicho— y cierra con un paso más, el repertorio,
-que apunta a `/partituras` mostrando las piezas más fáciles. Es la conexión
-entre las dos mitades del sitio: los ejercicios entrenan las partes, la
-partitura las junta. No hay que mantener nada ahí: las piezas salen solas de
-`PIEZAS` ordenadas por dificultad.
+**El índice es un selector, no un recorrido.** El patrón real es practicar uno
+o dos ejercicios por vez y volver al mismo varios días seguidos, así que
+arriba de todo va **seguir con** (lo último que se abrió, `lib/recientes.ts`)
+y **la tarea de esta semana** (el `homework` de la última clase), que es lo
+que decide qué se practica. Recién después el mapa: **una card por paso de la
+rutina** (`components/SalaIndice.tsx`), cerrada en el teléfono y siempre
+abierta en desktop —la diferencia es sólo CSS, el estado arranca cerrado en
+los dos lados para no hidratar distinto—, con los ejercicios adentro
+agrupados por **forma**: para mirar y escuchar, para probar, te corrige, te
+puntúa. Es "primero entendé, después probá, después que te corrijan". Cierra
+con un paso más, el repertorio, que apunta a `/partituras` mostrando las
+piezas más fáciles: los ejercicios entrenan las partes, la partitura las
+junta. Las piezas salen solas de `PIEZAS` ordenadas por dificultad.
+
+Los pasos son cinco: las manos, armar acordes, la armonía, la melodía y el
+tiempo. Eran cuatro y "acordes" había juntado 16 de 25 ejercicios porque las
+clases 3, 4 y 5 no tenían otro lugar adonde caer; armar un acorde, entender
+la armonía y ponerle melodía son tres habilidades. "Lectura" se fue: el
+cifrado es de armar acordes y los semitonos son de la armonía.
+
+**Seguir con es un marcador, no un puntaje.** Guarda los últimos tres slugs,
+en orden, sin fecha ni cuenta: con una fecha se vuelve "hace cuatro días que
+no practicás", que es el boletín que no queremos. Va en `localStorage` y no
+en `sessionStorage` a propósito (la pestaña se cierra y al día siguiente hay
+que seguir donde se dejó), es por aparato, y pasa todo por tres funciones
+para que el día que haya usuario y sesión cambie ese archivo y ningún otro.
 
 El `slug` **tiene que ser estable**: es la dirección que queda abierta en el
 teléfono arriba del piano. Por eso el número de clase se agrega sólo cuando hay
 dos del mismo tipo y no siempre — si no, publicar la clase 3 cambiaría la
-dirección de todo lo de la 1. El orden del catálogo es el de las áreas (el de
-una rutina), que es también el orden del "siguiente" del pie: ordenarlo por
-clase hacía que el siguiente saltara de área en área.
+dirección de todo lo de la 1. `npm run test:practica` **congela la lista
+entera con su orden** (que es el del "siguiente" del pie): agregar un
+ejercicio es sumar una línea; mover una dirección pide dejar un alias.
+Los renglones de notas guía son **una sola página** con un selector (son el
+mismo ejercicio con otros datos, y dos tarjetas con el mismo título no
+decían cuál era cuál); la dirección que el segundo ya tenía,
+`notas-guia-clase-5`, sigue existiendo como alias que abre esa página con
+ese renglón elegido (`aliases()`, y `buscar()` devuelve el `renglon`).
 
 Agregar una clase no obliga a tocar nada de eso. Lo único que hay que sumar es
-si aparece un *tipo* de bloque nuevo: una línea en `AREA_DE` diciendo a qué área
-va, su título y bajada en `catalogo()`, y una rama en
-`components/EjercicioDePractica.tsx`. Las herramientas que no dependen de datos
-de una clase (el laboratorio, el árbol de figuras) aparecen una sola vez, con la
-clase donde se vieron primero, y el laboratorio ofrece **los acordes aprendidos
-hasta ahora** y no todos los que existen en el código.
+si aparece un *tipo* de bloque nuevo: su ficha en `FICHAS` (título, bajada,
+área y forma), una rama en `catalogo()` que la cuelgue del bloque, y una rama
+en `components/EjercicioDePractica.tsx`. Los tres `switch` sobre bloques
+(`catalogo()`, `BlockView`, `EjercicioDePractica`) terminan en un `never`:
+un bloque que falte en alguno se grita en el build en vez de quedar afuera
+callado, que es lo que pasaba con el `AREA_DE` sin tipar. Las herramientas
+que no dependen de datos de una clase (el laboratorio, el árbol de figuras)
+aparecen una sola vez, con la clase donde se vieron primero, y el laboratorio
+ofrece **los acordes aprendidos hasta ahora** y no todos los que existen en
+el código.
 
 ### El piano de los ejercicios
 
@@ -82,7 +111,7 @@ con lo que el MIDI decide a qué ejercicio mandarle la nota.
 
 ### Los ejercicios que no salen de una clase
 
-La sala tiene cuatro que no son bloque de ninguna clase: son la sala
+La sala tiene un montón que no son bloque de ninguna clase: son la sala
 practicando lo que la clase enseñó. Entran por `sumarSuelta()` colgados del
 bloque que los habilita — el que necesita acordes cuelga del primer `chord-lab`,
 las escalas del bloque de semitonos — así que aparecen recién cuando hay con qué.
@@ -1133,6 +1162,7 @@ npm run build      # build de producción (falla si hay error de tipos)
 npm run typecheck  # sólo tipos
 npm run importar   # de un MusicXML a una pieza de content/partituras.ts
 npm run test:pentagrama # el pentagrama y que las piezas cierren la cuenta
+npm run test:practica # la sala: las direcciones congeladas y los alias
 npm run test:grados  # los grados de una tonalidad y las escalas
 npm run test:melodia # la melodía generada, contra sus propias reglas
 npm run test:ritmo   # figuras y compases

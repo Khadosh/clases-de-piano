@@ -326,5 +326,10 @@ export function BlockView({ block }: { block: Block }) {
         </section>
       );
     }
+    default: {
+      // Un tipo de bloque nuevo tiene que saber dibujarse: acá se grita en el build.
+      const _agotado: never = block;
+      return _agotado;
+    }
   }
 }

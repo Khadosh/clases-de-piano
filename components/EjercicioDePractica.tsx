@@ -30,7 +30,14 @@ import TecladoLibre from "./TecladoLibre";
  * Vive acá y no en la página para que el índice y la página de cada ejercicio
  * no puedan discrepar sobre qué es cada cosa.
  */
-export default function EjercicioDePractica({ e }: { e: Entrada }) {
+export default function EjercicioDePractica({
+  e,
+  renglon = 0,
+}: {
+  e: Entrada;
+  /** Para las notas guía: qué renglón abre elegido (lo dice la URL alias). */
+  renglon?: number;
+}) {
   const acordes = acordesAprendidos();
   switch (e.tipo) {
     case "exercise":
@@ -44,7 +51,17 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
     case "nomenclature":
       return <NomenclatureQuiz qualityIds={acordes} />;
     case "notas-guia":
-      return <NotasGuia columnas={e.block.columnas} />;
+      return (
+        <NotasGuia
+          inicial={renglon}
+          renglones={e.renglones.map((r) => ({
+            titulo: r.block.title,
+            intro: r.block.intro,
+            clase: r.lesson.n,
+            columnas: r.block.columnas,
+          }))}
+        />
+      );
     case "suelta":
       switch (e.id) {
         case "laboratorio":
@@ -85,6 +102,14 @@ export default function EjercicioDePractica({ e }: { e: Entrada }) {
           return <Compases />;
         case "semitonos":
           return <Semitonos />;
+        default: {
+          const _agotado: never = e.id;
+          return _agotado;
+        }
       }
+    default: {
+      const _agotado: never = e;
+      return _agotado;
+    }
   }
 }

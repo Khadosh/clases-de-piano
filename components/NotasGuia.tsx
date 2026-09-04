@@ -10,6 +10,7 @@ import {
   parseCifradoConBajo,
 } from "@/lib/music";
 import { playChord, playNote, wakeAudio } from "@/lib/audio";
+import { rich } from "./Blocks";
 
 /**
  * El renglón del cuaderno de papel: arriba la nota con la que la melodía
@@ -59,17 +60,45 @@ function armarColumnas(columnas: { guia: string; acorde: string }[]): Columna[] 
   });
 }
 
+export interface Renglon {
+  /** Cómo se llama en la clase, para el selector. */
+  titulo: string;
+  intro?: string;
+  clase: number;
+  columnas: { guia: string; acorde: string }[];
+}
+
+/**
+ * Un renglón (adentro de una clase) o varios con un selector (en la sala,
+ * donde todos los renglones del cuaderno son el mismo ejercicio con otros
+ * datos). `inicial` es el que abre elegido, para que la dirección vieja de
+ * un renglón siga abriéndolo.
+ */
 export default function NotasGuia({
   columnas,
+  renglones,
+  inicial = 0,
 }: {
-  columnas: { guia: string; acorde: string }[];
+  columnas?: { guia: string; acorde: string }[];
+  renglones?: Renglon[];
+  inicial?: number;
 }) {
+  const [elegido, setElegido] = useState(inicial);
   const [sonando, setSonando] = useState<number | null>(null);
   const [tocandoTodo, setTocandoTodo] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const cols = armarColumnas(columnas);
+  const renglon = renglones?.[Math.min(elegido, renglones.length - 1)];
+  const cols = armarColumnas(renglon?.columnas ?? columnas ?? []);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const cambiar = (i: number) => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setSonando(null);
+    setTocandoTodo(false);
+    setElegido(i);
+  };
 
   const tocarColumna = (i: number, soloGuia = false) => {
     wakeAudio();
@@ -101,6 +130,25 @@ export default function NotasGuia({
 
   return (
     <div className="card overflow-hidden">
+      {renglones && renglones.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2 border-b border-borde/60 px-4 py-3">
+          {renglones.map((r, i) => (
+            <button
+              key={i}
+              onClick={() => cambiar(i)}
+              className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition ${
+                i === elegido ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
+              }`}
+            >
+              clase {r.clase}
+              <span className="ml-1.5 font-normal opacity-70">{r.titulo}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {renglon?.intro && renglones && renglones.length > 1 && (
+        <p className="px-4 pt-4 text-sm leading-relaxed text-humo">{rich(renglon.intro)}</p>
+      )}
       {/* El renglón, como en el papel: scrollea de costado si no entra. */}
       <div className="overflow-x-auto p-4">
         <div className="flex min-w-max gap-1.5">

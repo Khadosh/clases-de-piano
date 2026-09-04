@@ -1,15 +1,12 @@
 import Link from "next/link";
 import Icono from "@/components/Icono";
 import type { Metadata } from "next";
-import { LESSONS } from "@/content";
+import { LESSONS, latestLesson, slugOf } from "@/content";
 import { PIEZAS } from "@/content/partituras";
-import {
-  AREAS,
-  acordesAprendidos,
-  catalogo,
-  type Area,
-  type Entrada,
-} from "@/content/practica";
+import { AREAS, acordesAprendidos, catalogo } from "@/content/practica";
+import SalaIndice, { type PasoDeLaSala } from "@/components/SalaIndice";
+import SeguirCon from "@/components/SeguirCon";
+import { rich } from "@/components/Blocks";
 
 export const metadata: Metadata = {
   title: "Práctica",
@@ -18,29 +15,47 @@ export const metadata: Metadata = {
 };
 
 /**
- * El índice de la sala de práctica, presentado como lo que es: una rutina.
+ * El índice de la sala de práctica, como lo que es: un lugar para elegir.
  *
- * Las áreas siempre estuvieron en orden de rutina (primero el cuerpo, después
- * la cabeza), pero el orden era un secreto del código: la página las mostraba
- * como categorías sueltas y había que adivinar por dónde empezar. Ahora cada
- * área lleva su número de paso, el encabezado dice cómo se usa, y la rutina
- * cierra donde cierra una práctica de verdad: en el repertorio, tocando
- * música. Ésa es la conexión con /partituras que antes no estaba dicha en
- * ningún lado.
+ * El patrón real es practicar uno o dos ejercicios por vez y volver al mismo
+ * varios días seguidos, así que arriba de todo va **seguir con** (lo último
+ * que se abrió, guardado en el aparato) y **la tarea de esta semana** (lo que
+ * pidió el profe el miércoles), que es lo que decide qué se practica. Recién
+ * después el mapa entero, en cards por paso de la rutina con los ejercicios
+ * agrupados adentro por lo que se hace en cada uno. Y cierra donde cierra
+ * una práctica de verdad: en el repertorio.
  *
- * Lo demás no cambia: acá sólo se elige, y cada ejercicio tiene su página y
- * su dirección estable para dejar abierta arriba del piano.
+ * Cada ejercicio tiene su página y su dirección estable para dejar abierta
+ * arriba del piano.
  */
 export default function PracticaPage() {
   const todo = catalogo();
-  const porArea = (a: Area) => todo.filter((e) => e.area === a.id);
-  const areasConAlgo = AREAS.filter((a) => porArea(a).length > 0);
   const acordes = acordesAprendidos();
+  const ultima = latestLesson();
   const piezasFaciles = [...PIEZAS].sort((a, b) => a.dificultad - b.dificultad).slice(0, 2);
+
+  const pasos: PasoDeLaSala[] = AREAS.map((a) => ({
+    id: a.id,
+    titulo: a.titulo,
+    emoji: a.emoji,
+    bajada: a.bajada,
+    ejercicios: todo
+      .filter((e) => e.area === a.id)
+      .map((e) => ({
+        slug: e.slug,
+        titulo: e.titulo,
+        bajada: resumir(e.bajada),
+        emoji: e.emoji,
+        forma: e.forma,
+        clase: e.lesson.n,
+      })),
+  })).filter((p) => p.ejercicios.length > 0);
+
+  const fichas = todo.map((e) => ({ slug: e.slug, titulo: e.titulo, emoji: e.emoji }));
 
   return (
     <div className="pt-10">
-      <header className="mb-12">
+      <header className="mb-8">
         <p className="text-xs tracking-[0.25em] text-humo uppercase">
           {todo.length} ejercicios · {LESSONS.length}{" "}
           {LESSONS.length === 1 ? "clase" : "clases"} · {acordes.length} acordes
@@ -53,95 +68,92 @@ export default function PracticaPage() {
           <strong className="text-tiza">agrupado por tipo</strong> y no por
           clase, y en <strong className="text-tiza">orden de rutina</strong>:
           primero lo que pide dedos, después lo que pide cabeza, y al final una
-          pieza de verdad. Elegí uno o dos de cada paso y ya tenés la sesión de
-          hoy — el &laquo;siguiente&raquo; del pie de cada ejercicio recorre
-          este mismo orden.
+          pieza de verdad. Uno o dos por vez alcanzan.
         </p>
       </header>
 
-      {areasConAlgo.map((a, i) => (
-        <section key={a.id} className="mb-14">
-          <div className="mb-5 flex items-center gap-3 border-b-2 border-borde pb-3">
-            <span className="font-display w-8 text-center text-4xl font-black text-borde">
-              {i + 1}
-            </span>
-            <span className="text-3xl text-sol"><Icono de={a.emoji} /></span>
-            <div className="min-w-0">
-              <h2 className="font-display text-3xl font-black tracking-tight">
-                {a.titulo}
-              </h2>
-              <p className="mt-1 max-w-2xl text-sm text-humo">{a.bajada}</p>
+      <div className="mb-10 flex flex-col gap-3">
+        <SeguirCon fichas={fichas} />
+
+        {/* La tarea del miércoles: es lo que decide qué se practica esta semana. */}
+        {ultima.homework && ultima.homework.length > 0 && (
+          <section className="card px-5 py-4">
+            <div className="flex flex-wrap items-baseline gap-x-3">
+              <span className="text-xs tracking-[0.2em] text-humo uppercase">
+                La tarea de esta semana
+              </span>
+              <Link
+                href={`/clases/${slugOf(ultima)}`}
+                className="text-sm text-humo underline decoration-dotted underline-offset-4 transition hover:text-sol"
+              >
+                clase {ultima.n} · {ultima.title} →
+              </Link>
             </div>
-            <span className="ml-auto self-start font-mono text-sm text-humo">
-              {porArea(a).length}
-            </span>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {porArea(a).map((e) => (
-              <Tarjeta key={e.slug} e={e} />
-            ))}
-          </div>
-        </section>
-      ))}
+            <ul className="mt-2 space-y-1.5">
+              {ultima.homework.map((h, i) => (
+                <li key={i} className="flex gap-2 text-sm leading-relaxed text-tiza">
+                  <span className="text-sol">▸</span>
+                  <span>{rich(h)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+
+      <SalaIndice pasos={pasos} />
 
       {/* El paso que faltaba decir: la rutina termina tocando música. */}
-      <section className="mb-14">
-        <div className="mb-5 flex items-center gap-3 border-b-2 border-borde pb-3">
-          <span className="font-display w-8 text-center text-4xl font-black text-borde">
-            {areasConAlgo.length + 1}
+      <section className="card mt-4 mb-14 overflow-hidden">
+        <div className="flex items-center gap-3 px-5 py-4">
+          <span className="font-display w-7 text-center text-3xl font-black text-borde">
+            {pasos.length + 1}
           </span>
-          <span className="text-3xl text-sol"><Icono de="pentagrama" /></span>
-          <div className="min-w-0">
-            <h2 className="font-display text-3xl font-black tracking-tight">
-              El repertorio
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm text-humo">
-              Para cerrar, donde los ejercicios se juntan: una pieza de verdad.
-              Las partituras suenan, te marcan dónde vas y te esperan si tenés
-              el teclado enchufado.
+          <span className="text-2xl text-sol"><Icono de="pentagrama" /></span>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-2xl font-black tracking-tight">El repertorio</h2>
+            <p className="mt-0.5 text-sm text-humo">
+              Para cerrar, donde los ejercicios se juntan: una pieza de verdad. Las
+              partituras suenan, te marcan dónde vas y te esperan si tenés el teclado
+              enchufado.
             </p>
           </div>
-          <span className="ml-auto self-start font-mono text-sm text-humo">
-            {PIEZAS.length}
-          </span>
+          <span className="font-mono text-sm text-humo">{PIEZAS.length}</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <ul className="border-t border-borde/60 py-2">
           {piezasFaciles.map((p) => (
-            <Link
-              key={p.slug}
-              href={`/partituras/${p.slug}`}
-              className="card group flex items-start gap-4 p-5 transition hover:border-sol/40"
-            >
-              <span className="text-3xl text-sol"><Icono de="pentagrama" /></span>
-              <span className="min-w-0">
-                <span className="font-display flex flex-wrap items-baseline gap-x-2 text-xl font-bold">
-                  {p.titulo}
-                  <span className="rounded-full bg-carta-2 px-2 py-0.5 font-mono text-[11px] font-normal text-humo">
-                    {"●".repeat(p.dificultad)}
-                    <span className="opacity-30">{"●".repeat(5 - p.dificultad)}</span>
+            <li key={p.slug}>
+              <Link
+                href={`/partituras/${p.slug}`}
+                className="group flex items-start gap-3 px-5 py-2 transition hover:bg-carta-2/60"
+              >
+                <span className="mt-0.5 text-lg text-sol"><Icono de="pentagrama" /></span>
+                <span className="min-w-0 flex-1">
+                  <span className="font-display flex flex-wrap items-baseline gap-x-2 font-bold">
+                    {p.titulo}
+                    <span className="rounded-full bg-carta-2 px-2 py-0.5 font-mono text-[11px] font-normal text-humo">
+                      {"●".repeat(p.dificultad)}
+                      <span className="opacity-30">{"●".repeat(5 - p.dificultad)}</span>
+                    </span>
+                  </span>
+                  <span className="block text-sm leading-relaxed text-humo">
+                    {p.compositor} · {resumir(p.sobre)}
                   </span>
                 </span>
-                <span className="mt-1.5 block text-sm leading-relaxed text-humo">
-                  {p.compositor} · {resumir(p.sobre)}
-                </span>
-              </span>
-              <span className="ml-auto self-center text-humo transition group-hover:text-sol">
-                →
-              </span>
-            </Link>
+                <span className="self-center text-humo transition group-hover:text-sol">→</span>
+              </Link>
+            </li>
           ))}
-        </div>
-        <p className="mt-4 text-sm text-humo">
-          <Link
-            href="/partituras"
-            className="font-semibold text-tiza underline decoration-dotted underline-offset-4 transition hover:text-sol"
-          >
-            Todas las partituras →
-          </Link>{" "}
-          <span className="text-humo/70">
-            ordenadas por lo que se puede intentar hoy.
-          </span>
-        </p>
+          <li className="px-5 pt-2 pb-1 text-sm text-humo">
+            <Link
+              href="/partituras"
+              className="font-semibold text-tiza underline decoration-dotted underline-offset-4 transition hover:text-sol"
+            >
+              Todas las partituras →
+            </Link>{" "}
+            <span className="text-humo/70">ordenadas por lo que se puede intentar hoy.</span>
+          </li>
+        </ul>
       </section>
     </div>
   );
@@ -154,32 +166,4 @@ function resumir(bajada: string) {
   const corte = limpio.slice(0, 150);
   const punto = corte.lastIndexOf(". ");
   return punto > 60 ? corte.slice(0, punto + 1) : `${corte.trimEnd()}…`;
-}
-
-function Tarjeta({ e }: { e: Entrada }) {
-  return (
-    <Link
-      href={`/practica/${e.slug}`}
-      className="card group flex items-start gap-4 p-5 transition hover:border-sol/40"
-    >
-      <span className="text-3xl text-sol"><Icono de={e.emoji} /></span>
-      <span className="min-w-0">
-        <span className="font-display flex flex-wrap items-baseline gap-x-2 text-xl font-bold">
-          {e.titulo}
-          <span className="rounded-full bg-carta-2 px-2 py-0.5 text-[11px] font-normal text-humo">
-            clase {e.lesson.n}
-          </span>
-        </span>
-        {/* En una tarjeta el resaltado no resalta nada, y las bajadas que
-            vienen de una clase son párrafos enteros: acá va la primera oración
-            y el resto se lee adentro. */}
-        <span className="mt-1.5 block text-sm leading-relaxed text-humo">
-          {resumir(e.bajada)}
-        </span>
-      </span>
-      <span className="ml-auto self-center text-humo transition group-hover:text-sol">
-        →
-      </span>
-    </Link>
-  );
 }

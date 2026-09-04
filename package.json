@@ -14,6 +14,7 @@
     "test:notas": "node --experimental-strip-types scripts/probar-notas.mjs",
     "test:ritmo": "node --experimental-strip-types scripts/probar-ritmo.mjs",
     "test:enlace": "node --experimental-strip-types scripts/probar-enlace.mjs",
+    "test:practica": "node --experimental-strip-types --import ./scripts/alias.mjs scripts/probar-practica.mjs",
     "test:grados": "node --experimental-strip-types scripts/probar-grados.mjs",
     "test:melodia": "node --experimental-strip-types scripts/probar-melodia.mjs",
     "test:pentagrama": "node --experimental-strip-types scripts/probar-pentagrama.mjs",

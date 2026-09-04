@@ -1,8 +1,7 @@
 import { LESSONS } from "@/content";
 import type {
-  CompasesBlock,
+  Block,
   ExerciseBlock,
-  FigurasBlock,
   HandsBlock,
   Lesson,
   NomenclatureBlock,
@@ -23,7 +22,7 @@ import type {
  * oro. Sólo hay que sumar acá si aparece un *tipo* de bloque que no existía.
  */
 
-export type AreaId = "manos" | "acordes" | "tiempo" | "lectura";
+export type AreaId = "manos" | "acordes" | "armonia" | "melodia" | "tiempo";
 
 export interface Area {
   id: AreaId;
@@ -35,6 +34,13 @@ export interface Area {
 /**
  * El orden es el de una rutina, no el de las clases: primero el cuerpo, después
  * la cabeza. Si vas a practicar media hora, arrancás por arriba.
+ *
+ * Son cinco y no cuatro desde la clase 5: "acordes" había juntado 16 de 25
+ * ejercicios porque las clases 3, 4 y 5 no tenían otro lugar adonde caer, y
+ * adentro convivían un dictado de tres minutos con un lienzo de veinte. Armar
+ * un acorde, entender la armonía y ponerle melodía son tres habilidades, y
+ * ahora son tres pasos. "Lectura" se fue: el cifrado es de armar acordes y los
+ * semitonos son de la armonía.
  */
 export const AREAS: Area[] = [
   {
@@ -46,10 +52,24 @@ export const AREAS: Area[] = [
   },
   {
     id: "acordes",
-    titulo: "Los acordes",
+    titulo: "Armar acordes",
     emoji: "🎹",
     bajada:
-      "El corazón de todo. Armarlos, girarlos, reconocerlos y encadenarlos — se puede sin el piano al lado.",
+      "Armarlos, girarlos, reconocerlos y encadenarlos. Casi todos piden tener el piano al lado.",
+  },
+  {
+    id: "armonia",
+    titulo: "La armonía",
+    emoji: "🏠",
+    bajada:
+      "Grados, funciones, cadencias, préstamos y acordes de paso. Es de escuchar y entender: se puede sin el piano.",
+  },
+  {
+    id: "melodia",
+    titulo: "La melodía",
+    emoji: "🎼",
+    bajada:
+      "Las guías que reciben a cada acorde, la grilla, y la melodía encima de la vuelta: el método de las clases 4 y 5.",
   },
   {
     id: "tiempo",
@@ -58,13 +78,24 @@ export const AREAS: Area[] = [
     bajada:
       "Figuras, compases y subdivisión. Son de escuchar y contar más que de tocar.",
   },
-  {
-    id: "lectura",
-    titulo: "Leer y nombrar",
-    emoji: "🔤",
-    bajada: "Los de velocidad: que el nombre salga antes de pensarlo.",
-  },
 ];
+
+/**
+ * Qué se hace en cada ejercicio, que no es lo mismo que de qué trata. Adentro
+ * de cada paso los ejercicios van agrupados por esto: primero lo que se mira
+ * y se escucha, después lo que se prueba, después lo que corrige, al final lo
+ * que puntúa. Es "primero entendé, después probá, después que te corrijan".
+ */
+export type Forma = "mirar" | "probar" | "corrige" | "puntua";
+
+export const FORMAS: Record<Forma, { titulo: string; bajada: string }> = {
+  mirar: { titulo: "Para mirar y escuchar", bajada: "No se contesta nada: se toca y se escucha." },
+  probar: { titulo: "Para probar", bajada: "Un laboratorio: armás, cambiás, ves qué pasa. Sin veredicto." },
+  corrige: { titulo: "Te corrige", bajada: "Propone algo, lo contestás, te dice si está bien." },
+  puntua: { titulo: "Te puntúa", bajada: "Creás o tocás algo y te mide, sin decirte cuál era la correcta." },
+};
+
+const ORDEN_FORMA: Forma[] = ["mirar", "probar", "corrige", "puntua"];
 
 /** Las herramientas que no vienen con datos de una clase: son siempre iguales. */
 export type HerramientaSuelta =
@@ -88,9 +119,10 @@ export type HerramientaSuelta =
   | "dominantes"
   | "semitonos";
 
-/** Lo que comparten todas: dónde va, de qué clase salió y cómo se llama su URL. */
+/** Lo que comparten todas: dónde va, qué se hace, de qué clase salió y cómo se llama su URL. */
 interface Comun {
   area: AreaId;
+  forma: Forma;
   lesson: Lesson;
   /** El pedazo de URL. Estable: es lo que alguien se guarda en favoritos. */
   slug: string;
@@ -104,7 +136,7 @@ export type Entrada = Comun &
     | { tipo: "exercise"; block: ExerciseBlock }
     | { tipo: "hands"; block: HandsBlock }
     | { tipo: "secuencia"; block: SecuenciaBlock }
-    | { tipo: "notas-guia"; block: NotasGuiaBlock }
+    | { tipo: "notas-guia"; renglones: { lesson: Lesson; block: NotasGuiaBlock }[] }
     | { tipo: "nomenclature"; block: NomenclatureBlock }
     | { tipo: "suelta"; id: HerramientaSuelta }
   );
@@ -115,116 +147,157 @@ export type Entrada = Comun &
  * Las que salen de un bloque de clase traen su propio título y su bajada de
  * allá; éstas no son de ninguna clase en particular, así que se escriben acá.
  */
-const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji: string }> = {
+const FICHAS: Record<
+  HerramientaSuelta,
+  { titulo: string; bajada: string; emoji: string; area: AreaId; forma: Forma }
+> = {
   laboratorio: {
+    area: "acordes",
+    forma: "probar",
     titulo: "El laboratorio de acordes",
     emoji: "🧪",
     bajada:
       "Fundamental, receta e inversión en el mismo teclado. Con el dictado prendido sale un cifrado y lo armás apretando teclas —o tocándolo en el piano, si tenés uno enchufado— y te dice si está bien, y si le erraste sólo al bajo también.",
   },
   identificador: {
+    area: "acordes",
+    forma: "probar",
     titulo: "¿Qué acorde armé?",
     emoji: "🔎",
     bajada:
       "El revés del dictado: tocás teclas y te dice cómo se llama eso. Sirve para encontrar inversiones sin buscarlas.",
   },
   oido: {
+    area: "acordes",
+    forma: "corrige",
     titulo: "Sacarlo de oído",
     emoji: "👂",
     bajada:
       "Suena un acorde y no se muestra nada: hay que darse cuenta de qué es y armarlo. Es el único que entrena el oído en vez de la memoria de la receta, y el que más pide tener el piano al lado.",
   },
   contrarreloj: {
+    area: "acordes",
+    forma: "corrige",
     titulo: "Dictado contrarreloj",
     emoji: "⚡",
     bajada:
       "El dictado del profe con reloj y racha. Los que te salen mal vuelven a aparecer más seguido, así que el ejercicio se te va acomodando solo a lo que te falta.",
   },
   grados: {
+    area: "armonia",
+    forma: "corrige",
     titulo: "Progresiones por grados",
     emoji: "🔢",
     bajada:
       "II – V – I en Fa, y salen los acordes. En un tema nadie piensa \"Sol séptima\", piensa \"el quinto\": por eso la misma vuelta se muda de tono sin volver a aprenderla.",
   },
   escalas: {
+    area: "manos",
+    forma: "corrige",
     titulo: "Las escalas",
     emoji: "🪜",
     bajada:
       "Mayor, menor natural, armónica y melódica, de la tónica a la octava. Cada una es una receta de tonos y semitonos, igual que los acordes — y de ahí sale por qué las blancas desde Do dan la mayor.",
   },
   figuras: {
+    area: "tiempo",
+    forma: "mirar",
     titulo: "El árbol de las figuras",
     emoji: "🌳",
     bajada:
       "Tocá una fila y después la de abajo: las cuatro duran lo mismo, sólo se parte más fino.",
   },
   compases: {
+    area: "tiempo",
+    forma: "probar",
     titulo: "Compases simples y compuestos",
     emoji: "🥁",
     bajada:
       "Elegí un compás y escuchá dónde caen los golpes. El botón de la constante pasa de simple a compuesto sin cambiar las notas.",
   },
   funciones: {
+    area: "armonia",
+    forma: "mirar",
     titulo: "Las tres funciones",
     emoji: "🏠",
     bajada:
       "Reposo, media tensión y tensión, con cada grado sonando y las tres cadencias para escuchar. Es el mapa de la armonía funcional: la casa, los intermedios y los que piden volver.",
   },
   inventor: {
+    area: "armonia",
+    forma: "puntua",
     titulo: "Inventar secuencias",
     emoji: "✍️",
     bajada:
       "Armá tu progresión grado por grado, con las funciones pintadas de colores. La regla de oro te avisa si te quedaste cuatro veces en la misma familia, y al final la escuchás entera.",
   },
   melodia: {
+    area: "melodia",
+    forma: "puntua",
     titulo: "Ponerle melodía a los acordes",
     emoji: "🎼",
     bajada:
       "El método completo de la clase 4: armás la progresión —tríadas o con séptima, y con los préstamos de las menores, el Fm incluido—, elegís las guías que reciben a cada acorde, y la melodía la compone la app o la escribís vos con figuras y silencios. El veredicto puntúa sin corregir: del acorde, de paso o en el aire, más los aterrizajes, la respiración y la variedad.",
   },
   encima: {
+    area: "melodia",
+    forma: "puntua",
     titulo: "Tocarla encima",
     emoji: "🎹",
     bajada:
       "La progresión suena en loop —con cuenta previa y metrónomo— y la melodía la ponés vos, en el piano de verdad o en el teclado de la pantalla. Cada nota se juzga en vivo contra el acorde que suena, y la primera de cada compás es el aterrizaje.",
   },
   grilla: {
+    area: "melodia",
+    forma: "mirar",
     titulo: "La grilla: qué nota cae parada",
     emoji: "🧮",
     bajada:
       "La escala en columnas, los acordes de la vuelta en filas, y un punto donde la nota cae parada en el acorde. Es lo que la melodía te muestra de a un compás, visto todo junto: ahí se ve la nota que puede quedarse quieta mientras la armonía gira, y la que va a tener que moverse.",
   },
   cadencias: {
+    area: "armonia",
+    forma: "corrige",
     titulo: "Las cadencias, con nombre",
     emoji: "🏠",
     bajada:
       "El juego de la clase 4: suena una cadencia y hay que nombrarla — dominante auténtica, subdominante con sustitución, compuesta plagal. Con los grados a la vista para aprender los nombres, o a oído solo para lo difícil.",
   },
   paralelas: {
+    area: "armonia",
+    forma: "mirar",
     titulo: "Las armonías paralelas",
     emoji: "🪜",
     bajada:
       "La mayor y las tres menores sobre el mismo Do, cada una con los acordes que le salen solos — y el préstamo estrella para escuchar: el Fm metido en Do mayor.",
   },
   dominantes: {
+    area: "armonia",
+    forma: "probar",
     titulo: "Los acordes de paso",
     emoji: "🧲",
     bajada:
       "La tabla de la clase 5 para escucharla: cada X7 de Do mayor con el acorde adonde lleva y la nota ajena que trae marcada en el teclado, el destino dado vuelta para oír cuándo se va del campo, y con un interruptor la otra opción, el X° que llega a los mismos lugares desde un semitono abajo. Y la vuelta: arranca con la del cuaderno y a cualquier progresión le metés los de paso de a uno, para comparar con y sin.",
   },
   "que-compas": {
+    area: "tiempo",
+    forma: "corrige",
     titulo: "¿Qué compás es?",
     emoji: "🧮",
     bajada:
       "Un compás lleno de figuras que cierra justo, y hay que ponerle el número. Es la cuenta del presupuesto al revés: de lo que entra, al compás.",
   },
   "completar-compas": {
+    area: "tiempo",
+    forma: "corrige",
     titulo: "Completá el compás",
     emoji: "🧩",
     bajada:
       "El número está puesto y falta una figura para que la cuenta cierre. 3/4 son tres negras para gastar — hay que encontrar la que gasta justo lo que sobra.",
   },
   semitonos: {
+    area: "armonia",
+    forma: "mirar",
     titulo: "Los semitonos de la octava",
     emoji: "📏",
     bajada:
@@ -232,36 +305,35 @@ const FICHAS: Record<HerramientaSuelta, { titulo: string; bajada: string; emoji:
   },
 };
 
-/** En qué área cae cada tipo de bloque. */
-const AREA_DE: Record<string, AreaId> = {
+/**
+ * En qué área cae cada tipo de bloque que produce su propia entrada (las
+ * sueltas llevan el área en su ficha). Tipado sobre los kinds: si aparece un
+ * bloque nuevo que debería estar en la sala y no está acá, el `never` del
+ * switch de abajo lo grita en el build en vez de dejarlo afuera callado.
+ */
+const AREA_DE_BLOQUE: Partial<Record<Block["kind"], AreaId>> = {
   exercise: "manos",
   hands: "manos",
-  "chord-lab": "acordes",
   secuencia: "acordes",
-  oido: "acordes",
-  contrarreloj: "acordes",
-  grados: "acordes",
-  escalas: "manos",
-  figuras: "tiempo",
-  compases: "tiempo",
-  "que-compas": "tiempo",
-  "completar-compas": "tiempo",
-  funciones: "acordes",
-  inventor: "acordes",
-  melodia: "acordes",
-  encima: "acordes",
-  grilla: "acordes",
-  "notas-guia": "acordes",
-  cadencias: "acordes",
-  paralelas: "acordes",
-  dominantes: "acordes",
-  "dominantes-secundarios": "acordes",
-  nomenclature: "lectura",
-  semitonos: "lectura",
+  nomenclature: "acordes",
+  "notas-guia": "melodia",
 };
 
+/** Dónde manda una dirección vieja: a qué ejercicio y con qué renglón abierto. */
+export interface Alias {
+  slug: string;
+  renglon: number;
+}
+
+interface Sala {
+  entradas: Entrada[];
+  alias: Record<string, Alias>;
+}
+
+let cache: Sala | null = null;
+
 /**
- * Todo lo que hay para practicar, en orden de clase.
+ * Todo lo que hay para practicar, en orden de rutina.
  *
  * Las herramientas que no dependen de datos de la clase (el laboratorio, el
  * árbol de figuras) aparecen una sola vez, con la clase donde se vieron por
@@ -271,10 +343,19 @@ const AREA_DE: Record<string, AreaId> = {
  * Cada una se lleva su `slug`, que es su URL. **Tiene que ser estable**: es lo
  * que alguien deja abierto en el teléfono arriba del piano. Por eso el número
  * de clase se agrega sólo cuando hay repetidos, y no siempre — si no, publicar
- * la clase 3 cambiaría la dirección de todo lo de la 1.
+ * la clase 3 cambiaría la dirección de todo lo de la 1. `test:practica`
+ * congela la lista entera con su orden.
+ *
+ * Los renglones de notas guía son **una sola página** con un selector: son el
+ * mismo ejercicio con otros datos, y dos tarjetas con el mismo título no
+ * decían cuál era cuál. La dirección que el segundo renglón ya tenía
+ * (`notas-guia-clase-5`) sigue existiendo como alias que abre esa página con
+ * ese renglón elegido.
  */
-export function catalogo(): Entrada[] {
+function armar(): Sala {
+  if (cache) return cache;
   const out: Entrada[] = [];
+  const alias: Record<string, Alias> = {};
   const yaEsta = new Set<string>();
   const usados = new Set<string>();
 
@@ -296,7 +377,6 @@ export function catalogo(): Entrada[] {
     yaEsta.add(id);
     out.push({
       tipo: "suelta",
-      area: AREA_DE[id] ?? "acordes",
       lesson,
       id,
       slug: unico(id, lesson),
@@ -306,13 +386,12 @@ export function catalogo(): Entrada[] {
 
   for (const lesson of LESSONS) {
     for (const block of lesson.blocks) {
-      const area = AREA_DE[block.kind];
-      if (!area) continue;
       switch (block.kind) {
         case "exercise":
           out.push({
             tipo: "exercise",
-            area,
+            area: AREA_DE_BLOQUE.exercise!,
+            forma: "corrige",
             lesson,
             block,
             slug: unico("posiciones", lesson),
@@ -324,7 +403,8 @@ export function catalogo(): Entrada[] {
         case "hands":
           out.push({
             tipo: "hands",
-            area,
+            area: AREA_DE_BLOQUE.hands!,
+            forma: "mirar",
             lesson,
             block,
             slug: unico("manos", lesson),
@@ -332,11 +412,16 @@ export function catalogo(): Entrada[] {
             bajada: block.intro ?? "",
             emoji: "🤲",
           });
+          // Las escalas son un ejercicio de dedos y cuelgan del primer reparto
+          // de manos: antes colgaban de los semitonos y quedaban primeras en
+          // la rutina, que es justo el lugar del ejercicio de posiciones.
+          sumarSuelta("escalas", lesson);
           break;
         case "secuencia":
           out.push({
             tipo: "secuencia",
-            area,
+            area: AREA_DE_BLOQUE.secuencia!,
+            forma: "puntua",
             lesson,
             block,
             slug: unico("enlace", lesson),
@@ -351,7 +436,8 @@ export function catalogo(): Entrada[] {
             yaEsta.add("nomenclature");
             out.push({
               tipo: "nomenclature",
-              area,
+              area: AREA_DE_BLOQUE.nomenclature!,
+              forma: "corrige",
               lesson,
               block,
               slug: unico("cifrado", lesson),
@@ -388,21 +474,30 @@ export function catalogo(): Entrada[] {
           // sentido hablar de dónde aterriza una melodía.
           sumarSuelta("melodia", lesson);
           break;
-        case "notas-guia":
-          out.push({
-            tipo: "notas-guia",
-            area,
-            lesson,
-            block,
-            slug: unico("notas-guia", lesson),
-            titulo: "Las notas guía",
-            emoji: "✍️",
-            // Cada renglón trae su propia bajada: el de la clase 4 y el de
-            // la 5 no son el mismo, y la ficha tiene que decir cuál es.
-            bajada:
-              block.intro ??
-              "Arriba la nota que recibe a cada acorde, abajo el cifrado. Tocá las columnas, escuchá el renglón entero — la fila de arriba, sola, ya es casi una melodía.",
-          });
+        case "notas-guia": {
+          const existente = out.find((e) => e.tipo === "notas-guia");
+          if (existente && existente.tipo === "notas-guia") {
+            // El renglón nuevo se suma a la página que ya está, y la
+            // dirección que hubiera tenido sola queda como alias.
+            existente.renglones.push({ lesson, block });
+            alias[unico("notas-guia", lesson)] = {
+              slug: existente.slug,
+              renglon: existente.renglones.length - 1,
+            };
+          } else {
+            out.push({
+              tipo: "notas-guia",
+              area: AREA_DE_BLOQUE["notas-guia"]!,
+              forma: "mirar",
+              lesson,
+              renglones: [{ lesson, block }],
+              slug: unico("notas-guia", lesson),
+              titulo: "Las notas guía",
+              emoji: "✍️",
+              bajada:
+                "Arriba la nota que recibe a cada acorde, abajo el cifrado: el renglón del cuaderno, uno por clase. Tocá las columnas, escuchá el renglón entero — la fila de arriba, sola, ya es casi una melodía.",
+            });
+          }
           // La grilla es el renglón de las guías visto para todas las notas a
           // la vez: en qué acordes cae parada cada una. Cuelga de acá porque
           // es la misma pregunta —qué nota recibe a cada acorde— dada vuelta.
@@ -412,6 +507,7 @@ export function catalogo(): Entrada[] {
           // los aterrizajes sobre el loop.
           sumarSuelta("encima", lesson);
           break;
+        }
         case "cadencias":
           sumarSuelta("cadencias", lesson);
           break;
@@ -423,32 +519,53 @@ export function catalogo(): Entrada[] {
           break;
         case "semitonos":
           sumarSuelta("semitonos", lesson);
-          // Una escala es la misma idea de los semitonos estirada a la octava.
-          sumarSuelta("escalas", lesson);
           break;
+        case "section":
+        case "prose":
+        case "correction":
+        case "quote":
+          break;
+        default: {
+          // Un tipo de bloque nuevo tiene que decidir acá si va a la sala o no.
+          const _agotado: never = block;
+          void _agotado;
+        }
       }
     }
   }
-  // Al final se acomoda por área, que es el orden de una rutina y el orden en
-  // que se ve el índice. Sin esto, el "siguiente" de cada ejercicio salta de
-  // área en área siguiendo el orden en que aparecieron en las clases, que arriba
-  // del piano no significa nada.
+  // Al final se acomoda por área (el orden de la rutina), adentro por forma
+  // (mirar, probar, corrige, puntúa) y recién después por orden de aparición.
   const orden = (e: Entrada) => AREAS.findIndex((a) => a.id === e.area);
-  return out
-    .map((e, i) => ({ e, i }))
-    .sort((a, b) => orden(a.e) - orden(b.e) || a.i - b.i)
-    .map(({ e }) => e);
+  const rango = (e: Entrada) => ORDEN_FORMA.indexOf(e.forma);
+  cache = {
+    entradas: out
+      .map((e, i) => ({ e, i }))
+      .sort((a, b) => orden(a.e) - orden(b.e) || rango(a.e) - rango(b.e) || a.i - b.i)
+      .map(({ e }) => e),
+    alias,
+  };
+  return cache;
 }
 
-/** El ejercicio de una URL, y sus vecinos para el "siguiente" del pie. */
+export const catalogo = (): Entrada[] => armar().entradas;
+
+/** Las direcciones viejas que siguen abriendo algo. */
+export const aliases = (): Record<string, Alias> => armar().alias;
+
+/**
+ * El ejercicio de una URL, y sus vecinos para el "siguiente" del pie. Una
+ * dirección alias abre su ejercicio con el renglón que le corresponde.
+ */
 export function buscar(slug: string) {
-  const todo = catalogo();
-  const i = todo.findIndex((e) => e.slug === slug);
+  const { entradas, alias } = armar();
+  const a = alias[slug];
+  const i = entradas.findIndex((e) => e.slug === (a ? a.slug : slug));
   if (i < 0) return null;
   return {
-    entrada: todo[i],
-    anterior: i > 0 ? todo[i - 1] : null,
-    siguiente: i < todo.length - 1 ? todo[i + 1] : null,
+    entrada: entradas[i],
+    anterior: i > 0 ? entradas[i - 1] : null,
+    siguiente: i < entradas.length - 1 ? entradas[i + 1] : null,
+    renglon: a?.renglon ?? 0,
   };
 }
 
