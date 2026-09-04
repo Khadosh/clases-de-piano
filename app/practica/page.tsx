@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import { LESSONS, latestLesson, slugOf } from "@/content";
 import { PIEZAS } from "@/content/partituras";
 import { AREAS, acordesAprendidos, catalogo } from "@/content/practica";
-import SalaIndice, { type PasoDeLaSala } from "@/components/SalaIndice";
 import SeguirCon from "@/components/SeguirCon";
 import { rich } from "@/components/Blocks";
 
@@ -20,38 +19,21 @@ export const metadata: Metadata = {
  * El patrón real es practicar uno o dos ejercicios por vez y volver al mismo
  * varios días seguidos, así que arriba de todo va **seguir con** (lo último
  * que se abrió, guardado en el aparato) y **la tarea de esta semana** (lo que
- * pidió el profe el miércoles), que es lo que decide qué se practica. Recién
- * después el mapa entero, en cards por paso de la rutina con los ejercicios
- * agrupados adentro por lo que se hace en cada uno. Y cierra donde cierra
- * una práctica de verdad: en el repertorio.
- *
- * Cada ejercicio tiene su página y su dirección estable para dejar abierta
- * arriba del piano.
+ * pidió el profe el miércoles), que es lo que decide qué se practica. Abajo,
+ * **una card por paso de la rutina** y nada más: título, dibujo, una línea.
+ * Los ejercicios de cada paso viven en su propia página. Se probó tenerlos
+ * todos acá, plegados en el teléfono y abiertos en desktop, y en desktop era
+ * el índice viejo con otro sombrero: veinticinco renglones que marean para
+ * elegir uno.
  */
 export default function PracticaPage() {
   const todo = catalogo();
   const acordes = acordesAprendidos();
   const ultima = latestLesson();
-  const piezasFaciles = [...PIEZAS].sort((a, b) => a.dificultad - b.dificultad).slice(0, 2);
-
-  const pasos: PasoDeLaSala[] = AREAS.map((a) => ({
-    id: a.id,
-    titulo: a.titulo,
-    emoji: a.emoji,
-    bajada: a.bajada,
-    ejercicios: todo
-      .filter((e) => e.area === a.id)
-      .map((e) => ({
-        slug: e.slug,
-        titulo: e.titulo,
-        bajada: resumir(e.bajada),
-        emoji: e.emoji,
-        forma: e.forma,
-        clase: e.lesson.n,
-      })),
-  })).filter((p) => p.ejercicios.length > 0);
-
   const fichas = todo.map((e) => ({ slug: e.slug, titulo: e.titulo, emoji: e.emoji }));
+  const pasos = AREAS.map((a) => ({ ...a, cuantos: todo.filter((e) => e.area === a.id).length })).filter(
+    (a) => a.cuantos > 0,
+  );
 
   return (
     <div className="pt-10">
@@ -64,15 +46,14 @@ export default function PracticaPage() {
           Sala de práctica
         </h1>
         <p className="mt-4 max-w-2xl text-lg leading-relaxed text-humo">
-          Todo lo que hay para machacar entre un miércoles y el otro,{" "}
-          <strong className="text-tiza">agrupado por tipo</strong> y no por
-          clase, y en <strong className="text-tiza">orden de rutina</strong>:
-          primero lo que pide dedos, después lo que pide cabeza, y al final una
-          pieza de verdad. Uno o dos por vez alcanzan.
+          Todo lo que hay para machacar entre un miércoles y el otro, en{" "}
+          <strong className="text-tiza">orden de rutina</strong>: primero lo que
+          pide dedos, después lo que pide cabeza, y al final una pieza de verdad.
+          Uno o dos por vez alcanzan.
         </p>
       </header>
 
-      <div className="mb-10 flex flex-col gap-3">
+      <div className="mb-8 flex flex-col gap-3">
         <SeguirCon fichas={fichas} />
 
         {/* La tarea del miércoles: es lo que decide qué se practica esta semana. */}
@@ -101,69 +82,50 @@ export default function PracticaPage() {
         )}
       </div>
 
-      <SalaIndice pasos={pasos} />
+      {/* Los pasos de la rutina, una card cada uno. */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {pasos.map((a, i) => (
+          <Link
+            key={a.id}
+            href={`/practica/paso/${a.id}`}
+            className="card group relative flex flex-col gap-3 p-6 transition hover:border-sol/40"
+          >
+            <span className="font-display absolute top-4 right-5 text-4xl font-black text-borde">
+              {i + 1}
+            </span>
+            <span className="text-5xl text-sol"><Icono de={a.emoji} /></span>
+            <span className="font-display text-2xl font-black tracking-tight group-hover:text-sol">
+              {a.titulo}
+            </span>
+            <span className="text-sm leading-relaxed text-humo">{a.bajada}</span>
+            <span className="mt-auto font-mono text-xs text-humo">
+              {a.cuantos} {a.cuantos === 1 ? "ejercicio" : "ejercicios"} →
+            </span>
+          </Link>
+        ))}
 
-      {/* El paso que faltaba decir: la rutina termina tocando música. */}
-      <section className="card mt-4 mb-14 overflow-hidden">
-        <div className="flex items-center gap-3 px-5 py-4">
-          <span className="font-display w-7 text-center text-3xl font-black text-borde">
+        {/* El paso que faltaba decir: la rutina termina tocando música. */}
+        <Link
+          href="/partituras"
+          className="card group relative flex flex-col gap-3 p-6 transition hover:border-sol/40"
+        >
+          <span className="font-display absolute top-4 right-5 text-4xl font-black text-borde">
             {pasos.length + 1}
           </span>
-          <span className="text-2xl text-sol"><Icono de="pentagrama" /></span>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-display text-2xl font-black tracking-tight">El repertorio</h2>
-            <p className="mt-0.5 text-sm text-humo">
-              Para cerrar, donde los ejercicios se juntan: una pieza de verdad. Las
-              partituras suenan, te marcan dónde vas y te esperan si tenés el teclado
-              enchufado.
-            </p>
-          </div>
-          <span className="font-mono text-sm text-humo">{PIEZAS.length}</span>
-        </div>
-        <ul className="border-t border-borde/60 py-2">
-          {piezasFaciles.map((p) => (
-            <li key={p.slug}>
-              <Link
-                href={`/partituras/${p.slug}`}
-                className="group flex items-start gap-3 px-5 py-2 transition hover:bg-carta-2/60"
-              >
-                <span className="mt-0.5 text-lg text-sol"><Icono de="pentagrama" /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="font-display flex flex-wrap items-baseline gap-x-2 font-bold">
-                    {p.titulo}
-                    <span className="rounded-full bg-carta-2 px-2 py-0.5 font-mono text-[11px] font-normal text-humo">
-                      {"●".repeat(p.dificultad)}
-                      <span className="opacity-30">{"●".repeat(5 - p.dificultad)}</span>
-                    </span>
-                  </span>
-                  <span className="block text-sm leading-relaxed text-humo">
-                    {p.compositor} · {resumir(p.sobre)}
-                  </span>
-                </span>
-                <span className="self-center text-humo transition group-hover:text-sol">→</span>
-              </Link>
-            </li>
-          ))}
-          <li className="px-5 pt-2 pb-1 text-sm text-humo">
-            <Link
-              href="/partituras"
-              className="font-semibold text-tiza underline decoration-dotted underline-offset-4 transition hover:text-sol"
-            >
-              Todas las partituras →
-            </Link>{" "}
-            <span className="text-humo/70">ordenadas por lo que se puede intentar hoy.</span>
-          </li>
-        </ul>
-      </section>
+          <span className="text-5xl text-sol"><Icono de="pentagrama" /></span>
+          <span className="font-display text-2xl font-black tracking-tight group-hover:text-sol">
+            El repertorio
+          </span>
+          <span className="text-sm leading-relaxed text-humo">
+            Para cerrar, donde los ejercicios se juntan: una pieza de verdad. Las
+            partituras suenan, te marcan dónde vas y te esperan si tenés el teclado
+            enchufado.
+          </span>
+          <span className="mt-auto font-mono text-xs text-humo">
+            {PIEZAS.length} {PIEZAS.length === 1 ? "pieza" : "piezas"} →
+          </span>
+        </Link>
+      </div>
     </div>
   );
-}
-
-/** La primera oración, sin pasarse de largo. */
-function resumir(bajada: string) {
-  const limpio = bajada.replace(/\*/g, "").trim();
-  if (limpio.length <= 150) return limpio;
-  const corte = limpio.slice(0, 150);
-  const punto = corte.lastIndexOf(". ");
-  return punto > 60 ? corte.slice(0, punto + 1) : `${corte.trimEnd()}…`;
 }

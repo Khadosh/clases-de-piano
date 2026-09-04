@@ -67,7 +67,7 @@ export const AREAS: Area[] = [
   {
     id: "melodia",
     titulo: "La melodía",
-    emoji: "🎼",
+    emoji: "🎶",
     bajada:
       "Las guías que reciben a cada acorde, la grilla, y la melodía encima de la vuelta: el método de las clases 4 y 5.",
   },

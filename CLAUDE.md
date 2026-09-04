@@ -40,15 +40,17 @@ estabas hablando.
 o dos ejercicios por vez y volver al mismo varios días seguidos, así que
 arriba de todo va **seguir con** (lo último que se abrió, `lib/recientes.ts`)
 y **la tarea de esta semana** (el `homework` de la última clase), que es lo
-que decide qué se practica. Recién después el mapa: **una card por paso de la
-rutina** (`components/SalaIndice.tsx`), cerrada en el teléfono y siempre
-abierta en desktop —la diferencia es sólo CSS, el estado arranca cerrado en
-los dos lados para no hidratar distinto—, con los ejercicios adentro
-agrupados por **forma**: para mirar y escuchar, para probar, te corrige, te
-puntúa. Es "primero entendé, después probá, después que te corrijan". Cierra
-con un paso más, el repertorio, que apunta a `/partituras` mostrando las
-piezas más fáciles: los ejercicios entrenan las partes, la partitura las
-junta. Las piezas salen solas de `PIEZAS` ordenadas por dificultad.
+que decide qué se practica. Abajo, **una card por paso de la rutina y nada
+más**: título, dibujo, una línea. Los ejercicios de cada paso viven en su
+propia página, `/practica/paso/<id>` —no en `/practica/<id>`, porque ahí
+están los ejercicios y `manos` y `melodia` ya son direcciones de
+ejercicios—, cada uno como card con título y dibujo, agrupados por
+**forma**: para mirar y escuchar, para probar, te corrige, te puntúa. Es
+"primero entendé, después probá, después que te corrijan". Se probó tener
+los veinticinco en el índice, plegados en el teléfono y abiertos en
+desktop, y en desktop era el índice viejo con otro sombrero: marea para
+elegir uno. Cierra con un paso más, el repertorio, que apunta a
+`/partituras`: los ejercicios entrenan las partes, la partitura las junta.
 
 Los pasos son cinco: las manos, armar acordes, la armonía, la melodía y el
 tiempo. Eran cuatro y "acordes" había juntado 16 de 25 ejercicios porque las

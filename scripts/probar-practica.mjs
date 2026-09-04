@@ -52,9 +52,11 @@ probar("las direcciones viejas siguen abriendo algo", () => {
   assert.equal(buscar("no-existe"), null);
 });
 
-probar("ningún alias pisa una dirección real", () => {
+probar("ningún alias pisa una dirección real, y nadie se llama como la ruta de los pasos", () => {
   const reales = new Set(catalogo().map((e) => e.slug));
   for (const viejo of Object.keys(aliases())) assert.ok(!reales.has(viejo), viejo);
+  // Los pasos viven en /practica/paso/<id>: "paso" no puede ser un ejercicio.
+  assert.ok(!reales.has("paso"));
 });
 
 probar("cada paso de la rutina tiene algo adentro y cada ejercicio tiene forma", () => {

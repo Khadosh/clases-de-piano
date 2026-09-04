@@ -47,10 +47,10 @@ export default async function EjercicioPage({
         {area && (
           <>
             <span className="opacity-40">/</span>
-            <span>
+            <Link href={`/practica/paso/${area.id}`} className="transition hover:text-sol">
               <Icono de={area.emoji} className="mr-1 text-sol" />
               {area.titulo}
-            </span>
+            </Link>
           </>
         )}
         <Link
