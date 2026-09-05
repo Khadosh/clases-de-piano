@@ -75,6 +75,8 @@ const Do4 = 60, Re4 = 62, Mi4 = 64, Fa4 = 65, Sol4 = 67, La4 = 69, Si4 = 71;
 const Do5 = 72, Re5 = 74, Mi5 = 76, Fa5 = 77;
 // Las de la vuelta de Joaquín.
 const Fa2 = 41, Fa3 = 53;
+// Las de las tres llegadas: las notas ajenas que traen los dominantes.
+const Res3 = 51, Res4 = 63, Fas4 = 66, Sols4 = 68;
 
 // Las del Claro de luna, en Do♯ menor.
 const Fas1 = 30, La1 = 33, Dos2 = 37, Fas2 = 42, La2 = 45, Dos3 = 49;
@@ -1132,6 +1134,87 @@ export const PIEZAS: Pieza[] = [
       ...repetir([n(Do3, 8), n(Mi3, 8), n(Sol3, 8), n(Mi3, 8)], 2),
       // El rodado final, corto: sube y se queda.
       n(Do3, 8), n(Mi3, 8), n(Sol3, 4),
+    ],
+  },
+  {
+    slug: "las-tres-llegadas",
+    titulo: "Las tres llegadas",
+    compositor: "Joaquín",
+    anio: "2026",
+    // Un vals: bajo en el uno y el acorde en el dos y el tres, que es como se
+    // tocó de punta a punta.
+    compas: { numerador: 3, denominador: 4 },
+    tonalidad: { tonica: 9, modo: "menor" },
+    bpm: 84,
+    dificultad: 2,
+    propia: true,
+    sobre:
+      "La tercera pieza propia, improvisada la semana de los acordes de paso, y es la tarea de la clase 5 hecha música: un vals en La menor donde tres llegadas vienen preparadas por su dominante secundario de la tabla — B7 → Em, D7 → G, E7 → Am. Cada dominante es un evento y no un acorde de paso de medio compás: la izquierda deja el vals, las dos manos arpegian el acorde para arriba y la melodía baja por grado conjunto hasta la fundamental de adonde llega. Re♯ Fa♯ La, Sol Fa♯, Mi. El gesto ya estaba en el tercer compás —La Do Mi, Sol Fa Mi— y después se repite tres veces sobre los dominantes: un motivo y tres transposiciones. En el B7 la derecha sola toca Re♯ Fa♯ La, que es el Re♯dim de paso de la misma clase: las dos opciones coinciden ahí.",
+    hasta: "Entera, con el final provisorio: los cuatro compases de Sol y la rota a Lam quedaron como se tocaron.",
+    revisar:
+      "Transcripta de la grabación MIDI de la página de grabar (4 de septiembre), cuantizada a la negra. El pulso de la toma se apuraba de ~75 a ~120: acá va parejo a 84. Las notas fantasma (velocity 1 a 9) y un Re3 rozado bajo la llegada a Em quedaron afuera. El Fa♯ del compás 22 estaba tocado solo, con tres segundos de silencio antes del Sol: se le puso un Re con Fa♯ y La abajo, que es el D7 → G que la pieza ya usa, y es una decisión para revisar. El final no está decidido todavía.",
+    derecha: [
+      // La intro: dos compases de vals solo, y el motivo — arpegio arriba,
+      // bajada por grado conjunto — sobre Lam.
+      silencio(2, { puntillo: true }),
+      n(Mi4, 2, { puntillo: true }),
+      n(La3, 4), n(Do4, 4), n(Mi4, 4),
+      n(Sol4, 4), n(Fa4, 4), n(Mi4, 4),
+      // Si°: el Re tenido, con el Mi vecino de paso.
+      n(Re4, 2), n(Mi4, 4),
+      n(Re4, 2, { puntillo: true }),
+      n(Do4, 2, { puntillo: true }),
+      n(Do4, 2, { puntillo: true, ligada: true }),
+      // B7 → Em: el motivo sobre el dominante. Si Re♯ Fa♯ arriba, La Sol Fa♯
+      // abajo, y el Mi de la llegada.
+      n(Si3, 4), n(Res4, 4), n(Fas4, 4),
+      n(La4, 4), n(Sol4, 4), n(Fas4, 4),
+      n(Mi4, 2, { puntillo: true }),
+      n(Mi4, 2, { puntillo: true, ligada: true }),
+      // D7 → G: lo mismo, una nota más alto, y las dos manos en octavas.
+      n(Re4, 4), n(Fas4, 4), n(La4, 4),
+      n(Do5, 4), n(Si4, 4), n(La4, 4),
+      n(Sol4, 2, { puntillo: true }),
+      n(Sol4, 2, { puntillo: true, ligada: true }),
+      // E7 → Am: el principal, y el más alto de los tres: llega al Re5.
+      n(Mi4, 4), n(Sols4, 4), n(Si4, 4),
+      n(Re5, 4), n(Do5, 4), n(Si4, 4),
+      n(La4, 2, { puntillo: true }),
+      // La bajada larga, Re Do Si La Sol Fa♯, que va a buscar el Sol.
+      n(La4, 2, { ligada: true }), n(Re5, 4),
+      n(Do5, 4), n(Si4, 4), n(La4, 4),
+      n(Sol4, 4), n(Fas4, 2),
+      // Sol: la melodía se queda en el Sol y la izquierda sigue sola.
+      n(Sol4, 2, { puntillo: true }),
+      n(Sol4, 2, { puntillo: true, ligada: true }),
+      silencio(2, { puntillo: true }),
+      silencio(2, { puntillo: true }),
+      // El acorde de Sol plantado y la rota a Lam: el final que falta.
+      silencio(2, { puntillo: true }),
+      silencio(2, { puntillo: true }),
+    ],
+    izquierda: [
+      // El vals: bajo, acorde, acorde.
+      ...repetir([n(La2, 4), n([Do3, Mi3], 4), n([Do3, Mi3], 4)], 4),
+      ...repetir([n(Si2, 4), n([Re3, Fa3], 4), n([Re3, Fa3], 4)], 2),
+      ...repetir([n(La2, 4), n([Do3, Mi3], 4), n([Do3, Mi3], 4)], 2),
+      // B7: el bajo en Si y arriba Re♯ Fa♯ La — el Re♯dim de paso de la
+      // clase, con la fundamental del dominante abajo.
+      ...repetir([n(Si2, 4), n([Res3, Fas3, La3], 4), n([Res3, Fas3, La3], 4)], 2),
+      ...repetir([n(Mi3, 4), n([Sol3, Si3], 4), n([Sol3, Si3], 4)], 2),
+      // D7: la izquierda dobla el motivo en octavas, como se tocó.
+      n(Re3, 4), n(Fas3, 4), n(La3, 4),
+      n(Do4, 4), n(La3, 4), n(Fas3, 4),
+      ...repetir([n(Sol3, 4), n([Si3, Re4], 4), n([Si3, Re4], 4)], 2),
+      // E7, en vals otra vez.
+      ...repetir([n(Mi3, 4), n([Sols3, Si3, Re4], 4), n([Sols3, Si3, Re4], 4)], 2),
+      // Lam una octava arriba de la intro, como en la toma.
+      ...repetir([n(La3, 4), n([Do4, Mi4], 4), n([Do4, Mi4], 4)], 3),
+      // El Re bajo el Fa♯ (ver revisar): D7 → G.
+      n(Re3, 4), n([Fas3, La3], 4), n([Fas3, La3], 4),
+      ...repetir([n(Sol2, 4), n([Si2, Re3], 4), n([Si2, Re3], 4)], 4),
+      n([Sol2, Si2, Re3], 2, { puntillo: true }),
+      n([La2, Do3, Mi3], 2, { puntillo: true }),
     ],
   },
 ];
