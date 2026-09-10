@@ -5,12 +5,13 @@ import clase02 from "@/content/lessons/clase-02";
 import clase03 from "@/content/lessons/clase-03";
 import clase04 from "@/content/lessons/clase-04";
 import clase05 from "@/content/lessons/clase-05";
+import clase06 from "@/content/lessons/clase-06";
 
 /**
  * El índice de clases. Para agregar una clase nueva: crear el archivo en
  * content/lessons/ y sumarlo acá. Nada más.
  */
-export const LESSONS: Lesson[] = [clase01, clase02, clase03, clase04, clase05].sort((a, b) => a.n - b.n);
+export const LESSONS: Lesson[] = [clase01, clase02, clase03, clase04, clase05, clase06].sort((a, b) => a.n - b.n);
 
 export const lessonBySlug = (slug: string) =>
   LESSONS.find((l) => slugOf(l) === slug);

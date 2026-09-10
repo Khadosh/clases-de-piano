@@ -35,7 +35,10 @@ const SLUGS = [
   "figuras", "compases", "que-compas", "completar-compas",
 ];
 
-const ALIAS = { "notas-guia-clase-5": { slug: "notas-guia", renglon: 1 } };
+const ALIAS = {
+  "notas-guia-clase-5": { slug: "notas-guia", renglon: 1 },
+  "notas-guia-clase-6": { slug: "notas-guia", renglon: 2 },
+};
 
 probar("las direcciones de la sala son exactamente éstas, en este orden", () => {
   assert.deepEqual(catalogo().map((e) => e.slug), SLUGS);
@@ -78,8 +81,8 @@ probar("adentro de cada paso el orden es mirar → probar → corrige → puntú
 probar("los renglones de notas guía viven en una sola página", () => {
   const ng = catalogo().filter((e) => e.tipo === "notas-guia");
   assert.equal(ng.length, 1);
-  assert.equal(ng[0].renglones.length, 2);
-  assert.deepEqual(ng[0].renglones.map((r) => r.lesson.n), [4, 5]);
+  assert.equal(ng[0].renglones.length, 3);
+  assert.deepEqual(ng[0].renglones.map((r) => r.lesson.n), [4, 5, 6]);
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);
