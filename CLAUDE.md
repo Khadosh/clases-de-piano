@@ -756,10 +756,13 @@ pasando por el conversor **y por el importador**, que es el camino real.
 La ficha de cada pieza —título en castellano, número en el libro,
 dificultad, tempo de estudio, `sobre`— vive en `scripts/importar-mutopia.mjs`
 y no en el archivo generado, para volver a generar cuando el lector mejore
-sin perder lo escrito a mano. Las piezas de un libro llevan `coleccion` y el
-índice las agrupa aparte, **en el orden del libro y no por dificultad**:
-mezclar diecisiete estudios de Burgmüller con las sueltas ponía el libro en
-el medio de todo, y de un libro uno busca el número.
+sin perder lo escrito a mano. Las piezas de un libro llevan `coleccion`, que
+la tarjeta muestra como "op. 100, nº 2".
+
+**El índice son dos estantes, propias y externas, cada uno por dificultad.**
+Se probó agrupar el libro de Burgmüller aparte en el orden del libro, y se
+volvió atrás: acá lo que ordena es cuánto cuesta, y el número ya está en la
+tarjeta. A igual dificultad desempata el número del libro.
 
 **Una mano puede tener dos voces.** Cuando la derecha lleva la melodía y el
 acompañamiento a la vez, cada una tiene su propio ritmo y no entran en una sola
