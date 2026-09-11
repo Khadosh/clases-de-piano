@@ -41,3 +41,35 @@ Dos cosas para tener en cuenta al traer una nueva:
   compás del archivo no cierra la cuenta, y ya sirvió: de las versiones de Para
   Elisa de esa biblioteca, una tiene el compás 8 corto y desalinea todo lo que
   sigue. Por eso se importó otra.
+
+## Las de Mutopia: LilyPond, no MusicXML
+
+`mutopia/` tiene los archivos tal cual están en el espejo de Mutopia en GitHub
+(`github.com/MutopiaProject/MutopiaProject`, carpeta `ftp/`), con el nombre de
+su carpeta adelante para saber de dónde salió cada uno. Mutopia guarda
+**LilyPond** (`.ly`), no MusicXML, y no hay conversor bueno de uno al otro: el
+que existe perdía puntillos y mezclaba voces. Por eso hay un lector propio,
+`scripts/lilypond-a-musicxml.mjs`, que lee el subconjunto que usan estos
+archivos y escribe MusicXML para el importador de siempre:
+
+```sh
+npm run importar:mutopia     # regenera content/partituras-mutopia.ts entero
+npm run lilypond -- pieza.ly # sólo la conversión, para mirar una
+```
+
+La ficha de cada pieza (título, número en el libro, dificultad, tempo de
+estudio, qué mirar) vive en `scripts/importar-mutopia.mjs`; las notas salen
+del archivo. El `.ts` generado no se edita a mano.
+
+| Archivo | Obra | Compositor |
+|---|---|---|
+| `BachJS-BWVAnh115-anna-magdalena-05.ly` | Minueto en Sol menor, BWV Anh. 115 | Christian Petzold (1677–1733), atribuido |
+| `BurgmullerJFF-O100-25EF-NN.ly` | 25 estudios fáciles, op. 100, nº 1 a 13 y 15 a 18 | Friedrich Burgmüller (1806–1874) |
+
+Todos declaran `"Public Domain"` en su header: el que los tipeó los puso en
+dominio público. Los 19 al 25 del op. 100 no están en Mutopia. **El 14 (La
+Styrienne) está en Mutopia y quedó afuera a propósito**: el archivo usa
+`\set Timing.measurePosition` para acomodar un *da capo* con casillas partidas
+a mitad de compás, y nuestro modelo no tiene forma de decir eso; importado,
+la grilla de compases se desalinea desde ahí.
+

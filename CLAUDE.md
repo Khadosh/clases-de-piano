@@ -717,6 +717,50 @@ Los `.mxl` que se importaron viven en `partituras-fuente/` con su procedencia, y
 ahí está también la advertencia que importa: **de dominio público es la obra, no
 necesariamente el archivo**.
 
+### Importar de LilyPond (Mutopia)
+
+`npm run importar:mutopia` regenera `content/partituras-mutopia.ts` entero
+desde `partituras-fuente/mutopia/*.ly`. Mutopia es la biblioteca grande de
+partituras de dominio público escritas como datos, pero guarda **LilyPond**,
+y el conversor automático que existe devolvía basura (puntillos perdidos,
+voces mezcladas, el compás 2 durando el doble). Así que
+`scripts/lilypond-a-musicxml.mjs` es un lector propio del subconjunto que
+usan esos archivos, y escribe **MusicXML, no nuestro modelo**: así el
+importador de siempre hace el resto con sus reglas y sus tests, y hay un solo
+lugar donde vive "cómo se parte una nota que cruza la barra".
+
+Tres cosas de LilyPond que no son obvias y costaron:
+
+- **La duración por defecto es del texto, no de la música.** Una nota sin
+  número dura lo que la última que *se escribió* antes, aunque esté en otra
+  rama de un `<< >>`. Se resuelve al parsear, en orden de lectura.
+- **La octava relativa sí es de la música.** Cada nota cae a menos de una
+  quinta de la anterior (hasta la cuarta se queda, la quinta cambia de lado,
+  y las comillas se suman *después*); adentro de un acorde, de la nota
+  anterior del acorde, y al salir se sigue desde la primera. Después de un
+  `<< >>` se sigue desde la última nota de la **primera** rama. Los adornos
+  y las casillas de repetición que se descartan mueven la referencia igual,
+  así que se recorren aunque no suenen.
+- **Las repeticiones no se desenrollan**: cada sección va una vez, con la
+  última casilla. Es como se toca sin repetir y es lo que ya hacía el
+  importador con las barras de repetición de MusicXML.
+
+Lo que no se lee se avisa, y hay una verificación que ningún aviso daría
+sola: **las barras `|` del archivo tienen que caer en las nuestras**. Un
+error de duración corre todo lo que sigue sin que nada más lo diga; con
+esto, se grita. (Los Burgmüller de Mutopia no traen barras, así que ahí lo
+único que cuida es el test de que cada compás cierre la cuenta.) `npm run
+test:lilypond` prueba las reglas de arriba contra pedacitos escritos a mano,
+pasando por el conversor **y por el importador**, que es el camino real.
+
+La ficha de cada pieza —título en castellano, número en el libro,
+dificultad, tempo de estudio, `sobre`— vive en `scripts/importar-mutopia.mjs`
+y no en el archivo generado, para volver a generar cuando el lector mejore
+sin perder lo escrito a mano. Las piezas de un libro llevan `coleccion` y el
+índice las agrupa aparte, **en el orden del libro y no por dificultad**:
+mezclar diecisiete estudios de Burgmüller con las sueltas ponía el libro en
+el medio de todo, y de un libro uno busca el número.
+
 **Una mano puede tener dos voces.** Cuando la derecha lleva la melodía y el
 acompañamiento a la vez, cada una tiene su propio ritmo y no entran en una sola
 fila. Por eso `derecha` e `izquierda` aceptan una fila suelta —el caso normal, y
@@ -1163,7 +1207,10 @@ npm run dev        # desarrollo
 npm run build      # build de producción (falla si hay error de tipos)
 npm run typecheck  # sólo tipos
 npm run importar   # de un MusicXML a una pieza de content/partituras.ts
+npm run importar:mutopia # regenera content/partituras-mutopia.ts desde los LilyPond
+npm run lilypond   # de un LilyPond de Mutopia a MusicXML
 npm run test:pentagrama # el pentagrama y que las piezas cierren la cuenta
+npm run test:lilypond # el lector de LilyPond: octava relativa, duraciones, repeticiones
 npm run test:practica # la sala: las direcciones congeladas y los alias
 npm run test:grados  # los grados de una tonalidad y las escalas
 npm run test:melodia # la melodía generada, contra sus propias reglas

@@ -1,5 +1,7 @@
 import type { Compas } from "@/lib/ritmo";
 import type { Evento, Tonalidad, Voces } from "@/lib/pentagrama";
+import { n, silencio, TRESILLO } from "@/content/escribir";
+import { MUTOPIA } from "@/content/partituras-mutopia";
 
 /**
  * Las partituras, escritas como datos.
@@ -50,21 +52,13 @@ export interface Pieza {
    * importador deja afuera.
    */
   fuente?: string;
+  /**
+   * El libro del que forma parte, si es una de varias: el índice las agrupa
+   * y las ordena por número en vez de mezclarlas con las sueltas.
+   */
+  coleccion?: { titulo: string; numero: number };
 }
 
-/** Atajos para que las piezas se lean como música y no como JSON. */
-const n = (midis: number | number[], divide: number, extra: Partial<Evento> = {}): Evento => ({
-  midis: Array.isArray(midis) ? midis : [midis],
-  divide,
-  ...extra,
-});
-/** Tres en el tiempo de dos, que es el grupo irregular que aparece siempre. */
-const TRESILLO = { en: 3, de: 2 } as const;
-const silencio = (divide: number, extra: Partial<Evento> = {}): Evento => ({
-  midis: [],
-  divide,
-  ...extra,
-});
 
 // Las teclas por nombre, para poder escribir la música leyéndola en vez de
 // contar números MIDI. Do central = Do4 = 60.
@@ -1217,6 +1211,8 @@ export const PIEZAS: Pieza[] = [
       n([La2, Do3, Mi3], 2, { puntillo: true }),
     ],
   },
+  // Las importadas de Mutopia van al final: son muchas y son un libro.
+  ...MUTOPIA,
 ];
 
 /** Repite un grupo de eventos, que es como está escrita la música de verdad. */

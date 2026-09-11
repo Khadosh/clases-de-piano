@@ -39,6 +39,7 @@ export default async function PiezaPage({
       <header className="mb-7">
         <p className="text-xs tracking-[0.25em] text-humo uppercase">
           {pieza.compositor} · {pieza.anio}
+          {pieza.coleccion && ` · ${pieza.coleccion.titulo}, nº ${pieza.coleccion.numero}`}
         </p>
         <h1 className="font-display mt-1 text-4xl font-black tracking-tight sm:text-5xl">
           {pieza.titulo}

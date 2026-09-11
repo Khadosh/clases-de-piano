@@ -17,8 +17,11 @@
     "test:practica": "node --experimental-strip-types --import ./scripts/alias.mjs scripts/probar-practica.mjs",
     "test:grados": "node --experimental-strip-types scripts/probar-grados.mjs",
     "test:melodia": "node --experimental-strip-types scripts/probar-melodia.mjs",
-    "test:pentagrama": "node --experimental-strip-types scripts/probar-pentagrama.mjs",
-    "importar": "node --experimental-strip-types scripts/importar-musicxml.mjs"
+    "test:pentagrama": "node --experimental-strip-types --import ./scripts/alias.mjs scripts/probar-pentagrama.mjs",
+    "importar": "node --experimental-strip-types scripts/importar-musicxml.mjs",
+    "lilypond": "node --experimental-strip-types scripts/lilypond-a-musicxml.mjs",
+    "test:lilypond": "node --experimental-strip-types scripts/probar-lilypond.mjs",
+    "importar:mutopia": "node --experimental-strip-types scripts/importar-mutopia.mjs"
   },
   "dependencies": {
     "next": "^16.3.0",
