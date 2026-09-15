@@ -5,9 +5,10 @@ import Icono from "./Icono";
 import Pentagrama from "./Pentagrama";
 import EdicionCompleta from "./EdicionCompleta";
 import Midi from "./Midi";
-import { getAudioContext, notaOff, notaOn, pararTodo, playClick, wakeAudio } from "@/lib/audio";
+import { getAudioContext, notaOff, notaOn, pararTodo, wakeAudio } from "@/lib/audio";
 import { useMidi } from "@/lib/useMidi";
-import { mod12 } from "@/lib/music";
+import { arrancarReloj, type Pulso } from "@/lib/reloj";
+import { juzgarInstante } from "@/lib/seguimiento";
 import { duracionDeCompas, duracionDeEvento, ubicar, vocesDe } from "@/lib/pentagrama";
 import type { Pieza } from "@/content/partituras";
 
@@ -107,6 +108,24 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
   const [acelerando, setAcelerando] = useState(false);
   const [vista, setVista] = useState<"cuaderno" | "edicion">("cuaderno");
   const pararRef = useRef<(() => void) | null>(null);
+  /**
+   * El metrónomo, cuando corre: en qué pulso va. `null` es que no corre. Es
+   * un reloj aparte de la pieza (`lib/reloj.ts`) y por eso lo comparten los
+   * dos modos: escuchándola se suma a la grilla de la pasada; siguiéndote es
+   * el único reloj que hay.
+   */
+  const [pulso, setPulso] = useState<Pulso | null>(null);
+  const relojRef = useRef<(() => void) | null>(null);
+  /**
+   * Hasta cuándo (reloj del audio) dura la cuenta previa del seguimiento.
+   * Mientras tanto las teclas no cuentan: todavía no entraste.
+   */
+  const cuentaHastaRef = useRef(0);
+  /**
+   * La pasada que está sonando, para que el metrónomo prendido a mitad de
+   * camino se sume a su grilla en vez de arrancar una propia.
+   */
+  const pasadaRef = useRef<{ arranque: number; segundosPorRedonda: number } | null>(null);
   const repetirRef = useRef(repetir);
   repetirRef.current = repetir;
   // Por ref porque el loop se rearma solo desde adentro de un closure viejo:
@@ -195,12 +214,30 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
 
   const largoCompas = duracionDeCompas(pieza.compas);
 
+  const pararReloj = useCallback(() => {
+    relojRef.current?.();
+    relojRef.current = null;
+    cuentaHastaRef.current = 0;
+    setPulso(null);
+  }, []);
+
+  const encenderReloj = useCallback(
+    (o: { arranque: number; segundosPorRedonda: () => number; cuenta: boolean }) => {
+      pararReloj();
+      cuentaHastaRef.current = o.cuenta ? o.arranque : 0;
+      relojRef.current = arrancarReloj({ compas: pieza.compas, ...o, mostrar: setPulso });
+    },
+    [pararReloj, pieza.compas],
+  );
+
   const parar = useCallback(() => {
     pararRef.current?.();
     pararRef.current = null;
+    pararReloj();
+    pasadaRef.current = null;
     setTocando(false);
     setSonando(null);
-  }, []);
+  }, [pararReloj]);
 
   /**
    * Toca la pieza. Todo se agenda de una contra el reloj del audio y la imagen
@@ -234,10 +271,15 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       const segundosPorRedonda = (60 / bpmRef.current) * 4;
       // **El metrónomo te cuenta un compás antes de entrar.** Sin eso, con el
       // loop puesto la música arranca sola y nunca sabés cuándo poner las
-      // manos: la vuelta empieza con un compás de clicks y recién ahí suena.
+      // manos: la vuelta empieza con un compás de cuenta y recién ahí suena.
+      // El click es del reloj aparte, clavado al tempo de esta pasada.
       const cuentaPrevia = metronomoRef.current ? largoCompas * segundosPorRedonda : 0;
       const arranque = ctx.currentTime + 0.15 + cuentaPrevia;
       const aSegundos = (t: number) => arranque + (t - t0Musical) * segundosPorRedonda;
+      pasadaRef.current = { arranque, segundosPorRedonda };
+      if (metronomoRef.current) {
+        encenderReloj({ arranque, segundosPorRedonda: () => segundosPorRedonda, cuenta: true });
+      }
 
       // **No se agenda la pieza entera: se agenda lo que viene.** La primera
       // versión mandaba todo de una y el botón de parar no podía parar nada —
@@ -247,9 +289,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       // (los dos relojes de siempre, como el metrónomo). Parar es dejar de
       // despachar y soltar lo apretado: las notas que faltaban nunca llegan a
       // existir.
-      type Evento =
-        | { t: number; tipo: "on" | "off"; midi: number; dur: number }
-        | { t: number; tipo: "click"; acento: "fuerte" | "medio" | "debil" };
+      type Evento = { t: number; tipo: "on" | "off"; midi: number; dur: number };
       const eventos: Evento[] = [];
       for (const n of notas) {
         if (n.t < t0Musical - 1e-9) continue;
@@ -258,34 +298,13 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         eventos.push({ t: aSegundos(n.t), tipo: "on", midi: n.midi, dur });
         eventos.push({ t: aSegundos(n.t) + dur, tipo: "off", midi: n.midi, dur });
       }
-      if (metronomoRef.current) {
-        const tiempo = 1 / pieza.compas.denominador;
-        // El compás de la cuenta previa, con el primer click fuerte...
-        for (let i = 0; i < pieza.compas.numerador; i++) {
-          eventos.push({
-            t: aSegundos(t0Musical - largoCompas + i * tiempo),
-            tipo: "click",
-            acento: i === 0 ? "fuerte" : "medio",
-          });
-        }
-        // ...y el pulso marcado mientras suena, fuerte en cada barra.
-        for (let t = t0Musical; t < fin - 1e-9; t += tiempo) {
-          const enElCompas = Math.round((t % largoCompas) / tiempo);
-          eventos.push({
-            t: aSegundos(t),
-            tipo: "click",
-            acento: enElCompas === 0 ? "fuerte" : "debil",
-          });
-        }
-      }
       eventos.sort((a, b) => a.t - b.t);
       let proximo = 0;
       const despachar = () => {
         const horizonte = ctx.currentTime + 0.15;
         while (proximo < eventos.length && eventos[proximo].t <= horizonte) {
           const e = eventos[proximo++];
-          if (e.tipo === "click") playClick(e.acento, e.t);
-          else if (e.tipo === "on") notaOn(e.midi, e.t, e.dur);
+          if (e.tipo === "on") notaOn(e.midi, e.t, e.dur);
           else notaOff(e.midi, e.t);
         }
       };
@@ -310,6 +329,8 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             return;
           }
           clearInterval(timer);
+          pararReloj();
+          pasadaRef.current = null;
           setTocando(false);
           setSonando(null);
           return;
@@ -324,9 +345,11 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
         cancelAnimationFrame(raf);
         clearInterval(timer);
         pararTodo();
+        pararReloj();
+        pasadaRef.current = null;
       };
     },
-    [notas, largoCompas, finMusical, recorte, pieza.compas],
+    [notas, largoCompas, finMusical, recorte, encenderReloj, pararReloj],
   );
   tocarRef.current = tocar;
 
@@ -335,7 +358,8 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
   // ---- Seguirte a vos ------------------------------------------------------
 
   const caja = useRef<HTMLDivElement>(null);
-  const puestasRef = useRef<Set<number>>(new Set());
+  /** Las teclas tocadas en el instante que se está esperando, como llegan. */
+  const puestasRef = useRef<number[]>([]);
   const esperadoRef = useRef<Momento[]>(momentos);
   esperadoRef.current = momentos;
   const iRef = useRef(i);
@@ -347,24 +371,25 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
    * Una tecla mientras te sigue.
    *
    * Se acepta el instante completo, no nota por nota: si el acorde tiene tres
-   * notas hay que tocar las tres, en cualquier orden y en cualquier octava.
-   * Las que sobran no se marcan como error hasta que el instante esté completo,
+   * notas hay que tocar las tres, en cualquier orden y en cualquier octava —
+   * pero **contando**, que una octava son dos teclas (`juzgarInstante`). Las
+   * que sobran no se marcan como error hasta que el instante esté completo,
    * porque al armar un acorde con las dos manos las teclas nunca caen juntas.
    */
   const alTocar = useCallback((midi: number) => {
     if (!siguiendoRef.current) return;
+    // Durante la cuenta previa del metrónomo no entraste todavía.
+    const ac = getAudioContext();
+    if (ac && ac.currentTime < cuentaHastaRef.current) return;
     const m = esperadoRef.current[iRef.current];
     if (!m) return;
-    puestasRef.current.add(mod12(midi));
-    const faltan = new Set(m.midis.map(mod12));
-    const puestas = puestasRef.current;
-    const todas = [...faltan].every((c) => puestas.has(c));
-    if (!todas) return;
+    puestasRef.current.push(midi);
+    const { completo, sobran } = juzgarInstante(m.midis, puestasRef.current);
+    if (!completo) return;
     // Si además tocaste algo que no iba, cuenta como error pero se avanza igual:
     // quedarse trabado en un instante es peor que anotarlo y seguir.
-    const sobra = [...puestas].some((c) => !faltan.has(c));
-    if (sobra) setErrores((e) => e + 1);
-    puestasRef.current = new Set();
+    if (sobran > 0) setErrores((e) => e + 1);
+    puestasRef.current = [];
     setI((n) => n + 1);
   }, []);
 
@@ -378,6 +403,23 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
     (i >= momentos.length ||
       (recorte !== null && (momentos[i]?.compas ?? Infinity) > recorte.hasta));
 
+  /**
+   * Un compás de cuenta antes de seguirte: el tiempo de poner las manos y de
+   * agarrar el tempo. Es del metrónomo y no de "seguime": sin él no hay
+   * reloj, así que no hay qué contar — la partitura te espera igual.
+   */
+  const contarParaSeguir = () => {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    // Acá no hay pasada: el reloj es el único tempo, y el slider lo mueve en vivo.
+    const segundosPorRedonda = () => (60 / bpmRef.current) * 4;
+    encenderReloj({
+      arranque: ctx.currentTime + 0.15 + largoCompas * segundosPorRedonda(),
+      segundosPorRedonda,
+      cuenta: true,
+    });
+  };
+
   const arrancarSeguimiento = () => {
     wakeAudio();
     parar();
@@ -387,16 +429,78 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       : desdeCompas;
     setI(indiceDelCompas(momentos, desde));
     setErrores(0);
-    puestasRef.current = new Set();
+    puestasRef.current = [];
+    if (metronomoRef.current) contarParaSeguir();
   };
 
-  // El estado de "seguirte" —compás, cuántas van, errores— aparece en dos
-  // lugares distintos según el tamaño de pantalla (pegado al pie de la
-  // partitura en desktop, adentro de la barra de tocar en el celular), pero
-  // es el mismo contenido en los dos: se arma acá una sola vez.
-  const estadoSeguimiento = siguiendo && (
+  const dejarDeSeguir = () => {
+    setSiguiendo(false);
+    pararReloj();
+  };
+
+  // Llegaste al final: el metrónomo no tiene más nada que marcar.
+  useEffect(() => {
+    if (terminada) pararReloj();
+  }, [terminada, pararReloj]);
+
+  /**
+   * El chip del metrónomo, y qué pasa si lo prendés en el medio: con la
+   * pieza sonando, el click se suma a su grilla sin cuenta previa; mientras
+   * te sigo, un compás de cuenta para agarrar el tempo, y recién después
+   * vuelven a contar las teclas. Apagarlo lo calla, siempre.
+   */
+  const alternarMetronomo = () => {
+    const puesto = !metronomo;
+    setMetronomo(puesto);
+    metronomoRef.current = puesto;
+    if (!puesto) {
+      pararReloj();
+      return;
+    }
+    if (pasadaRef.current) {
+      const { arranque, segundosPorRedonda } = pasadaRef.current;
+      encenderReloj({ arranque, segundosPorRedonda: () => segundosPorRedonda, cuenta: false });
+    } else if (siguiendo && !terminada) {
+      contarParaSeguir();
+    }
+  };
+
+  /**
+   * El metrónomo en pantalla: durante la cuenta previa los números grandes
+   * (es lo que te dice cuándo entrar), después el pulso del compás con el
+   * tiempo actual prendido. Mismo tamaño en los dos, para que no salte.
+   */
+  const estadoReloj = pulso && (
+    <div className="flex items-center gap-3">
+      <span className="text-xs tracking-[0.2em] text-humo uppercase">
+        {pulso.cuenta !== null ? "Entrás en" : "Pulso"}
+      </span>
+      <div className="flex gap-2.5 font-display text-2xl font-black">
+        {Array.from({ length: pieza.compas.numerador }, (_, k) => {
+          const prendido = pulso.cuenta !== null ? pulso.cuenta === k + 1 : pulso.pulso === k;
+          return (
+            <span
+              key={k}
+              className={
+                !prendido ? "text-borde" : pulso.cuenta !== null ? "text-sol" : "text-tiza"
+              }
+            >
+              {k + 1}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  // El estado de "seguirte" —compás, cuántas van, errores— y el metrónomo
+  // aparecen en dos lugares distintos según el tamaño de pantalla (pegado al
+  // pie de la partitura en desktop, adentro de la barra de tocar en el
+  // celular), pero es el mismo contenido en los dos: se arma acá una sola vez.
+  const estadoSeguimiento = (siguiendo || pulso !== null) && (
     <div className="rounded-2xl bg-noche px-4 py-3 sm:px-5 sm:py-4">
-      {terminada ? (
+      {estadoReloj && <div className={siguiendo ? "mb-3" : ""}>{estadoReloj}</div>}
+      {!siguiendo ? null : terminada ? (
         <>
           <p className="font-display text-2xl font-bold text-menta">
             Hasta el final <Icono de="festejo" />
@@ -431,9 +535,9 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             )}
           </div>
           <p className="mt-2 hidden text-xs text-humo sm:block">
-            No hay reloj: la partitura avanza cuando tocás todas las notas de
-            ese instante. La octava no importa. Tocá un compás del pentagrama
-            para saltar ahí.
+            La partitura avanza cuando tocás todas las notas de ese instante,
+            no con el reloj: el metrónomo marca el pulso pero no te apura. La
+            octava no importa. Tocá un compás del pentagrama para saltar ahí.
           </p>
         </>
       )}
@@ -475,7 +579,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
                   setDesdeCompas(c);
                   if (siguiendo) {
                     setI(indiceDelCompas(momentos, c));
-                    puestasRef.current = new Set();
+                    puestasRef.current = [];
                   } else {
                     tocar(c);
                   }
@@ -665,7 +769,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
               )}
 
               <button
-                onClick={siguiendo ? () => setSiguiendo(false) : arrancarSeguimiento}
+                onClick={siguiendo ? dejarDeSeguir : arrancarSeguimiento}
                 className={`${chipAccion(siguiendo ? "activo" : "listo")} flex items-center justify-center gap-1.5`}
               >
                 {siguiendo ? (
@@ -678,9 +782,9 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
               </button>
 
               <button
-                onClick={() => setMetronomo(!metronomo)}
+                onClick={alternarMetronomo}
                 className={`${chip(metronomo)} lg:w-full`}
-                title="Un compás de clicks para entrar, y el pulso marcado mientras suena"
+                title="Un compás de cuenta para entrar y el pulso marcado mientras suena — escuchándola o siguiéndote"
               >
                 <Icono de="metronomo" /> metrónomo
               </button>

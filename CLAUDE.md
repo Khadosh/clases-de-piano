@@ -571,7 +571,8 @@ Tres herramientas más, aprendidas de mirar el reproductor de alphaTab:
 
 - **El metrónomo** marca el pulso mientras suena (fuerte en cada barra) y
   además **cuenta un compás antes de entrar** — sin eso, con el loop puesto la
-  música arranca sola y nunca sabés cuándo poner las manos.
+  música arranca sola y nunca sabés cuándo poner las manos. Es un reloj
+  aparte (ver abajo), no parte del reproductor.
 - **El acelerando** (visible sólo con el loop): cada vuelta sube 4 bpm, hasta
   el tope del slider. El speed trainer de toda la vida. El bpm va por ref
   porque el loop se rearma desde adentro de un closure viejo.
@@ -579,6 +580,56 @@ Tres herramientas más, aprendidas de mirar el reproductor de alphaTab:
   toggles del loop) es un bloque `whitespace-nowrap` adentro de un contenedor
   con wrap: en el celular los grupos bajan enteros en vez de dejar un chip
   huérfano en la línea siguiente. Todos los toggles usan el mismo `chip()`.
+
+### El metrónomo
+
+`lib/reloj.ts`. Es **un reloj propio y no una propiedad de "escucharla"**.
+Antes los clicks vivían adentro de `tocar`, mezclados con las notas en la
+misma lista de eventos, y sonaban bien ahí y en ningún otro lado: en
+"seguime" no había reloj, y prenderlo con la pieza sonando no hacía nada
+hasta la pasada siguiente. Desde afuera eso se lee como "el metrónomo no
+anda", y es la lectura correcta. Se midió en el browser interceptando los
+osciladores del click: cero clicks siguiéndote.
+
+Ahora lo arrancan los dos modos y hace lo mismo en los dos: **un compás de
+cuenta previa, con los números grandes en el pie de la hoja**, y después el
+pulso del compás con el tiempo actual prendido. Tres reglas:
+
+- **La cuenta previa es del metrónomo, no de "seguime".** Sin metrónomo no
+  hay reloj, así que no hay qué contar: el seguimiento te espera igual, como
+  siempre. Con él, durante ese compás las teclas **no cuentan** (todavía no
+  entraste; se mira el reloj del audio, `cuentaHastaRef`, no un flag que
+  dependa del `requestAnimationFrame`).
+- **Los dos relojes son independientes a propósito.** El seguimiento dice
+  *qué* tocás y avanza por notas; el metrónomo dice *cuándo* y no te apura.
+  Si te atrasás lo escuchás, que es para lo que existe un metrónomo. No hay
+  puntaje de tiempo, y no conviene agregarlo como ajuste: cambia lo que el
+  seguimiento es, y tiene el modo de falla del arrastre del micrófono (te
+  trabás en una nota y todo lo que sigue sale "tarde"). Si alguna vez entra,
+  es otro ejercicio con su propio toggle.
+- **Prenderlo en el medio funciona, y distinto según qué esté pasando.** Con
+  la pieza sonando el click se suma a la grilla de esa pasada, sin cuenta
+  (`pasadaRef` guarda el `arranque` y el tempo, y el reloj salta hasta el
+  próximo pulso que no cayó); siguiéndote, un compás de cuenta para agarrar
+  el tempo. Apagarlo lo calla siempre.
+
+`segundosPorRedonda` es una función y no un número porque el tempo se lee
+distinto en cada modo: escuchándola queda **clavado al de la pasada** para
+que click y notas no se separen; siguiéndote no hay pasada, el reloj es el
+único tempo que hay y el slider lo mueve en vivo.
+
+### El juez de "seguime"
+
+`lib/seguimiento.ts`, `juzgarInstante`. Se compara por nota y no por octava,
+pero **contando**: un instante con la octava Do♯2 · Do♯3 pide dos Do♯. Con un
+conjunto de clases el instante se daba por completo con el primer Do♯, y el
+segundo —la otra mitad de la misma octava, unos milisegundos después, porque
+tres teclas nunca caen juntas— caía en el instante siguiente. En el Claro de
+luna ese siguiente es justo el Do♯4 del arpegio: se lo comía calladito y el
+Do♯4 de verdad aparecía después como "una nota de más". Un error por compás
+que no era de nadie, y sólo cuando la derecha caía entre las dos teclas de la
+izquierda, que es como se toca. `npm run test:seguimiento` juega ese compás
+tecla por tecla en el orden que rompía.
 
 ### La hoja y el riel
 
@@ -614,7 +665,9 @@ del riel), así que sigue a la vista mientras tocás sin competir con las
 manos/compases. `estadoSeguimiento` es un solo bloque de JSX armado una vez
 en el cuerpo del componente y usado en los dos lugares —el pie de la hoja en
 desktop, adentro de la barra de tocar en el celular— para que las dos copias
-jamás se desincronicen.
+jamás se desincronicen. El metrónomo en pantalla (la cuenta previa, el
+pulso) va en ese mismo bloque, arriba del compás: también es información
+sobre lo que estás tocando, y también aparece escuchándola sola.
 
 En el celular todo vuelve a ser una sola tarjeta apilada (`max-lg:card` en
 el contenedor, `lg:card` en la hoja y el riel), con la barra de tocar
@@ -1221,4 +1274,5 @@ npm run test:ritmo   # figuras y compases
 npm run test:enlace  # el enlace de acordes
 npm run test:notas   # segmentación y puntaje del micrófono
 npm run test:pitch   # el detector de altura
+npm run test:seguimiento # el juez de "seguime": la octava pide dos teclas
 ```
