@@ -18,6 +18,8 @@
     "test:practica": "node --experimental-strip-types --import ./scripts/alias.mjs scripts/probar-practica.mjs",
     "test:grados": "node --experimental-strip-types scripts/probar-grados.mjs",
     "test:melodia": "node --experimental-strip-types scripts/probar-melodia.mjs",
+    "test:voicing": "node --experimental-strip-types scripts/probar-voicing.mjs",
+    "test:texturas": "node --experimental-strip-types scripts/probar-texturas.mjs",
     "test:pentagrama": "node --experimental-strip-types --import ./scripts/alias.mjs scripts/probar-pentagrama.mjs",
     "importar": "node --experimental-strip-types scripts/importar-musicxml.mjs",
     "lilypond": "node --experimental-strip-types scripts/lilypond-a-musicxml.mjs",

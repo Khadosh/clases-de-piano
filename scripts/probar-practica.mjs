@@ -26,9 +26,9 @@ const SLUGS = [
   // 1 · las manos
   "manos", "posiciones", "escalas",
   // 2 · armar acordes
-  "laboratorio", "identificador", "oido", "contrarreloj", "cifrado", "enlace",
+  "texturas", "laboratorio", "identificador", "voicing", "oido", "contrarreloj", "cifrado", "enlace",
   // 3 · la armonía
-  "semitonos", "funciones", "paralelas", "dominantes", "grados", "cadencias", "inventor",
+  "semitonos", "funciones", "paralelas", "dominantes", "tritonal", "grados", "cadencias", "inventor",
   // 4 · la melodía
   "notas-guia", "grilla", "melodia", "encima",
   // 5 · el tiempo

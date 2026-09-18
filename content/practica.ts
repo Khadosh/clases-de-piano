@@ -117,6 +117,9 @@ export type HerramientaSuelta =
   | "cadencias"
   | "paralelas"
   | "dominantes"
+  | "voicing"
+  | "texturas"
+  | "tritonal"
   | "semitonos";
 
 /** Lo que comparten todas: dónde va, qué se hace, de qué clase salió y cómo se llama su URL. */
@@ -278,6 +281,30 @@ const FICHAS: Record<
     emoji: "🧲",
     bajada:
       "La tabla de la clase 5 para escucharla: cada X7 de Do mayor con el acorde adonde lleva y la nota ajena que trae marcada en el teclado, el destino dado vuelta para oír cuándo se va del campo, y con un interruptor la otra opción, el X° que llega a los mismos lugares desde un semitono abajo. Y la vuelta: arranca con la del cuaderno y a cualquier progresión le metés los de paso de a uno, para comparar con y sin.",
+  },
+  voicing: {
+    area: "acordes",
+    forma: "probar",
+    titulo: "Voicing: repartir el acorde",
+    emoji: "⚖️",
+    bajada:
+      "El mismo acorde cerrado en la izquierda, abierto a dos manos con la tercera arriba, o a una mano sin la fundamental. Las notas no cambian; el color sí. Escuchá la cerrada y la abierta seguidas y fijate cuál suena a día nublado.",
+  },
+  texturas: {
+    area: "acordes",
+    forma: "mirar",
+    titulo: "Texturas: plaqué, pum-chá y arpegios",
+    emoji: "🧶",
+    bajada:
+      "Una vuelta tocada de las tres maneras de la clase 7, en loop, con el teclado diciendo qué mano pone qué. Y los cuatro tipos de textura de la música —monofonía, melodía acompañada, homofonía, polifonía— sobre la misma frase, para escuchar en qué se diferencian.",
+  },
+  tritonal: {
+    area: "armonia",
+    forma: "probar",
+    titulo: "La sustitución tritonal",
+    emoji: "🔀",
+    bajada:
+      "Cada X7 de Do mayor y el que está a un tritono, que puede ir en su lugar porque comparten las dos notas que empujan. La ii-V-I con el G7 y con el D♭7, para escuchar el bajo que en vez de saltar baja de a semitonos.",
   },
   "que-compas": {
     area: "tiempo",
@@ -519,6 +546,15 @@ function armar(): Sala {
           break;
         case "semitonos":
           sumarSuelta("semitonos", lesson);
+          break;
+        case "voicing":
+          sumarSuelta("voicing", lesson);
+          break;
+        case "texturas":
+          sumarSuelta("texturas", lesson);
+          break;
+        case "sustitucion-tritonal":
+          sumarSuelta("tritonal", lesson);
           break;
         case "section":
         case "prose":

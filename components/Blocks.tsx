@@ -10,6 +10,9 @@ import NotasGuia from "./NotasGuia";
 import Cadencias from "./Cadencias";
 import Paralelas from "./Paralelas";
 import Dominantes from "./Dominantes";
+import Voicing from "./Voicing";
+import Texturas from "./Texturas";
+import SustitucionTritonal from "./SustitucionTritonal";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -238,6 +241,39 @@ export function BlockView({ block }: { block: Block }) {
             <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
           )}
           <Dominantes />
+        </section>
+      );
+
+    case "voicing":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Voicing qualityIds={block.qualities} />
+        </section>
+      );
+
+    case "texturas":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Texturas />
+        </section>
+      );
+
+    case "sustitucion-tritonal":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <SustitucionTritonal />
         </section>
       );
 

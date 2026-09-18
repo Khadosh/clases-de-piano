@@ -25,6 +25,9 @@ export type Block =
   | CadenciasBlock
   | ParalelasBlock
   | DominantesBlock
+  | VoicingBlock
+  | TexturasBlock
+  | TritonalBlock
   | QuoteBlock;
 
 /**
@@ -233,6 +236,42 @@ export interface ParalelasBlock {
  */
 export interface DominantesBlock {
   kind: "dominantes-secundarios";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * El voicing de la clase 7: el mismo acorde repartido entre las manos de
+ * distintas maneras —cerrado, abierto a dos manos, a una mano sin la
+ * fundamental— para escuchar que las notas son las mismas y el color no.
+ * `qualities` son ids de CHORD_QUALITIES; sin ellos, todos los que apilan
+ * terceras.
+ */
+export interface VoicingBlock {
+  kind: "voicing";
+  title: string;
+  intro?: string;
+  qualities?: string[];
+}
+
+/**
+ * Las texturas de la clase 7: los cuatro tipos sobre la misma frase, y las
+ * tres del piano —plaqué, pum-chá, arpegios— sobre una vuelta. No lleva datos
+ * porque la frase y las progresiones son las que son.
+ */
+export interface TexturasBlock {
+  kind: "texturas";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * La sustitución tritonal de la clase 7: cada X7 de Do mayor con el X7 a un
+ * tritono que puede ir en su lugar, y la ii-V-I con los dos. No lleva datos
+ * porque la tabla se deduce de la de los dominantes.
+ */
+export interface TritonalBlock {
+  kind: "sustitucion-tritonal";
   title: string;
   intro?: string;
 }

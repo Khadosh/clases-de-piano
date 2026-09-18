@@ -6,12 +6,13 @@ import clase03 from "@/content/lessons/clase-03";
 import clase04 from "@/content/lessons/clase-04";
 import clase05 from "@/content/lessons/clase-05";
 import clase06 from "@/content/lessons/clase-06";
+import clase07 from "@/content/lessons/clase-07";
 
 /**
  * El índice de clases. Para agregar una clase nueva: crear el archivo en
  * content/lessons/ y sumarlo acá. Nada más.
  */
-export const LESSONS: Lesson[] = [clase01, clase02, clase03, clase04, clase05, clase06].sort((a, b) => a.n - b.n);
+export const LESSONS: Lesson[] = [clase01, clase02, clase03, clase04, clase05, clase06, clase07].sort((a, b) => a.n - b.n);
 
 export const lessonBySlug = (slug: string) =>
   LESSONS.find((l) => slugOf(l) === slug);
@@ -47,6 +48,9 @@ export function temarioDe(lesson: Lesson) {
   let cadencias = false;
   let paralelas = false;
   let dominantes = false;
+  let voicing = false;
+  let texturas = false;
+  let tritonal = false;
   for (const b of lesson.blocks) {
     if (b.kind === "chord-lab") {
       b.qualities.forEach((q) => qualityIds.add(q));
@@ -75,6 +79,17 @@ export function temarioDe(lesson: Lesson) {
       // La tabla es toda X7 hacia tríadas del campo: se pueden preguntar.
       for (const q of ["maj", "min", "dom7"]) qualityIds.add(q);
     }
+    if (b.kind === "voicing") {
+      voicing = true;
+      // El reparto se practica sobre tríadas y cuatriadas: se pueden preguntar.
+      for (const q of b.qualities ?? ["maj", "min", "maj7", "dom7", "min7"]) qualityIds.add(q);
+    }
+    if (b.kind === "texturas") texturas = true;
+    if (b.kind === "sustitucion-tritonal") {
+      tritonal = true;
+      // Los dos lados de la sustitución son dominantes.
+      qualityIds.add("dom7");
+    }
     if (b.kind === "notas-guia") {
       // El renglón usa inversiones para el bajo que baja: se pueden preguntar.
       inversiones = true;
@@ -91,6 +106,9 @@ export function temarioDe(lesson: Lesson) {
     cadencias,
     paralelas,
     dominantes,
+    voicing,
+    texturas,
+    tritonal,
   };
 }
 

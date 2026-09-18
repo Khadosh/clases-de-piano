@@ -129,6 +129,9 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 | **Inventar secuencias** | La tarea de la clase 3 jugable: grados con las funciones pintadas, la regla de oro avisando en la cuarta igual seguida (sin borrar nada: la secuencia es tuya), y las cadencias detectadas al cierre. `lib/grados.ts`. |
 | **Ponerle melodía a los acordes** | El método completo de la clase 4 en tres pasos: la progresión (tríadas o con séptima, y con los préstamos de las menores), las guías que reciben a cada acorde, y la melodía — compuesta por la app o escrita con figuras y silencios. Veredicto por nota más aterrizajes, respiración y variedad. `lib/melodia.ts`. |
 | **Tocarla encima** | La mitad de los dedos del mismo método: la progresión en loop con cuenta previa y metrónomo, y la melodía la tocás vos (MIDI o pantalla). Veredicto en vivo contra el acorde que suena; la primera nota de cada compás es el aterrizaje. |
+| **Voicing** | El mismo acorde cerrado, abierto con cada reparto y a una mano. Cuelga de su propio bloque. `lib/voicing.ts`. |
+| **Texturas** | Una vuelta en plaqué, pum-chá o arpegios, en loop; y los cuatro tipos sobre la misma frase. `lib/texturas.ts`. |
+| **La sustitución tritonal** | La tabla con las dos notas compartidas y la ii-V-I con y sin. `SUSTITUTOS_TRITONALES`, `lib/grados.ts`. |
 | **La grilla** | La escala en columnas, los acordes de la vuelta en filas, un punto donde la nota cae parada. Es la imagen de un curso de armonía pop que Joaquín hace aparte, y es lo mismo que las fichas verdes de la melodía visto todo junto: la nota que puede quedarse quieta salta a la vista. Los nombres de las funciones son los de Quique; los apodos del pop (casa mayor, casa menor, tensión, el que eleva) van de alias en I, VIm, V y IV. |
 
 De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
@@ -217,6 +220,64 @@ un fa♯ y nada más, la ii-V-I de Fa dando Gm7 · C7 · Fmaj7, que toda escala 
 los saltos calculados. **Esa última es la que importa**: es teoría que la app
 afirma y que Quique todavía no dio, así que no puede quedar sólo escrita.
 
+### El voicing, las texturas y la sustitución tritonal (clase 7)
+
+Tres módulos puros y tres componentes, cada uno con su bloque y su entrada en
+la sala (`voicing`, `texturas`, `tritonal`, colgadas de su propio bloque).
+
+**El voicing no es una tabla: es un reparto de grados por mano.**
+`lib/voicing.ts` arma cada disposición de la receta del acorde: `cerrada`
+apila todo en la izquierda desde Do3; `abierta` pone en la izquierda `1-5` o
+`1-7` y en la derecha lo que queda, cada nota en su primera aparición arriba
+de la izquierda, así quedan a cuartas, quintas y sextas solas; `unaMano` saca
+la fundamental y gira. Tres reglas que `test:voicing` clava sobre todos los
+acordes que apilan terceras:
+
+- **La tercera nunca está en la izquierda del voicing abierto.** Es la nota
+  de la que trata la clase: dice mayor o menor, y abajo ensucia. No se saca,
+  se muda — el test también verifica que esté en la derecha.
+- **Una tríada abierta duplica la fundamental arriba** para que la derecha
+  tenga dos dedos, y **no tiene `1-7 / 3-5`** (devuelve null). Y a una mano
+  una tríada no puede esquivar nada: `sinFundamental` es false y sólo gira.
+- **Los sus quedan afuera del componente**: no tienen tercera. Se filtran por
+  `grados` en el propio `Voicing`, no en el catálogo.
+
+El rango del teclado se calcula del acorde y no de la disposición (todo lo
+que ese acorde puede ocupar en cualquiera de ellas): cambiar de cerrada a
+abierta no mueve el teclado, sólo las marcas.
+
+**Las texturas son eventos en pulsos, no audio.** `compasDe(textura,
+acorde)` devuelve `{t, dur, pitches, mano}` para un compás; el componente los
+agenda contra el reloj del audio con el patrón de los dos relojes (un timer
+que agenda la ventana que viene, un `requestAnimationFrame` que pinta lo que
+suena) y hace loop rearmando la vuelta desde adentro. `repartir()` pone el
+bajo entre Do2 y Sol2 y el acorde girado cerca del Do central; por eso el
+teclado de esa pestaña arranca en **Sol1** — el bajo de La♭ a Si cae abajo
+del Do2, y una tecla que no entra no se dibuja mal, no se dibuja.
+
+- **El arpegio va 1 · 5 · 3 · 7, y con tríada la octava hace de séptima.**
+  El "7/8" es interpretación de Joaquín, no de la clase; está en
+  `openQuestions`. El *secuencial* sube de una mano a la otra (la izquierda
+  desde el bajo, la derecha una octava más), el *intercalado* alterna las
+  manos nota por nota: también interpretación, también anotada.
+- **Los cuatro tipos se escuchan sobre la misma frase** (`FRASE_MELODIA`,
+  cuatro compases nuestros sobre C · F · G7 · C) y la melodía es idéntica en
+  las cuatro: lo único que cambia es qué hace todo lo demás. La homofonía
+  arma cada columna con `vocesDebajo` (las dos notas del acorde justo
+  debajo, mismo ritmo); la polifonía trae una contravoz escrita a mano
+  (`FRASE_CONTRAVOZ`). `test:texturas` clava que cada compás cierra la
+  cuenta, que en los pulsos 1 y 3 las dos voces caen en el acorde, y que el
+  ritmo de la contravoz es distinto del de la melodía.
+
+**La sustitución tritonal se deduce, uno por cada `Dominante`.** El
+sustituto es el X7 a seis semitonos, y `compartidas` son exactamente la
+tercera y la séptima del original (el tritono de adentro es el mismo).
+Se escribe como el **♭II de adonde llega** —D♭7 y no C♯7, con Do♭ adentro y
+no Si, porque es su séptima— y cuando eso daría una tecla blanca (el
+sustituto del F7 es el B7, no el C♭7) se escribe llana. `test:grados` clava
+la lista entera y que la sustitución es de ida y vuelta. En la ii-V-I el D♭7
+va una octava arriba de su Do♯3 para que el bajo baje de verdad: Re, Re♭, Do.
+
 ### Lo que se acuerda entre sesiones
 
 `lib/memoria.ts`, en `localStorage`. Rompe a medias la regla de que el puntaje
@@ -275,6 +336,9 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `notas-guia` | El renglón del papel: la nota que recibe a cada acorde | Columnas guía/acorde sonando de a una o de corrido (acepta cifrados con barra: `Em/B`) |
 | `cadencias` | Las cadencias con nombre y apellido | El mapa para escucharlas + el juego de nombrarlas (datos en `CADENCIAS_CON_NOMBRE`, `lib/grados.ts`) |
 | `paralelas` | La mayor y las tres menores sobre Do, con sus acordes | Las cuatro escalas con lo corrido marcado, el campo armónico de cada una (`triadasDeEscala` + `identificarAcorde`) y el préstamo C→Fm→C |
+| `voicing` | El mismo acorde repartido entre las manos: cerrado, abierto a dos manos, a una mano sin la fundamental | Selector de acorde y disposición, teclado con las manos en colores y la tercera con aro, los saltos entre vecinas con nombre, y "cerrada y después abierta" (`lib/voicing.ts`) |
+| `texturas` | Los cuatro tipos de textura y las tres del piano | Una vuelta en plaqué, pum-chá o arpegios en loop, y la misma frase vestida de monofonía, melodía acompañada, homofonía y polifonía (`lib/texturas.ts`) |
+| `sustitucion-tritonal` | El dominante cambiado por el que está a un tritono | La tabla deducida de `DOMINANTES` con las dos notas compartidas marcadas, y la ii-V-I con el G7 y con el D♭7 (`SUSTITUTOS_TRITONALES`, `lib/grados.ts`) |
 | `dominantes-secundarios` | Los acordes de paso: el X7 y el X° de cada llegada | La tabla de Do mayor sonando con un interruptor dominantes/disminuidos (la nota ajena pintada, el destino dado vuelta para oír el efectivo) y la vuelta: arranca con la del cuaderno y cualquier progresión se llena de a uno, ciclando X7 → X° → nada (datos en `DOMINANTES` y `DISMINUIDOS`, `lib/grados.ts`) |
 
 **Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
@@ -1270,6 +1334,8 @@ npm run test:lilypond # el lector de LilyPond: octava relativa, duraciones, repe
 npm run test:practica # la sala: las direcciones congeladas y los alias
 npm run test:grados  # los grados de una tonalidad y las escalas
 npm run test:melodia # la melodía generada, contra sus propias reglas
+npm run test:voicing # el reparto del acorde entre las manos: la tercera nunca abajo
+npm run test:texturas # plaqué, pum-chá, arpegios y los cuatro tipos sobre la frase
 npm run test:ritmo   # figuras y compases
 npm run test:enlace  # el enlace de acordes
 npm run test:notas   # segmentación y puntaje del micrófono

@@ -270,6 +270,27 @@ const CUERPOS: Record<string, JSX.Element> = {
       <path d="M6 7.5h4M14 7.5h4" strokeWidth={1.4} />
     </g>
   ),
+  // El voicing: una balanza, porque de eso se trata — que ninguna nota pese de más.
+  balanza: (
+    <g {...S}>
+      <path d="M12 4v16M8 20h8M4 8h16" />
+      <path d="M7 8l-3 6a3 3 0 0 0 6 0l-3-6zM17 8l-3 6a3 3 0 0 0 6 0l-3-6z" strokeWidth={1.4} />
+    </g>
+  ),
+  // Las texturas: un tejido, que es de donde viene la palabra.
+  ovillo: (
+    <g {...S}>
+      <circle cx={12} cy={12} r={8} />
+      <path d="M5.5 8.5c4 1 9 1 13 0M5.5 15.5c4-1 9-1 13 0M8.5 5.5c1 4 1 9 0 13M15.5 5.5c-1 4-1 9 0 13" strokeWidth={1.3} />
+    </g>
+  ),
+  // La sustitución: dos caminos que se cruzan y llegan al mismo lado.
+  cruce: (
+    <g {...S}>
+      <path d="M3 7h4l10 10h4M3 17h4l10-10h4" />
+      <path d="M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5" strokeWidth={1.5} />
+    </g>
+  ),
 };
 
 /** De los emojis que quedaron en los datos, al ícono que los reemplaza. */
@@ -306,6 +327,9 @@ const DE_EMOJI: Record<string, string> = {
   "🔁": "loop",
   "🎼": "pentagrama",
   "🧲": "iman",
+  "⚖️": "balanza",
+  "🧶": "ovillo",
+  "🔀": "cruce",
 };
 
 export default function Icono({

@@ -518,3 +518,62 @@ export const DISMINUIDOS: Disminuido[] = DOMINANTES.map(disminuidoDePaso);
 export function disminuidoDelGrado(grado: number): Disminuido | null {
   return DISMINUIDOS.find((x) => x.destino === grado) ?? null;
 }
+
+// ---------------------------------------------------------------------------
+// La sustitución tritonal (clase 7)
+// ---------------------------------------------------------------------------
+
+export interface SustitutoTritonal {
+  /** El dominante que reemplaza: el G7 del G7 → C. */
+  original: Dominante;
+  /** La fundamental del sustituto: seis semitonos de la del original, para cualquier lado. */
+  raiz: number;
+  /**
+   * Cómo se escribe. Es el ♭II de adonde llega —el D♭ que baja al Do—, así
+   * que lleva la letra de arriba de la llegada con bemol: D♭7 y no C♯7. Si
+   * eso da una tecla blanca (el sustituto del F7 es el B7) se escribe llana.
+   */
+  base: NotaEscrita;
+  cifrado: string;
+  /** Las dos notas que comparten, que son la razón de que se puedan cambiar. */
+  compartidas: number[];
+  /** Las notas del sustituto que Do mayor no tiene. */
+  ajenas: number[];
+}
+
+/**
+ * El acorde que está a un tritono —seis semitonos, la mitad justa de la
+ * octava, así que da lo mismo subir que bajar— del dominante, también
+ * dominante. Se puede poner en su lugar porque **comparten dos notas**, y son
+ * justo las que empujan: la tercera y la séptima del G7 (Si y Fa) son la
+ * séptima y la tercera del D♭7 (C♭ y Fa). El tritono de adentro del acorde
+ * es el mismo, y con él la tensión; lo que cambia es el bajo, que en vez de
+ * saltar una quinta baja un semitono a la llegada. Muy usado en el jazz.
+ *
+ * Se deduce de `DOMINANTES`, uno por cada X7: así las dos tablas van juntas.
+ */
+export function sustitutoTritonal(d: Dominante): SustitutoTritonal {
+  const raiz = mod12(d.raiz + 6);
+  const llegada = raizEscrita(d.raizDestino);
+  const letra = (llegada.letra + 1) % 7;
+  let alter = mod12(raiz - LETRAS_PC[letra]);
+  if (alter > 6) alter -= 12;
+  const base: NotaEscrita =
+    LETRAS_PC.includes(raiz as (typeof LETRAS_PC)[number])
+      ? { letra: LETRAS_PC.indexOf(raiz as (typeof LETRAS_PC)[number]), alter: 0, pc: raiz }
+      : { letra, alter, pc: raiz };
+  const escala = new Set<number>(GRADOS_MAYOR);
+  const propias = clasesDeDominante(raiz);
+  const delOriginal = new Set(clasesDeDominante(d.raiz));
+  return {
+    original: d,
+    raiz,
+    base,
+    cifrado: `${escribirNota(base, "en")}7`,
+    compartidas: propias.filter((pc) => delOriginal.has(pc)),
+    ajenas: propias.filter((pc) => !escala.has(pc)),
+  };
+}
+
+/** Uno por cada dominante de la tabla, en el mismo orden. */
+export const SUSTITUTOS_TRITONALES: SustitutoTritonal[] = DOMINANTES.map(sustitutoTritonal);

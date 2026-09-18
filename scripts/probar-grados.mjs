@@ -15,6 +15,7 @@ import {
   GRADOS_MAYOR,
   PRESTAMOS,
   PROGRESIONES,
+  SUSTITUTOS_TRITONALES,
   TONALIDAD_MAYOR,
   cadenciaAlFinal,
   cifradoDelAcorde,
@@ -28,6 +29,7 @@ import {
   intervalosDelAcorde,
   rachaDeFuncion,
   raizDelGrado,
+  sustitutoTritonal,
   violaLaReglaDeOro,
 } from "../lib/grados.ts";
 import {
@@ -42,6 +44,7 @@ import {
   CHORD_QUALITIES,
   chordSymbol,
   identificarAcorde,
+  mod12,
   parseCifradoConBajo,
   qualityById,
 } from "../lib/music.ts";
@@ -191,6 +194,46 @@ probar("las calidades de los grados están todas en el catálogo del código", (
   const ids = new Set(CHORD_QUALITIES.map((q) => q.id));
   for (const g of TONALIDAD_MAYOR) {
     assert.ok(ids.has(g.triada) && ids.has(g.cuatriada), g.cifra);
+  }
+});
+
+// ---- La sustitución tritonal de la clase 7 ----------------------------------
+
+probar("el sustituto del G7 es el D♭7, y está a seis semitonos para cualquier lado", () => {
+  const g7 = DOMINANTES.find((d) => d.cifrado === "G7");
+  const s = sustitutoTritonal(g7);
+  assert.equal(s.cifrado, "Db7");
+  assert.equal(s.raiz, 1);
+  assert.equal(mod12(s.raiz - g7.raiz), 6);
+  assert.equal(mod12(g7.raiz - s.raiz), 6);
+});
+
+probar("los dos comparten exactamente dos notas, y son la tercera y la séptima del original", () => {
+  for (const s of SUSTITUTOS_TRITONALES) {
+    assert.equal(s.compartidas.length, 2, s.cifrado);
+    const tercera = mod12(s.original.raiz + 4);
+    const septima = mod12(s.original.raiz + 10);
+    assert.deepEqual(new Set(s.compartidas), new Set([tercera, septima]), s.cifrado);
+  }
+});
+
+probar("el sustituto cae a la llegada bajando un semitono, en vez de saltar la quinta", () => {
+  for (const s of SUSTITUTOS_TRITONALES) {
+    assert.equal(mod12(s.raiz - 1), s.original.raizDestino, s.cifrado);
+  }
+});
+
+probar("se escriben con bemol, como el ♭II de adonde van, y llanos cuando son tecla blanca", () => {
+  assert.deepEqual(
+    SUSTITUTOS_TRITONALES.map((s) => s.cifrado),
+    ["Gb7", "Ab7", "Bb7", "B7", "Db7", "Eb7", "F7"],
+  );
+  assert.deepEqual(SUSTITUTOS_TRITONALES.map((s) => s.original.cifrado), ["C7", "D7", "E7", "F7", "G7", "A7", "B7"]);
+});
+
+probar("la sustitución es de ida y vuelta: el sustituto del sustituto es el original", () => {
+  for (const s of SUSTITUTOS_TRITONALES) {
+    assert.equal(mod12(s.raiz + 6), s.original.raiz);
   }
 });
 

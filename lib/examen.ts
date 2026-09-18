@@ -15,6 +15,7 @@ import {
   notasDeAcorde,
   notasDeInversion,
   pickRandom,
+  qualityById,
   shuffle,
   simboloConBajo,
   stackLabel,
@@ -41,6 +42,7 @@ import {
   CADENCIAS_CON_NOMBRE,
   DISMINUIDOS,
   DOMINANTES,
+  SUSTITUTOS_TRITONALES,
   FUNCIONES,
   FUNCION_DE_GRADO,
   TONALIDAD_MAYOR,
@@ -467,6 +469,101 @@ function preguntaDominante(): Pregunta {
   );
 }
 
+/**
+ * La sustitución tritonal de la clase 7: qué acorde reemplaza a cuál, y por
+ * qué se puede — las dos notas que comparten.
+ */
+function preguntaSustituto(): Pregunta {
+  const s = pickRandom(SUSTITUTOS_TRITONALES);
+  const otros = SUSTITUTOS_TRITONALES.filter((o) => o.cifrado !== s.cifrado);
+  const dado = Math.random();
+  const notaEs = (pc: number) => escribirNota(deletrearAcorde(s.original.raiz, qualityById("dom7")!).find((n) => n.pc === pc)!);
+  if (dado < 0.45) {
+    return conOpciones(
+      `¿Qué acorde sustituye por tritono al ${s.original.cifrado}?`,
+      s.cifrado,
+      shuffle(otros.map((o) => o.cifrado)).slice(0, 3),
+      `${s.original.cifrado} → ${s.cifrado}: la fundamental se corre seis semitonos, un tritono, y da lo mismo para qué lado porque es la mitad justa de la octava. Los dos son dominantes y los dos llevan al ${s.original.cifradoDestino}.`,
+      s.original.cifrado,
+    );
+  }
+  if (dado < 0.75) {
+    const correcta = s.compartidas.map(notaEs).join(" y ");
+    const notas = deletrearAcorde(s.original.raiz, qualityById("dom7")!);
+    const pares = [
+      [0, 2],
+      [0, 1],
+      [1, 2],
+      [0, 3],
+    ].map(([a, b]) => `${escribirNota(notas[a])} y ${escribirNota(notas[b])}`).filter((p) => p !== correcta);
+    return conOpciones(
+      `¿Qué dos notas comparten el ${s.original.cifrado} y su sustituto, el ${s.cifrado}?`,
+      correcta,
+      shuffle(pares).slice(0, 3),
+      `La tercera y la séptima del ${s.original.cifrado} son la séptima y la tercera del ${s.cifrado}: el mismo tritono adentro, la misma tensión. Por eso se pueden cambiar.`,
+    );
+  }
+  return conOpciones(
+    `¿A cuántos semitonos está el sustituto tritonal de un dominante?`,
+    "6",
+    ["5", "7", "3"],
+    "Un tritono son seis semitonos, la mitad justa de la octava: por eso da lo mismo subir que bajar, se llega al mismo acorde.",
+  );
+}
+
+const TEXTURAS_EXAMEN: { nombre: string; pista: string }[] = [
+  { nombre: "Plaqué", pista: "El acorde entero, planchado, y se deja sonando hasta el que viene." },
+  { nombre: "Pum-chá", pista: "El bajo en la fundamental y después el acorde en la derecha, girado." },
+  { nombre: "Arpegio", pista: "Las notas del acorde de a una: 1 · 5 · 3 · 7." },
+  { nombre: "Monofonía", pista: "Una sola línea melódica; si hay más instrumentos, todos hacen lo mismo." },
+  { nombre: "Melodía acompañada", pista: "Una melodía y, debajo, acordes que la sostienen." },
+  { nombre: "Homofonía", pista: "Varias líneas que se mueven a la vez con el mismo ritmo; manda la más aguda." },
+  { nombre: "Polifonía", pista: "Varias líneas independientes a la vez, cada una con su propio ritmo." },
+];
+
+/** Las texturas de la clase 7: de la descripción al nombre. */
+function preguntaTextura(): Pregunta {
+  const t = pickRandom(TEXTURAS_EXAMEN);
+  return conOpciones(
+    `¿Cómo se llama esta textura?`,
+    t.nombre,
+    shuffle(TEXTURAS_EXAMEN.filter((o) => o.nombre !== t.nombre).map((o) => o.nombre)).slice(0, 3),
+    `${t.nombre}: ${t.pista.toLowerCase()}`,
+    t.pista,
+  );
+}
+
+/** El voicing de la clase 7: qué va en cada mano y por qué. */
+function preguntaVoicing(): Pregunta {
+  const dado = Math.random();
+  if (dado < 0.4) {
+    return conOpciones(
+      "En el voicing abierto a dos manos, ¿qué nota del acorde suele no tocar la mano izquierda?",
+      "La tercera",
+      ["La fundamental", "La quinta", "La séptima"],
+      "La tercera es la que dice si el acorde es mayor o menor, y abajo, pegada a la fundamental, ensucia: se muda a la derecha. La izquierda pone 1 y 5, o 1 y 7.",
+    );
+  }
+  if (dado < 0.7) {
+    return conOpciones(
+      "¿Cuál de estos repartos es un voicing abierto a dos manos?",
+      "1 y 5 en la izquierda, 3 y 7 en la derecha",
+      [
+        "1, 3 y 5 en la izquierda, nada en la derecha",
+        "1 y 3 en la izquierda, 5 y 7 en la derecha",
+        "3 y 5 en la izquierda, 1 y 7 en la derecha",
+      ],
+      "Los dos repartos de la clase son 1-5 / 3-7 y 1-7 / 3-5: la fundamental abajo, la tercera arriba, y entre nota y nota cuartas, quintas y sextas.",
+    );
+  }
+  return conOpciones(
+    "¿Cómo suena la posición cerrada, 1-3-5 apilado y grave?",
+    "Densa y oscura, como un día nublado",
+    ["Abierta y liviana", "Igual que la abierta: son las mismas notas", "Más aguda"],
+    "Las notas son las mismas, pero pegadas y graves se cargan. Abrir el acorde es repartir esas mismas notas para que ninguna tape a otra — como en una orquesta.",
+  );
+}
+
 export interface OpcionesExamen {
   /** Ids de acordes que la clase tocó. Si está vacío, no hay examen. */
   qualityIds: string[];
@@ -486,6 +583,12 @@ export interface OpcionesExamen {
   paralelas?: boolean;
   /** ¿Vio los dominantes secundarios? */
   dominantes?: boolean;
+  /** ¿Vio el voicing, el reparto del acorde entre las manos? */
+  voicing?: boolean;
+  /** ¿Vio las texturas? */
+  texturas?: boolean;
+  /** ¿Vio la sustitución tritonal? */
+  tritonal?: boolean;
   cantidad?: number;
 }
 
@@ -504,6 +607,9 @@ export function generarExamen({
   cadencias,
   paralelas,
   dominantes,
+  voicing,
+  texturas,
+  tritonal,
   cantidad = 8,
 }: OpcionesExamen): Pregunta[] {
   const pozo = qualityIds
@@ -532,6 +638,9 @@ export function generarExamen({
   if (cadencias) fabricas.push(preguntaCadenciaNombre);
   if (paralelas) fabricas.push(preguntaEscalaMenor);
   if (dominantes) fabricas.push(preguntaDominante);
+  if (voicing) fabricas.push(preguntaVoicing);
+  if (texturas) fabricas.push(preguntaTextura);
+  if (tritonal) fabricas.push(preguntaSustituto);
 
   const preguntas: Pregunta[] = [];
   // Se garantiza una de armar y después se completa mezclando.
