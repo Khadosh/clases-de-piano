@@ -1211,6 +1211,46 @@ export const PIEZAS: Pieza[] = [
       n([La2, Do3, Mi3], 2, { puntillo: true }),
     ],
   },
+  {
+    slug: "pum-cha-en-la-menor",
+    titulo: "Pum-chá en La menor",
+    compositor: "Joaquín",
+    anio: "2026",
+    compas: { numerador: 4, denominador: 4 },
+    tonalidad: { tonica: 9, modo: "menor" },
+    bpm: 84,
+    dificultad: 2,
+    propia: true,
+    sobre:
+      "El primer pum-chá, tres días después de la clase 7, y quedó como registro. Cuatro compases, un acorde por compás —Lam, Fa, Sol, Lam— con la izquierda haciendo todo el acompañamiento: el bajo en el 1 y el 3, el acorde girado en el 2 y el 4, siempre en segunda inversión para que la mano casi no se mueva mientras el bajo sí. Arriba, una sola frase que se transporta con el acorde: fundamental, quinta, fundamental, y después dos tresillos que suben y bajan —1-2-3, 5-4-3— y aterrizan en la tercera. En el Fa la frase se queda en La, que es su tercera. El último compás es un La tenido mientras la izquierda cierra sola.",
+    hasta: "Entera: los cuatro compases, con el final que se apaga.",
+    revisar:
+      "Transcripta de la grabación MIDI de la página de grabar (19 de septiembre), cuantizada a la corchea y al tresillo. El pulso se estira en el último compás, y quedó parejo. Un Re3 apretado casi sin sonar en el segundo chá del primer compás quedó afuera. La melodía era secundaria en la toma: el foco estaba en la mano izquierda.",
+    derecha: [
+      // Lam: fundamental, quinta, fundamental, y los dos tresillos.
+      n(La4, 8), n(Mi5, 8), n(La4, 4),
+      n(La4, 8, { irregular: TRESILLO }), n(Si4, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }),
+      n(Mi5, 8, { irregular: TRESILLO }), n(Re5, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }),
+      // Fa: la misma frase, sin mover —el La es la tercera del Fa.
+      n(La4, 8), n(Mi5, 8), n(La4, 4),
+      n(La4, 8, { irregular: TRESILLO }), n(Si4, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }),
+      n(Mi5, 8, { irregular: TRESILLO }), n(Re5, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }),
+      // Sol: la frase transportada al Sol, nota por nota.
+      n(Sol4, 8), n(Re5, 8), n(Sol4, 4),
+      n(Sol4, 8, { irregular: TRESILLO }), n(La4, 8, { irregular: TRESILLO }), n(Si4, 8, { irregular: TRESILLO }),
+      n(Re5, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }), n(Si4, 8, { irregular: TRESILLO }),
+      // Lam: el La tenido, y la izquierda cierra sola.
+      n(La4, 1),
+    ],
+    izquierda: [
+      // El pum en el 1 y el 3, el chá en el 2 y el 4: el acorde en segunda
+      // inversión, con la quinta abajo, para que la mano se quede quieta.
+      ...repetir([n(La2, 4), n([Mi3, La3, Do4], 4)], 2),
+      ...repetir([n(Fa2, 4), n([Do3, Fa3, La3], 4)], 2),
+      ...repetir([n(Sol2, 4), n([Re3, Sol3, Si3], 4)], 2),
+      ...repetir([n(La2, 4), n([Mi3, La3, Do4], 4)], 2),
+    ],
+  },
   // Las importadas de Mutopia van al final: son muchas y son un libro.
   ...MUTOPIA,
 ];
