@@ -10,14 +10,18 @@
 import assert from "node:assert/strict";
 import { CHORD_QUALITIES, mod12, qualityById } from "../lib/music.ts";
 import {
+  DISPOSICIONES,
   abierta,
   cerrada,
+  corregirVoicing,
   esAbierta,
   gradoDeTecla,
   nombreDeIntervalo,
   saltosEntreVecinas,
   teclasDe,
+  teclasQuePide,
   unaMano,
+  voicingModelo,
 } from "../lib/voicing.ts";
 
 let bien = 0;
@@ -135,6 +139,94 @@ probar("los nombres de los saltos: 5 es cuarta, 7 quinta, 9 sexta, 12 octava", (
   assert.equal(nombreDeIntervalo(4), "3ª");
   assert.equal(nombreDeIntervalo(12), "8ª");
   assert.equal(nombreDeIntervalo(16), "8ª + 3ª");
+});
+
+// ---- El dictado -----------------------------------------------------------
+
+const MIN7 = qualityById("min7");
+const juzgar = (puestas, root, q, disposicion) => corregirVoicing(puestas, { root, q, disposicion })?.veredicto ?? null;
+
+probar("dictado: la respuesta modelo de cada disposición se corrige a sí misma como bien", () => {
+  for (const q of TERCIADOS) {
+    for (let root = 0; root < 12; root++) {
+      for (const { id, soloCuatriadas } of DISPOSICIONES) {
+        if (soloCuatriadas && q.stack.length < 3) continue;
+        const pedido = { root, q, disposicion: id };
+        const modelo = voicingModelo(pedido);
+        const c = corregirVoicing(teclasDe(modelo), pedido);
+        assert.equal(c?.veredicto, "bien", `${q.id} sobre ${root}, ${id}`);
+        assert.equal(teclasDe(modelo).length >= teclasQuePide(pedido), true);
+      }
+    }
+  }
+});
+
+probar("en toda abierta la derecha arranca por lo menos a una cuarta del techo de la izquierda", () => {
+  for (const q of TERCIADOS) {
+    for (let root = 0; root < 12; root++) {
+      for (const reparto of ["15-37", "17-35"]) {
+        const v = abierta(root, q, reparto);
+        if (!v) continue;
+        assert.ok(v.derecha[0] - Math.max(...v.izquierda) >= 5, `${q.id} sobre ${root}, ${reparto}`);
+      }
+    }
+  }
+});
+
+probar("dictado: no corrige hasta que estén las teclas que pide", () => {
+  assert.equal(corregirVoicing([48, 55], { root: 0, q: MAJ7, disposicion: "15-37" }), null);
+  assert.equal(corregirVoicing([48, 55, 64], { root: 0, q: MAJ7, disposicion: "15-37" }), null);
+  // A una mano sin fundamental pide una tecla menos.
+  assert.equal(teclasQuePide({ root: 0, q: MAJ7, disposicion: "una-mano" }), 3);
+  assert.equal(teclasQuePide({ root: 0, q: MAJ, disposicion: "una-mano" }), 3);
+});
+
+probar("dictado abierto: la tercera abajo es el error de la clase, y se dice así", () => {
+  // Do3 · Mi3 abajo, Sol4 · Si4 arriba: las notas están, el bajo está, la tercera no debía.
+  assert.equal(juzgar([48, 52, 67, 71], 0, MAJ7, "15-37"), "tercera-abajo");
+  // 1-7 abajo cuando se pidió 1-5.
+  assert.equal(juzgar([48, 59, 64, 67], 0, MAJ7, "15-37"), "reparto");
+  assert.equal(juzgar([48, 55, 64, 71], 0, MAJ7, "17-35"), "reparto");
+  // El bajo no es la fundamental.
+  assert.equal(juzgar([43, 48, 64, 71], 0, MAJ7, "15-37"), "bajo");
+  // Una tecla ajena.
+  assert.equal(juzgar([48, 55, 64, 70], 0, MAJ7, "15-37"), "notas");
+});
+
+probar("dictado abierto: el reparto bien pero pegado —Sol3 y Si3 a una tercera— no es abierto", () => {
+  const c = corregirVoicing([48, 55, 59, 64], { root: 0, q: MAJ7, disposicion: "15-37" });
+  assert.equal(c.veredicto, "pegado");
+  assert.deepEqual(c.pegadas, [55, 59]);
+  // Las manos se deducen del registro: las dos graves son la izquierda.
+  assert.deepEqual(c.izquierda, [48, 55]);
+  assert.deepEqual(c.derecha, [59, 64]);
+});
+
+probar("dictado abierto: la octava da igual, duplicar una voz no molesta, y el orden de la derecha tampoco", () => {
+  assert.equal(juzgar([36, 43, 52, 59], 0, MAJ7, "15-37"), "bien", "una octava abajo");
+  assert.equal(juzgar([48, 55, 64, 71, 72], 0, MAJ7, "15-37"), "bien", "fundamental duplicada arriba");
+  assert.equal(juzgar([48, 55, 64, 67, 71], 0, MAJ7, "15-37"), "bien", "quinta duplicada");
+  assert.equal(juzgar([48, 55, 71, 76], 0, MAJ7, "15-37"), "bien", "la séptima antes que la tercera");
+  // Tríada: 1-5 abajo y la tercera arriba, con o sin la fundamental de vuelta.
+  assert.equal(juzgar([48, 55, 64], 0, MAJ, "15-37"), "bien");
+  assert.equal(juzgar([48, 55, 64, 72], 0, MAJ, "15-37"), "bien");
+  assert.equal(juzgar([48, 52, 67], 0, MAJ, "15-37"), "tercera-abajo");
+});
+
+probar("dictado cerrado: apilado desde la fundamental y nada más", () => {
+  assert.equal(juzgar([50, 53, 57, 60], 2, MIN7, "cerrada"), "bien");
+  assert.equal(juzgar([62, 65, 69, 72], 2, MIN7, "cerrada"), "bien", "en otra octava");
+  assert.equal(juzgar([50, 57, 65, 72], 2, MIN7, "cerrada"), "no-cerrada", "abierto");
+  assert.equal(juzgar([53, 57, 60, 62], 2, MIN7, "cerrada"), "bajo", "girado");
+});
+
+probar("dictado a una mano: sin la fundamental, en cualquier giro; con ella, se dice", () => {
+  assert.equal(juzgar([65, 69, 72], 2, MIN7, "una-mano"), "bien", "3-5-7");
+  assert.equal(juzgar([69, 72, 77], 2, MIN7, "una-mano"), "bien", "girado");
+  assert.equal(juzgar([62, 65, 69], 2, MIN7, "una-mano"), "con-fundamental");
+  assert.equal(juzgar([65, 69, 71], 2, MIN7, "una-mano"), "notas");
+  // Con una tríada no hay qué esquivar: son las tres, como caigan.
+  assert.equal(juzgar([64, 67, 72], 0, MAJ, "una-mano"), "bien");
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

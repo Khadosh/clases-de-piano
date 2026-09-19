@@ -130,6 +130,7 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 | **Ponerle melodía a los acordes** | El método completo de la clase 4 en tres pasos: la progresión (tríadas o con séptima, y con los préstamos de las menores), las guías que reciben a cada acorde, y la melodía — compuesta por la app o escrita con figuras y silencios. Veredicto por nota más aterrizajes, respiración y variedad. `lib/melodia.ts`. |
 | **Tocarla encima** | La mitad de los dedos del mismo método: la progresión en loop con cuenta previa y metrónomo, y la melodía la tocás vos (MIDI o pantalla). Veredicto en vivo contra el acorde que suena; la primera nota de cada compás es el aterrizaje. |
 | **Voicing** | El mismo acorde cerrado, abierto con cada reparto y a una mano. Cuelga de su propio bloque. `lib/voicing.ts`. |
+| **Dictado de voicing** | Sale el acorde con su disposición —"Fmaj7 abierto, 1 y 5 en la izquierda, 3 y 7 en la derecha"— y lo tocás. Corrige las notas, el bajo y dónde quedó cada grado; la tercera abajo se dice con nombre. `corregirVoicing`, `lib/voicing.ts`. |
 | **Texturas** | Una vuelta en plaqué, pum-chá o arpegios, en loop; y los cuatro tipos sobre la misma frase. `lib/texturas.ts`. |
 | **La sustitución tritonal** | La tabla con las dos notas compartidas y la ii-V-I con y sin. `SUSTITUTOS_TRITONALES`, `lib/grados.ts`. |
 | **La grilla** | La escala en columnas, los acordes de la vuelta en filas, un punto donde la nota cae parada. Es la imagen de un curso de armonía pop que Joaquín hace aparte, y es lo mismo que las fichas verdes de la melodía visto todo junto: la nota que puede quedarse quieta salta a la vista. Los nombres de las funciones son los de Quique; los apodos del pop (casa mayor, casa menor, tensión, el que eleva) van de alias en I, VIm, V y IV. |
@@ -245,6 +246,26 @@ acordes que apilan terceras:
 El rango del teclado se calcula del acorde y no de la disposición (todo lo
 que ese acorde puede ocupar en cualquiera de ellas): cambiar de cerrada a
 abierta no mueve el teclado, sólo las marcas.
+
+**El aire se mide en la costura entre las manos.** `abierta` pone la primera
+tecla de la derecha por lo menos a una cuarta del techo de la izquierda; sin
+eso, con 1-7 abajo la tercera caía a veces a una tercera de la séptima (Si ·
+Mi♭ en el menor con séptima mayor). Adentro de la derecha el 3-5 es una
+tercera por definición y no se le pide nada — si Quique la quiere abierta
+también (5 abajo, 3 arriba: Sol4 · Mi5) es una pregunta para él, y está en
+`openQuestions`.
+
+**El dictado de voicing** (`components/DictadoVoicing.tsx`) es el dictado de
+acordes con un criterio más, y el criterio vive en `corregirVoicing`: las
+notas del acorde en cualquier octava, la fundamental abajo, y después *dónde*
+cae cada grado. Con el MIDI no se sabe qué mano apretó qué, así que **las
+manos se deducen del registro**: en el abierto la izquierda son las dos
+teclas más graves. Los veredictos son distintos a propósito —`tercera-abajo`
+es el error de la clase y se dice así, `reparto` es el otro par, `pegado` es
+la costura sin aire, `con-fundamental` es la que a una mano sobra— porque
+"mal" a secas no enseña cuál de las cuatro cosas fue. Una voz duplicada
+arriba no molesta. Y la memoria cuenta por disposición (`voicing:15-37`) y no
+por calidad: lo que se olvida es el reparto, no el acorde.
 
 **Las texturas son eventos en pulsos, no audio.** `compasDe(textura,
 acorde)` devuelve `{t, dur, pitches, mano}` para un compás; el componente los

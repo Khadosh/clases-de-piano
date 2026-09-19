@@ -118,6 +118,7 @@ const lesson: Lesson = {
     "\"Secuenciales o intercalados\" en los arpegios: lo interpretamos como que en el secuencial una mano hace 1 · 5 · 3 · 7 y la otra sigue una octava arriba, y en el intercalado las manos se alternan nota por nota. Preguntar cómo lo toca él.",
     "En el plaqué, \"lo que dura el compás\": ¿el acorde se deja sonando hasta el próximo cambio de acorde, o hay que volver a atacarlo en cada compás aunque no cambie?",
     "El voicing a una mano sin la fundamental: ¿vale también para las tríadas (quedarían dos notas) o es sólo para las cuatriadas?",
+    "En el reparto 1-7 / 3-5 la derecha lleva la tercera y la quinta, que están a una tercera entre sí: ¿va así, pegadas, o la derecha se abre también (la quinta abajo y la tercera arriba, Sol4 · Mi5) para que todo el acorde quede a cuartas, quintas y sextas como dijo?",
   ],
 };
 

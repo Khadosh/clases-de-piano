@@ -18,6 +18,7 @@ import Cadencias from "./Cadencias";
 import Paralelas from "./Paralelas";
 import Dominantes from "./Dominantes";
 import Voicing from "./Voicing";
+import DictadoVoicing from "./DictadoVoicing";
 import Texturas from "./Texturas";
 import SustitucionTritonal from "./SustitucionTritonal";
 import ExerciseRunner from "./ExerciseRunner";
@@ -97,6 +98,8 @@ export default function EjercicioDePractica({
           // Con los acordes aprendidos, como el laboratorio: el reparto es de
           // los que apilan terceras, y el componente filtra los sus solo.
           return <Voicing qualityIds={acordes} />;
+        case "dictado-voicing":
+          return <DictadoVoicing qualityIds={acordes} />;
         case "texturas":
           return <Texturas />;
         case "tritonal":

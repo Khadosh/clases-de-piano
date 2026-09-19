@@ -118,6 +118,7 @@ export type HerramientaSuelta =
   | "paralelas"
   | "dominantes"
   | "voicing"
+  | "dictado-voicing"
   | "texturas"
   | "tritonal"
   | "semitonos";
@@ -289,6 +290,14 @@ const FICHAS: Record<
     emoji: "⚖️",
     bajada:
       "El mismo acorde cerrado en la izquierda, abierto a dos manos con la tercera arriba, o a una mano sin la fundamental. Las notas no cambian; el color sí. Escuchá la cerrada y la abierta seguidas y fijate cuál suena a día nublado.",
+  },
+  "dictado-voicing": {
+    area: "acordes",
+    forma: "corrige",
+    titulo: "Dictado de voicing",
+    emoji: "🤲",
+    bajada:
+      "Sale un acorde con su disposición —Fmaj7 abierto, 1 y 5 en la izquierda, 3 y 7 en la derecha— y lo tocás así. Corrige las notas, el bajo y dónde quedó cada grado: la tercera en la izquierda es el error que la clase 7 vino a sacar, y se dice con nombre.",
   },
   texturas: {
     area: "acordes",
@@ -549,6 +558,8 @@ function armar(): Sala {
           break;
         case "voicing":
           sumarSuelta("voicing", lesson);
+          // El dictado es la sala practicando el reparto: cuelga del mismo bloque.
+          sumarSuelta("dictado-voicing", lesson);
           break;
         case "texturas":
           sumarSuelta("texturas", lesson);
