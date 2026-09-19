@@ -8,7 +8,7 @@ import Midi from "./Midi";
 import { getAudioContext, notaOff, notaOn, pararTodo, wakeAudio } from "@/lib/audio";
 import { useMidi } from "@/lib/useMidi";
 import { arrancarReloj, type Pulso } from "@/lib/reloj";
-import { juzgarInstante } from "@/lib/seguimiento";
+import { VENTANA_SEGUIMIENTO, juzgarInstante, resincronizar } from "@/lib/seguimiento";
 import { duracionDeCompas, duracionDeEvento, ubicar, vocesDe } from "@/lib/pentagrama";
 import type { Pieza } from "@/content/partituras";
 
@@ -98,6 +98,8 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
   const [siguiendo, setSiguiendo] = useState(false);
   const [i, setI] = useState(0);
   const [errores, setErrores] = useState(0);
+  /** Las notas que te comiste y la partitura dio por pasadas para alcanzarte. */
+  const [comidas, setComidas] = useState(0);
   const [bpm, setBpm] = useState(pieza.bpm);
   const [desdeCompas, setDesdeCompas] = useState(0);
   /** El pedazo que se está practicando, en compases (ambos inclusive). */
@@ -366,6 +368,8 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
   iRef.current = i;
   const siguiendoRef = useRef(siguiendo);
   siguiendoRef.current = siguiendo;
+  const recorteRef = useRef(recorte);
+  recorteRef.current = recorte;
 
   /**
    * Una tecla mientras te sigue.
@@ -385,12 +389,31 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
     if (!m) return;
     puestasRef.current.push(midi);
     const { completo, sobran } = juzgarInstante(m.midis, puestasRef.current);
-    if (!completo) return;
-    // Si además tocaste algo que no iba, cuenta como error pero se avanza igual:
-    // quedarse trabado en un instante es peor que anotarlo y seguir.
-    if (sobran > 0) setErrores((e) => e + 1);
+    if (completo) {
+      // Si además tocaste algo que no iba, cuenta como error pero se avanza igual:
+      // quedarse trabado en un instante es peor que anotarlo y seguir.
+      if (sobran > 0) setErrores((e) => e + 1);
+      puestasRef.current = [];
+      setI((n) => n + 1);
+      return;
+    }
+    // Mientras lo que pusiste sea parte de este instante, se espera el resto.
+    // Si hay algo que no iba, capaz te comiste la nota y seguiste de largo: si
+    // lo último que tocaste es justo uno de los instantes que vienen, se salta
+    // ahí y lo salteado se anota como comido. Sin esto, errar una nota dejaba
+    // la partitura clavada esperándola y todo lo que seguía caía "de más".
+    if (sobran === 0) return;
+    const i0 = iRef.current;
+    const hasta = recorteRef.current ? recorteRef.current.hasta : Infinity;
+    const siguientes = esperadoRef.current
+      .slice(i0 + 1, i0 + 1 + VENTANA_SEGUIMIENTO)
+      .filter((x) => x.compas <= hasta)
+      .map((x) => x.midis);
+    const d = resincronizar(siguientes, puestasRef.current);
+    if (d === null) return;
+    setComidas((c) => c + d + 1);
     puestasRef.current = [];
-    setI((n) => n + 1);
+    setI(i0 + d + 2);
   }, []);
 
   const { estado: estadoMidi, dispositivos } = useMidi({ caja, onNota: ({ midi }) => alTocar(midi) });
@@ -429,6 +452,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       : desdeCompas;
     setI(indiceDelCompas(momentos, desde));
     setErrores(0);
+    setComidas(0);
     puestasRef.current = [];
     if (metronomoRef.current) contarParaSeguir();
   };
@@ -506,9 +530,14 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             Hasta el final <Icono de="festejo" />
           </p>
           <p className="mt-1 text-sm text-humo">
-            {errores === 0
-              ? "Sin una nota de más."
-              : `Con ${errores} ${errores === 1 ? "nota" : "notas"} que no iban.`}
+            {errores === 0 && comidas === 0
+              ? "Sin una nota de más ni una de menos."
+              : [
+                  errores > 0 && `${errores} ${errores === 1 ? "nota" : "notas"} que no iban`,
+                  comidas > 0 && `${comidas} que ${comidas === 1 ? "faltó" : "faltaron"}`,
+                ]
+                  .filter(Boolean)
+                  .join(", y ") + "."}
           </p>
           <button onClick={arrancarSeguimiento} className={`mt-3 ${chipAccion("listo")}`}>
             Otra vez
@@ -533,11 +562,15 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
             {errores > 0 && (
               <p className="font-mono text-sm text-brasa">{errores} de más</p>
             )}
+            {comidas > 0 && (
+              <p className="font-mono text-sm text-brasa">{comidas} de menos</p>
+            )}
           </div>
           <p className="mt-2 hidden text-xs text-humo sm:block">
             La partitura avanza cuando tocás todas las notas de ese instante,
             no con el reloj: el metrónomo marca el pulso pero no te apura. La
-            octava no importa. Tocá un compás del pentagrama para saltar ahí.
+            octava no importa. Si te comés una nota y seguís, te alcanza en la
+            que viene. Tocá un compás del pentagrama para saltar ahí.
           </p>
         </>
       )}

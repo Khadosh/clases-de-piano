@@ -716,6 +716,20 @@ que no era de nadie, y sólo cuando la derecha caía entre las dos teclas de la
 izquierda, que es como se toca. `npm run test:seguimiento` juega ese compás
 tecla por tecla en el orden que rompía.
 
+**Si te comés una nota y seguís, la partitura te alcanza** (`resincronizar`).
+Antes errar una nota y seguir de largo la dejaba clavada esperándola, y todo
+lo que venía después caía "de más": desde afuera es "dejó de seguirme", y es
+la lectura correcta. Es la ventana de resync del micrófono con otro motivo —
+el teclado no se come notas, el que se las come sos vos— y por eso es más
+chica (`VENTANA_SEGUIMIENTO`, dos instantes) y más estricta: se mira sólo la
+cola de lo tocado, tiene que ser *exactamente* uno de los dos instantes que
+vienen, y se consulta recién cuando hay algo puesto que el instante actual no
+quería. Esa última condición es la que importa: armando un acorde tecla por
+tecla, la primera coincide muchas veces con la nota suelta que viene después
+(Do · Mi · Sol y después un Do), y sin ella se saltaba el acorde entero. Lo
+salteado se cuenta aparte, "de menos", porque no es lo mismo que una nota que
+no iba.
+
 ### La hoja y el riel
 
 En desktop, `/partituras/[slug]` son dos tarjetas hermanas **adentro de la
