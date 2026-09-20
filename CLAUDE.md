@@ -613,12 +613,36 @@ hay que chequear), y las dos cosas se muestran al pie. Es la misma regla que
 `openQuestions`: la duda anotada es mejor que el invento en silencio.
 
 **También hay piezas propias.** Una improvisación de Joaquín grabada en
-`/grabar` se puede transcribir de su JSON (los tiempos dicen compás y
-subdivisión; los note-on no traen duración, así que las figuras las decide el
-editor) y entra como cualquier otra, con `propia: true`: el pie deja de decir
+`/grabar` entra como cualquier otra, con `propia: true`: el pie deja de decir
 "dominio público" y el índice las cuenta aparte. La primera es La vuelta en Do,
 en 12/8 porque es lo que se tocó — doce corcheas parejas de a tres, sin
 tresillos.
+
+Las tres primeras se transcribieron a mano leyendo el JSON, una tarde cada
+una. Ahora lo mecánico lo hace `npm run importar:grabacion` sobre el JSON
+(`scripts/importar-grabacion.mjs`; las grabaciones viven en
+`partituras-fuente/grabaciones/` con su procedencia): agrupa las teclas que
+cayeron a menos de 40 ms en un instante, reparte las manos por registro
+(`--corte`, Do4 por defecto), **cuantiza pulso por pulso a la grilla que
+mejor le queda** —corcheas, semicorcheas o tresillo, la más gruesa que no
+pierda— y escribe cada duración como figuras: puntillo antes que ligadura,
+ligadas cuando mezclan, cortadas en cada barra, silencios en los huecos. El
+`sobre` y el título siguen siendo a mano, y el `revisar` sale escrito con lo
+que se supuso. Dos cosas que conviene saber:
+
+- **El grabador guarda el note-off** (`dur` en cada nota) desde septiembre de
+  2026. Con él la duración anotada manda y el aire después de una nota queda
+  como silencio; sin él —las grabaciones viejas— cada nota dura hasta la
+  siguiente de su mano o hasta la barra, y el informe lo dice.
+- **El bpm conviene pasarlo.** Si no, se estima de la mediana entre ataques de
+  la mano izquierda (el acompañamiento va en pulsos, la melodía no) y el
+  `revisar` avisa que es estimado.
+
+`npm run test:grabacion` corre el importador sobre la grabación del primer
+pum-chá y pide que salga lo que se transcribió a mano: cuatro compases que
+cierran, la izquierda en negras alternando bajo y acorde con los tres chá tal
+cual se tocaron, los tresillos de la corrida detectados. Si lo automático no
+reproduce lo que costó una tarde, no sirve.
 
 **Se puede tocar de a una mano.** Es lo primero que se estudia —una mano por
 vez y recién después las dos juntas—, así que el selector está arriba de todo y
@@ -1376,10 +1400,12 @@ npm run dev        # desarrollo
 npm run build      # build de producción (falla si hay error de tipos)
 npm run typecheck  # sólo tipos
 npm run importar   # de un MusicXML a una pieza de content/partituras.ts
+npm run importar:grabacion # de un JSON de /grabar a una pieza propia, cuantizada
 npm run importar:mutopia # regenera content/partituras-mutopia.ts desde los LilyPond
 npm run lilypond   # de un LilyPond de Mutopia a MusicXML
 npm run test:pentagrama # el pentagrama y que las piezas cierren la cuenta
 npm run test:lilypond # el lector de LilyPond: octava relativa, duraciones, repeticiones
+npm run test:grabacion # el importador de grabaciones contra el primer pum-chá
 npm run test:practica # la sala: las direcciones congeladas y los alias
 npm run test:grados  # los grados de una tonalidad y las escalas
 npm run test:melodia # la melodía generada, contra sus propias reglas

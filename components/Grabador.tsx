@@ -28,6 +28,12 @@ interface NotaMidi {
   t: number;
   midi: number;
   velocity: number;
+  /**
+   * Cuánto duró, en milisegundos, si se soltó antes de parar. Sin esto el
+   * importador de grabaciones tiene que suponer que cada nota dura hasta la
+   * siguiente, y una negra con aire después sale escrita como blanca.
+   */
+  dur?: number;
 }
 
 type Estado = "listo" | "grabando" | "terminado";
@@ -55,9 +61,10 @@ export default function Grabador() {
 
   // ---- MIDI ---------------------------------------------------------------
 
-  // Sólo los ataques: lo que se compara contra el detector es cuándo empezó
-  // cada nota, así que los note-off no se anotan (`useMidi` los avisa aparte y
-  // acá no se pide).
+  // Los ataques son lo que se compara contra el detector; los note-off no le
+  // hacen falta a la calibración pero sí al importador de grabaciones, que
+  // sin ellos supone que cada nota dura hasta la siguiente. Se anotan como
+  // `dur` sobre la nota que sueltan.
   const { estado: estadoMidi, dispositivos } = useMidi({
     onNota: ({ midi, velocity, t }) => {
       if (!grabandoRef.current) return;
@@ -67,6 +74,19 @@ export default function Grabador() {
       const nota = { t: Math.round(t - inicioRef.current), midi, velocity };
       notasRef.current.push(nota);
       setNotas((prev) => [...prev, nota]);
+    },
+    onSoltar: (midi) => {
+      if (!grabandoRef.current) return;
+      const ahora = Math.round(performance.now() - inicioRef.current);
+      // La última de esa tecla que todavía no se soltó: apretar dos veces
+      // seguidas la misma tecla suelta primero la más vieja, y esto lo tolera.
+      for (let i = notasRef.current.length - 1; i >= 0; i--) {
+        const n = notasRef.current[i];
+        if (n.midi === midi && n.dur === undefined) {
+          n.dur = Math.max(1, ahora - n.t);
+          break;
+        }
+      }
     },
   });
 

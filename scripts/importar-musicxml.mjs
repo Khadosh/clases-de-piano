@@ -15,6 +15,7 @@
  */
 
 import { readFileSync } from "node:fs";
+import { escribirPieza } from "./escribir-pieza.mjs";
 import { inflateRawSync } from "node:zlib";
 import { figuraQueDivide } from "../lib/ritmo.ts";
 
@@ -632,61 +633,18 @@ function principal() {
   const slug = opcion("slug") ?? "pieza";
   const titulo = opcion("titulo") ?? pieza.titulo ?? "Sin título";
 
-  const evento = (e) => {
-    const midis = e.midis.length === 0 ? "[]" : e.midis.length === 1 ? String(e.midis[0]) : `[${e.midis.join(", ")}]`;
-    // Ojo con el puntillo de los silencios: perderlo acortaba la mano y las dos
-    // dejaban de durar lo mismo. Lo agarró el test, no el ojo.
-    const partes = [];
-    if (e.puntillo) partes.push("puntillo: true");
-    if (e.ligada) partes.push("ligada: true");
-    if (e.irregular) {
-      partes.push(
-        e.irregular.en === 3 && e.irregular.de === 2
-          ? "irregular: TRESILLO"
-          : `irregular: { en: ${e.irregular.en}, de: ${e.irregular.de} }`,
-      );
-    }
-    const extra = partes.length ? `, { ${partes.join(", ")} }` : "";
-    return e.midis.length === 0
-      ? `silencio(${e.divide}${extra})`
-      : `n(${midis}, ${e.divide}${extra})`;
-  };
-  const filaDe = (evs) =>
-    evs.map(evento).reduce((lineas, txt) => {
-      const ultima = lineas[lineas.length - 1];
-      if (ultima && (ultima + ", " + txt).length < 76) lineas[lineas.length - 1] = ultima + ", " + txt;
-      else lineas.push(txt);
-      return lineas;
-    }, []);
-
-  /** Una sola voz se escribe como fila suelta; dos, como lista de filas. */
-  const escribirVoces = (voces, sangria) => {
-    if (voces.length === 1) {
-      return filaDe(voces[0]).map((l) => `${sangria}${l},`).join("\n");
-    }
-    return voces
-      .map((v) => `${sangria}[\n${filaDe(v).map((l) => `${sangria}  ${l},`).join("\n")}\n${sangria}],`)
-      .join("\n");
-  };
-
-  console.log(`  {
-    slug: ${JSON.stringify(slug)},
-    titulo: ${JSON.stringify(titulo)},
-    compositor: ${JSON.stringify(pieza.compositor ?? "")},
-    anio: "",
-    compas: { numerador: ${pieza.compas.numerador}, denominador: ${pieza.compas.denominador} },
-    tonalidad: { tonica: ${pieza.tonalidad.tonica}, modo: ${JSON.stringify(pieza.tonalidad.modo)} },
-    bpm: ${pieza.bpm},
-    dificultad: 3,
-    sobre: "",
-    hasta: "",
-    derecha: [
-${escribirVoces(pieza.derecha, "      ")}
-    ],
-    izquierda: [
-${escribirVoces(pieza.izquierda, "      ")}
-    ],
-  },`);
+  console.log(
+    escribirPieza({
+      slug,
+      titulo,
+      compositor: pieza.compositor ?? "",
+      compas: pieza.compas,
+      tonalidad: pieza.tonalidad,
+      bpm: pieza.bpm,
+      derecha: pieza.derecha,
+      izquierda: pieza.izquierda,
+    }),
+  );
 
   const cuenta = (voces) =>
     voces.length === 1

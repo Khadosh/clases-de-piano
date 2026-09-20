@@ -1,0 +1,20 @@
+# Las grabaciones de las piezas propias
+
+El JSON que baja `/grabar` con lo que se tocó en el teclado MIDI: cada nota
+con su milisegundo, su velocidad y —desde septiembre de 2026— cuánto duró.
+Están acá por lo mismo que los `.mxl`: para poder volver a importar cuando el
+importador mejore, y para comparar cuando el dibujo no cierre con lo que se
+tocó.
+
+```sh
+npm run importar:grabacion -- partituras-fuente/grabaciones/pum-cha-en-la-menor.json \
+  --bpm 84 --slug pum-cha-en-la-menor --titulo "Pum-chá en La menor" --tonica 9 --modo menor
+```
+
+Escupe el objeto listo para pegar en `content/partituras.ts` con `revisar`
+ya escrito, y por la salida de error lo que supuso: el bpm si no se lo
+pasaron, las notas sin note-off, las duraciones raras.
+
+| Archivo | Pieza | Qué es |
+|---|---|---|
+| `pum-cha-en-la-menor.json` | Pum-chá en La menor | El primer pum-chá, 19 de septiembre de 2026. Sin note-off: es anterior a que el grabador los guardara. |

@@ -22,6 +22,8 @@
     "test:texturas": "node --experimental-strip-types scripts/probar-texturas.mjs",
     "test:pentagrama": "node --experimental-strip-types --import ./scripts/alias.mjs scripts/probar-pentagrama.mjs",
     "importar": "node --experimental-strip-types scripts/importar-musicxml.mjs",
+    "importar:grabacion": "node --experimental-strip-types scripts/importar-grabacion.mjs",
+    "test:grabacion": "node --experimental-strip-types scripts/probar-grabacion.mjs",
     "lilypond": "node --experimental-strip-types scripts/lilypond-a-musicxml.mjs",
     "test:lilypond": "node --experimental-strip-types scripts/probar-lilypond.mjs",
     "importar:mutopia": "node --experimental-strip-types scripts/importar-mutopia.mjs"
