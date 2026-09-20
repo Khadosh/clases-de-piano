@@ -137,7 +137,12 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 
 De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
 con dos enunciados, porque son la misma ronda: se propone algo, lo armás, se
-corrige. Lo único que cambia es si lo ves o lo escuchás. Los dos de compases
+corrige. Lo único que cambia es si lo ves o lo escuchás. Y lo que toda ronda
+lleva —cuántas van, las limpias, la racha y su mejor, las pistas pedidas— es
+`useRonda` (`lib/useRonda.ts`) con su barra `Marcador`, compartidos con el
+dictado de voicing: eran cien líneas copiadas con dos diferencias que no eran
+decisiones. Lo que sí es de cada dictado (qué pide, cómo corrige, qué anota
+en la memoria) queda en cada uno. Los dos de compases
 también son uno solo (`components/CompasQuiz.tsx`) con la pregunta dada vuelta,
 y los dos practican la misma lectura: el compás como presupuesto. En el de
 ponerle el número **los hermanos (3/4 y 6/8) no compiten nunca entre opciones**:

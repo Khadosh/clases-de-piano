@@ -5,6 +5,8 @@ import Icono from "./Icono";
 import { type Mark } from "./Keyboard";
 import Piano from "./Piano";
 import Pistas, { type Pista } from "./Pistas";
+import Marcador from "./Marcador";
+import { useRonda } from "@/lib/useRonda";
 import {
   CHORD_QUALITIES,
   NOMBRES_INVERSION,
@@ -67,13 +69,12 @@ export default function Dictado({
   }, [qualityIds]);
 
   const [ronda, setRonda] = useState<Ronda | null>(null);
-  const [n, setN] = useState(0);
-  const [pistas, setPistas] = useState(0);
+  const marcador = useRonda();
+  const { pistas } = marcador;
   const [resuelta, setResuelta] = useState(false);
   const [seTermino, setSeTermino] = useState(false);
-  const [racha, setRacha] = useState(0);
-  const [mejorRacha, setMejorRacha] = useState(0);
-  const [puntaje, setPuntaje] = useState({ limpias: 0, rondas: 0 });
+  /** Para que la portada vuelva a leer la memoria después de borrarla. */
+  const [version, setVersion] = useState(0);
   const [conInversiones, setConInversiones] = useState(false);
   const [conReloj, setConReloj] = useState(relojInicial);
   const [restante, setRestante] = useState(SEGUNDOS);
@@ -111,13 +112,11 @@ export default function Dictado({
         : 0,
     };
     setRonda(siguiente);
-    setPistas(0);
+    marcador.arrancar();
     setResuelta(false);
     setSeTermino(false);
     armado.borrar();
     setRestante(SEGUNDOS);
-    setN((x) => x + 1);
-    setPuntaje((p) => ({ ...p, rondas: p.rondas + 1 }));
     if (modo === "oido") {
       const ps = invertir(
         chordPitches(BASE + siguiente.root, siguiente.quality),
@@ -136,17 +135,9 @@ export default function Dictado({
       if (!ronda) return;
       setResuelta(true);
       anotar(ronda.quality.id, acerto && limpio);
-      if (acerto && limpio) {
-        setPuntaje((p) => ({ ...p, limpias: p.limpias + 1 }));
-        setRacha((r) => {
-          const siguiente = r + 1;
-          setMejorRacha((m) => Math.max(m, siguiente));
-          return siguiente;
-        });
-      } else {
-        setRacha(0);
-      }
+      marcador.cerrar(acerto && limpio);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [ronda],
   );
 
@@ -272,36 +263,16 @@ export default function Dictado({
         onArrancar={nueva}
         onOlvidar={() => {
           olvidar();
-          setN((x) => x + 1);
+          setVersion((x) => x + 1);
         }}
-        version={n}
+        version={version}
       />
     );
   }
 
   return (
     <div className="card overflow-hidden">
-      {/* Marcador */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-borde/60 px-5 py-3 text-sm">
-        <span className="text-xs tracking-[0.2em] text-humo uppercase">
-          Ronda {n}
-        </span>
-        <span className="font-mono">
-          <span className="text-menta">{puntaje.limpias}</span>
-          <span className="text-humo">/{puntaje.rondas}</span>
-          <span className="ml-1 text-xs text-humo">sin pistas</span>
-        </span>
-        <span className="font-mono">
-          <span className={racha >= 3 ? "text-sol" : "text-humo"}>
-            {Array.from({ length: Math.min(racha, 5) }, (_, i) => (
-              <Icono key={i} de="llama" />
-            ))}
-            {racha === 0 ? "—" : ` ${racha}`}
-          </span>
-          {mejorRacha > 1 && (
-            <span className="ml-2 text-xs text-humo">mejor {mejorRacha}</span>
-          )}
-        </span>
+      <Marcador ronda={marcador}>
         {conReloj && !resuelta && (
           <span
             className={`ml-auto font-mono text-lg font-bold ${
@@ -311,7 +282,7 @@ export default function Dictado({
             {restante}s
           </span>
         )}
-      </div>
+      </Marcador>
 
       <div className="p-5">
         <div className="mb-4 text-center">
@@ -377,7 +348,7 @@ export default function Dictado({
           <Pistas
             lista={listaDePistas}
             dadas={pistas}
-            onPedir={() => setPistas((x) => x + 1)}
+            onPedir={marcador.pedirPista}
           />
         </Piano>
 

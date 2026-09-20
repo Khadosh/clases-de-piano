@@ -5,6 +5,8 @@ import Icono from "./Icono";
 import { type Mark } from "./Keyboard";
 import Piano from "./Piano";
 import Pistas, { type Pista } from "./Pistas";
+import Marcador from "./Marcador";
+import { useRonda } from "@/lib/useRonda";
 import {
   CHORD_QUALITIES,
   chordSymbol,
@@ -102,11 +104,9 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
 
   const [activas, setActivas] = useState<Disposicion[]>(POR_DEFECTO);
   const [ronda, setRonda] = useState<Ronda | null>(null);
-  const [n, setN] = useState(0);
-  const [pistas, setPistas] = useState(0);
+  const marcador = useRonda();
+  const { pistas } = marcador;
   const [resuelta, setResuelta] = useState<"acerto" | "mostrado" | null>(null);
-  const [racha, setRacha] = useState(0);
-  const [puntaje, setPuntaje] = useState({ limpias: 0, rondas: 0 });
   const [modo, setModo] = useState<"sueltos" | "vuelta">("sueltos");
   // La vuelta arranca en la ii – V – I en Do y el dado la cambia: sin azar en
   // el primer render, servidor y cliente dibujan lo mismo.
@@ -131,11 +131,9 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
     (pedido: Ronda) => {
       wakeAudio();
       setRonda(pedido);
-      setPistas(0);
+      marcador.arrancar();
       setResuelta(null);
       armado.borrar();
-      setN((x) => x + 1);
-      setPuntaje((p) => ({ ...p, rondas: p.rondas + 1 }));
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -193,13 +191,9 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
       const bien = como === "acerto" && limpio;
       anotar(BASE_DE_MEMORIA + ronda.disposicion, bien);
       if (modo === "vuelta") setVuelta((v) => ({ ...v, limpios: [...v.limpios, bien] }));
-      if (bien) {
-        setPuntaje((p) => ({ ...p, limpias: p.limpias + 1 }));
-        setRacha((r) => r + 1);
-      } else {
-        setRacha(0);
-      }
+      marcador.cerrar(bien);
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [ronda, modo],
   );
 
@@ -506,22 +500,7 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
 
   return (
     <div className="card overflow-hidden">
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-borde/60 px-5 py-3 text-sm">
-        <span className="text-xs tracking-[0.2em] text-humo uppercase">Ronda {n}</span>
-        <span className="font-mono">
-          <span className="text-menta">{puntaje.limpias}</span>
-          <span className="text-humo">/{puntaje.rondas}</span>
-          <span className="ml-1 text-xs text-humo">sin pistas</span>
-        </span>
-        <span className="font-mono">
-          <span className={racha >= 3 ? "text-sol" : "text-humo"}>
-            {Array.from({ length: Math.min(racha, 5) }, (_, i) => (
-              <Icono key={i} de="llama" />
-            ))}
-            {racha === 0 ? "—" : ` ${racha}`}
-          </span>
-        </span>
-      </div>
+      <Marcador ronda={marcador} />
 
       {modo === "vuelta" && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-borde/60 px-5 py-3 text-sm">
@@ -579,7 +558,7 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
               {texto}
             </p>
           )}
-          <Pistas lista={listaDePistas} dadas={pistas} onPedir={() => setPistas((x) => x + 1)} />
+          <Pistas lista={listaDePistas} dadas={pistas} onPedir={marcador.pedirPista} />
         </Piano>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
