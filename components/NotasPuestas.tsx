@@ -17,8 +17,15 @@ export default function NotasPuestas({
   onQuitar,
   onBorrar,
   faltan,
+  nombre = noteNameWithOctave,
 }: {
   notas: Pitch[];
+  /**
+   * Cómo se llama cada tecla. Por defecto la tecla pelada (Fa♯4); un
+   * ejercicio que sabe qué acorde pidió pasa `nombreEnAcorde`, y la ficha
+   * dice Sol♭4 cuando el acorde es Mi♭ menor.
+   */
+  nombre?: (p: Pitch) => string;
   onQuitar: (p: Pitch) => void;
   onBorrar?: () => void;
   /** Cuántas faltan para completar el acorde, si se sabe. */
@@ -43,9 +50,9 @@ export default function NotasPuestas({
             key={p}
             onClick={() => onQuitar(p)}
             className="group flex items-center gap-1.5 rounded-full bg-carta-2 py-2 pr-2.5 pl-3.5 font-mono text-sm font-bold transition hover:bg-brasa hover:text-noche"
-            aria-label={`Sacar ${noteNameWithOctave(p)}`}
+            aria-label={`Sacar ${nombre(p)}`}
           >
-            {noteNameWithOctave(p)}
+            {nombre(p)}
             <span className="text-humo transition group-hover:text-noche">
               ✕
             </span>

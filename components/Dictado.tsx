@@ -14,6 +14,7 @@ import {
   escribirNota,
   invertir,
   mod12,
+  nombreEnAcorde,
   notasDeInversion,
   qualityById,
   raizEscrita,
@@ -360,6 +361,7 @@ export default function Dictado({
           armado={armado}
           respondiendo={!resuelta}
           faltan={pitches.length - puestas.length}
+          nombre={(p) => nombreEnAcorde(p, ronda.root, ronda.quality)}
           paraTocar
         >
           {veredicto === "bajo" && (

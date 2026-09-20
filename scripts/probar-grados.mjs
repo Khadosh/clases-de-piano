@@ -46,8 +46,7 @@ import {
   identificarAcorde,
   mod12,
   parseCifradoConBajo,
-  qualityById,
-} from "../lib/music.ts";
+  qualityById, nombreEnAcorde } from "../lib/music.ts";
 
 let bien = 0;
 const mal = [];
@@ -468,6 +467,17 @@ probar("el disminuido se escribe con la letra de abajo de la llegada: Re♯dim p
   assert.equal(paraEm.base.alter, 1);
   const paraAm = disminuidoDelGrado(5);
   assert.equal(paraAm.cifrado, "G#dim");
+});
+
+probar("la ficha de una tecla dentro de un acorde lleva la letra del acorde, y la octava de la letra", () => {
+  const MIN = qualityById("min");
+  const MAJ7 = qualityById("maj7");
+  const DOM7 = qualityById("dom7");
+  assert.equal(nombreEnAcorde(66, 3, MIN), "Sol♭4", "en Mi♭ menor la tecla 66 es Sol♭, no Fa♯");
+  assert.equal(nombreEnAcorde(63, 3, MIN), "Mi♭4");
+  assert.equal(nombreEnAcorde(59, 1, DOM7, { letra: 1, alter: -1, pc: 1 }), "Do♭4", "la séptima de Re♭7 es Do♭, y es un Do: octava 4 aunque la tecla sea la 59");
+  assert.equal(nombreEnAcorde(71, 0, MAJ7), "Si4");
+  assert.equal(nombreEnAcorde(61, 0, MAJ7), "Do♯4", "una tecla que no es del acorde se llama por la tecla");
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

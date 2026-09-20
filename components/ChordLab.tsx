@@ -17,6 +17,7 @@ import {
   escribirNota,
   invertir,
   mod12,
+  nombreEnAcorde,
   notasDeInversion,
   pickRandom,
   raizEscrita,
@@ -399,6 +400,7 @@ export default function ChordLab({
           armado={armado}
           respondiendo={oculto}
           faltan={pitches.length - puestas.length}
+          nombre={(p) => nombreEnAcorde(p, mostrado.root, mostrado.quality)}
           paraTocar={dictation}
         >
           <Correccion

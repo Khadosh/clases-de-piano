@@ -410,7 +410,11 @@ Es lo primero que se rompe si alguien vuelve a escribir `NOTES_ES[pc]` para
 mostrar la nota de un acorde: eso da la tecla, no el nombre, y aparecen cosas
 como "Mi♭ menor = Re♯ · Fa♯ · La♯". Para mostrar notas de un acorde va
 `notasDeAcorde()` / `notasDeInversion()`; `noteName()` es sólo para teclas
-sueltas, donde no hay contexto que decida.
+sueltas, donde no hay contexto que decida. **Las fichas de lo que apretaste
+también obedecen**: cuando el ejercicio pidió un acorde, pasa `nombre` a
+`Piano` con `nombreEnAcorde(p, root, q)` y la ficha dice Sol♭4 en Mi♭ menor;
+sólo el teclado libre las llama por la tecla. La octava es la de la letra —el
+Do♭ que es la tecla 59 se escribe Do♭4—, y `test:grados` lo clava.
 
 Cuando la letra correcta pide un doble signo (Si aumentado sería Si Re♯ Fa♯♯)
 escribimos la tecla llana: Si · Re♯ · Sol. Es mentira en el papel y es lo que se

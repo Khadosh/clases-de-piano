@@ -455,6 +455,20 @@ export function deletrearAcorde(
   });
 }
 
+/**
+ * El nombre de una tecla **dentro de un acorde**, con su octava: en Mi♭m la
+ * tecla 66 es "Sol♭4", no "Fa♯4". Es la misma regla de `deletrearAcorde`
+ * llevada a la ficha de lo que apretaste: cuando hay un acorde pedido, el
+ * contexto decide la letra, y `noteName` —la tecla pelada— queda para el
+ * teclado libre. La octava es la de la letra, no la de la tecla: el Do♭ que
+ * es la tecla 59 se escribe Do♭4, porque es un Do.
+ */
+export function nombreEnAcorde(p: Pitch, root: PitchClass, q: ChordQuality, base?: NotaEscrita): string {
+  const nota = deletrearAcorde(root, q, base).find((n) => n.pc === mod12(p));
+  if (!nota) return noteNameWithOctave(p);
+  return `${escribirNota(nota)}${octaveOf(p - nota.alter)}`;
+}
+
 /** Las notas del acorde listas para mostrar: ["Mi♭", "Sol♭", "Si♭"]. */
 export function notasDeAcorde(
   root: PitchClass,

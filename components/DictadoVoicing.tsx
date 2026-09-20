@@ -11,14 +11,13 @@ import {
   deletrearAcorde,
   escribirNota,
   intervalsOf,
-  octaveOf,
+  nombreEnAcorde,
   qualityById,
   type ChordQuality,
   type Pitch,
 } from "@/lib/music";
 import {
   DISPOSICIONES,
-  GRADOS_DE_ACORDE,
   corregirVoicing,
   gradoDeTecla,
   teclasDe,
@@ -205,13 +204,7 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
     }
   };
 
-  const nombreConOctava = (p: Pitch): string => {
-    if (!ronda) return "";
-    const g = grado(p);
-    const escritas = deletrearAcorde(ronda.root, ronda.q);
-    const i = g === null ? -1 : GRADOS_DE_ACORDE.indexOf(g);
-    return `${i >= 0 && escritas[i] ? escribirNota(escritas[i]) : "?"}${octaveOf(p)}`;
-  };
+  const nombreConOctava = (p: Pitch): string => (ronda ? nombreEnAcorde(p, ronda.root, ronda.q) : "");
 
   const listaDePistas: Pista[] = !ronda || !modelo
     ? []
@@ -342,6 +335,7 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
           armado={armado}
           respondiendo={!resuelta}
           faltan={Math.max(0, teclasQuePide(ronda) - puestas.length)}
+          nombre={nombreConOctava}
           paraTocar
         >
           {texto && (

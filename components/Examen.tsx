@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { type Mark } from "./Keyboard";
 import Piano from "./Piano";
-import { corregirAcorde } from "@/lib/music";
+import {
+  corregirAcorde,
+  identificarAcorde,
+  nombreEnAcorde,
+  noteNameWithOctave,
+} from "@/lib/music";
 import { generarExamen, type OpcionesExamen, type Pregunta } from "@/lib/examen";
 import { playChord, wakeAudio } from "@/lib/audio";
 import { useArmado } from "@/lib/useArmado";
@@ -209,6 +214,10 @@ export default function Examen(opciones: OpcionesExamen) {
             armado={armado}
             respondiendo={!resuelta}
             faltan={pregunta.pitches.length - puestas.length}
+            nombre={(p) => {
+              const id = identificarAcorde(pregunta.pitches);
+              return id ? nombreEnAcorde(p, id.root, id.quality) : noteNameWithOctave(p);
+            }}
           />
         )}
 

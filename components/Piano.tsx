@@ -30,6 +30,7 @@ export default function Piano({
   pista,
   invitacion,
   cierre,
+  nombre,
   children,
 }: {
   from: number;
@@ -49,6 +50,8 @@ export default function Piano({
   pista?: string;
   invitacion?: string;
   cierre?: string;
+  /** Cómo se llama cada ficha: el acorde pedido decide la letra (ver `NotasPuestas`). */
+  nombre?: (p: number) => string;
   /** El veredicto del ejercicio, entre las fichas y el MIDI. */
   children?: ReactNode;
 }) {
@@ -71,6 +74,7 @@ export default function Piano({
           <NotasPuestas
             notas={armado!.notas}
             faltan={faltan}
+            nombre={nombre}
             onQuitar={armado!.quitar}
             onBorrar={armado!.borrar}
           />
