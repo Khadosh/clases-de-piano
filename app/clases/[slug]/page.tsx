@@ -124,9 +124,12 @@ export default async function ClasePage({
 
       {lesson.openQuestions && lesson.openQuestions.length > 0 && (
         <section className="mt-10">
-          <h2 className="font-display mb-4 text-2xl font-bold">
-            Preguntar la próxima
-          </h2>
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="font-display text-2xl font-bold">Preguntar la próxima</h2>
+            <Link href="/preguntas" className="text-sm text-humo transition hover:text-tiza">
+              todas las preguntas abiertas →
+            </Link>
+          </div>
           <ul className="space-y-2">
             {lesson.openQuestions.map((q, i) => (
               <li

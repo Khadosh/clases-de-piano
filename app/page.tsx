@@ -7,6 +7,7 @@ import ProximoMiercoles from "@/components/ProximoMiercoles";
 export default function Home() {
   const stats = computeStats(LESSONS, CHORD_QUALITIES.length);
   const clases = [...LESSONS].reverse();
+  const preguntas = LESSONS.reduce((acc, l) => acc + (l.openQuestions?.length ?? 0), 0);
   // El miércoles siguiente al de la última clase. Se suma en UTC para no
   // depender del huso, igual que formatDate.
   const proximoMiercoles = new Date(
@@ -86,10 +87,17 @@ export default function Home() {
             <ProximoMiercoles />
           </p>
         </div>
-        <p className="ml-auto max-w-xs text-sm text-humo">
-          Cuando termine, contame qué vieron y lo agrego como clase{" "}
-          {LESSONS.length + 1}.
-        </p>
+        <div className="ml-auto max-w-xs text-sm text-humo">
+          <p>
+            Cuando termine, contame qué vieron y lo agrego como clase{" "}
+            {LESSONS.length + 1}.
+          </p>
+          {preguntas > 0 && (
+            <Link href="/preguntas" className="mt-1 inline-block text-uva transition hover:brightness-125">
+              {preguntas} {preguntas === 1 ? "pregunta" : "preguntas"} para llevar →
+            </Link>
+          )}
+        </div>
       </section>
 
       {/* Línea de tiempo */}
