@@ -69,6 +69,8 @@ const Do4 = 60, Re4 = 62, Mi4 = 64, Fa4 = 65, Sol4 = 67, La4 = 69, Si4 = 71;
 const Do5 = 72, Re5 = 74, Mi5 = 76, Fa5 = 77;
 // Las de la vuelta de Joaquín.
 const Fa2 = 41, Fa3 = 53;
+// Las de los acordes de paso de su pum-chá: el C7 y el E7.
+const Mi2 = 40, Sols2 = 44, Sib3 = 58;
 // Las de las tres llegadas: las notas ajenas que traen los dominantes.
 const Res3 = 51, Res4 = 63, Fas4 = 66, Sols4 = 68;
 
@@ -1249,6 +1251,49 @@ export const PIEZAS: Pieza[] = [
       ...repetir([n(Fa2, 4), n([Do3, Fa3, La3], 4)], 2),
       ...repetir([n(Sol2, 4), n([Re3, Sol3, Si3], 4)], 2),
       ...repetir([n(La2, 4), n([Mi3, La3, Do4], 4)], 2),
+    ],
+  },
+  {
+    slug: "pum-cha-con-los-de-paso",
+    titulo: "Pum-chá en La menor, con los de paso",
+    compositor: "Joaquín",
+    anio: "2026",
+    compas: { numerador: 4, denominador: 4 },
+    tonalidad: { tonica: 9, modo: "menor" },
+    bpm: 84,
+    dificultad: 2,
+    propia: true,
+    sobre:
+      "La misma vuelta del primer pum-chá —Lam, Fa, Sol, Lam— un día después, con los acordes de paso de la clase 5 metidos en el acompañamiento: en el cuarto pulso del primer compás el chá se cambia por un C7 rodado, el dominante que lleva al Fa que viene; y en el cuarto pulso del compás de Sol, un E7 plaqué con el bajo en Mi2, el dominante que lleva de vuelta a casa. Tres texturas en cuatro compases: pum-chá, el acorde rodado y el plaqué. La melodía es la misma frase de siempre, transportada con cada acorde, y el cierre es el Lam rodado, tenido.",
+    hasta: "Entera: los cuatro compases y el acorde final.",
+    revisar:
+      "Importada con el importador de grabaciones (20 de septiembre), el pulso puesto por la mano izquierda. Dos cosas se escribieron como se pensaron y no como salieron: el C7 del primer compás, que en la toma tiene el Do3 rozado (velocidad 13) y un Si natural en vez de Si♭, y el chá del último compás, donde el Mi3 se rozó (velocidad 2) y sonó el Do4 solo. El acorde final se escribió como compás aparte, con el La de la melodía ligado: la toma no trae note-off, así que cuánto se tuvo es una suposición.",
+    derecha: [
+      // Lam: fundamental, quinta, fundamental, la corrida en tresillo y la bajada.
+      n(La4, 8), n(Mi5, 8), n(La4, 4),
+      n(La4, 8, { irregular: TRESILLO }), n(Si4, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }),
+      n(Mi5, 8), n(Re5, 16), n(Do5, 16),
+      // Fa: la misma frase, con los dos tresillos.
+      n(La4, 8), n(Mi5, 8), n(La4, 4),
+      n(La4, 8, { irregular: TRESILLO }), n(Si4, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }),
+      n(Mi5, 8, { irregular: TRESILLO }), n(Re5, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }),
+      // Sol: transportada al Sol.
+      n(Sol4, 8), n(Re5, 8), n(Sol4, 4),
+      n(Sol4, 8, { irregular: TRESILLO }), n(La4, 8, { irregular: TRESILLO }), n(Si4, 8, { irregular: TRESILLO }),
+      n(Re5, 8, { irregular: TRESILLO }), n(Do5, 8, { irregular: TRESILLO }), n(Si4, 8, { irregular: TRESILLO }),
+      // Lam: el La tenido hasta el acorde final.
+      n(La4, 1), n(La4, 1, { ligada: true }),
+    ],
+    izquierda: [
+      // Lam: pum, chá, pum, y el C7 rodado que pide el Fa.
+      n(La2, 4), n([Mi3, Do4], 4), n(La2, 4), n([Do3, Mi3, Sol3, Sib3], 4),
+      // Fa: pum-chá derecho.
+      n(Fa2, 4), n([Do3, La3], 4), n(Fa2, 4), n([Do3, La3], 4),
+      // Sol: pum, chá, pum, y el E7 plaqué con el bajo en Mi2, que pide el Lam.
+      n(Sol2, 4), n([Re3, Si3], 4), n(Sol2, 4), n([Mi2, Sols2, Si2, Re3], 4),
+      // Lam: pum, chá, pum, aire, y el acorde rodado tenido.
+      n(La2, 4), n([Mi3, Do4], 4), n(La2, 4), silencio(4),
+      n([La2, Do3, Mi3, La3], 1),
     ],
   },
   // Las importadas de Mutopia van al final: son muchas y son un libro.

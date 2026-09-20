@@ -18,3 +18,4 @@ pasaron, las notas sin note-off, las duraciones raras.
 | Archivo | Pieza | Qué es |
 |---|---|---|
 | `pum-cha-en-la-menor.json` | Pum-chá en La menor | El primer pum-chá, 19 de septiembre de 2026. Sin note-off: es anterior a que el grabador los guardara. |
+| `pum-cha-con-los-de-paso.json` | Pum-chá en La menor, con los de paso | Un día después, con el C7 rodado y el E7 plaqué. Importada con `--pulso izquierda`; el C7 se corrigió a mano (ver el `revisar` de la pieza). Sin note-off. |

@@ -45,6 +45,18 @@ probar("las manos se parten solas en el hueco del registro medio: acá entre el 
   assert.equal(corteAutomatico([{ midi: 58 }, { midi: 60 }, { midi: 62 }]), 60, "sin hueco, el Do central");
 });
 
+probar("un acorde rodado es un instante: se mide contra la tecla anterior, no contra la primera", () => {
+  const inst = instantesDe([
+    { t: 0, midi: 45, velocity: 60 },
+    { t: 27, midi: 48, velocity: 60 },
+    { t: 54, midi: 52, velocity: 60 },
+    { t: 76, midi: 57, velocity: 60 },
+    { t: 400, midi: 69, velocity: 60 },
+  ]);
+  assert.equal(inst.length, 2);
+  assert.deepEqual(inst[0].notas.map((n) => n.midi), [45, 48, 52, 57]);
+});
+
 probar("los instantes agrupan las teclas que cayeron juntas", () => {
   const inst = instantesDe(grabacion.notas);
   assert.equal(inst[0].t, 1750);
@@ -81,9 +93,10 @@ probar("Pum-chá en La menor con el pulso en la izquierda sale como se transcrib
   assert.deepEqual(izq[1].midis, [52, 57, 60]);
   assert.deepEqual(izq[5].midis, [48, 53, 57]);
   assert.deepEqual(izq[9].midis, [50, 55, 59]);
-  // El Re3 fantasma del segundo chá del primer compás entró con el acorde: es
-  // una tecla de verdad, y sacarla es del que revisa, no del importador.
-  assert.deepEqual(izq[3].midis, [50, 52, 57, 60]);
+  // El Re3 del segundo chá del primer compás se rozó (velocidad 15): queda
+  // afuera y se avisa, que a mano se sacó igual.
+  assert.deepEqual(izq[3].midis, [52, 57, 60]);
+  assert.ok(pieza.avisos.some((a) => a.includes("rozada") && a.includes("50")));
 });
 
 probar("la derecha: los tresillos de la corrida se detectan, y el La final dura el compás", () => {

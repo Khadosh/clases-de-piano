@@ -30,8 +30,15 @@ import { readFileSync } from "node:fs";
 import { compasesIncompletos, HOLGURA } from "../lib/pentagrama.ts";
 import { escribirPieza } from "./escribir-pieza.mjs";
 
-/** Las teclas a menos de esto caen en el mismo instante: nunca caen juntas de verdad. */
+/**
+ * Dos teclas a menos de esto, una de la otra, caen en el mismo instante:
+ * nunca caen juntas de verdad. Se mide contra la anterior y no contra la
+ * primera del grupo, así un acorde rodado —cuatro teclas a 25 ms cada una,
+ * casi cien en total— sigue siendo un acorde.
+ */
 const VENTANA_ACORDE_MS = 40;
+/** Por debajo de esto una tecla se rozó, no se tocó: se saca y se avisa. */
+const VELOCIDAD_FANTASMA = 20;
 /** Un pulso se parte en 12: entran corcheas (6), semicorcheas (3) y tresillos (4). */
 const DOCEAVOS = 12;
 
@@ -47,7 +54,7 @@ export function instantesDe(notas) {
   const out = [];
   for (const n of orden) {
     const u = out[out.length - 1];
-    if (u && n.t - u.t < VENTANA_ACORDE_MS) u.notas.push(n);
+    if (u && n.t - u.notas[u.notas.length - 1].t < VENTANA_ACORDE_MS) u.notas.push(n);
     else out.push({ t: n.t, notas: [n] });
   }
   return out;
@@ -170,8 +177,15 @@ export const esMezcla = (doceavos) => {
  */
 export function importarGrabacion(grabacion, opciones = {}) {
   const avisos = [];
-  const notas = grabacion.notas ?? [];
+  const fantasma = opciones.fantasma ?? VELOCIDAD_FANTASMA;
+  const rozadas = (grabacion.notas ?? []).filter((n) => n.velocity < fantasma);
+  const notas = (grabacion.notas ?? []).filter((n) => n.velocity >= fantasma);
   if (notas.length === 0) throw new Error("La grabación no tiene notas MIDI.");
+  if (rozadas.length) {
+    avisos.push(
+      `${rozadas.length} ${rozadas.length === 1 ? "tecla rozada" : "teclas rozadas"} (velocidad menor a ${fantasma}) quedaron afuera: ${rozadas.map((n) => `${n.midi} a los ${(n.t / 1000).toFixed(1)}s`).join(", ")}.`,
+    );
+  }
   const corte = opciones.corte ?? corteAutomatico(notas);
   if (opciones.corte === undefined) avisos.push(`Las manos se partieron en la tecla ${corte} (--corte para cambiarlo).`);
   const compas = opciones.compas ?? { numerador: 4, denominador: 4 };
@@ -333,7 +347,7 @@ function principal() {
   const args = process.argv.slice(2);
   const archivo = args.find((a) => !a.startsWith("--"));
   if (!archivo) {
-    console.error("Uso: npm run importar:grabacion -- grabacion.json [--bpm N] [--slug x] [--titulo x] [--corte 60] [--arranque ms] [--pulso izquierda] [--tonica 0] [--modo mayor]");
+    console.error("Uso: npm run importar:grabacion -- grabacion.json [--bpm N] [--slug x] [--titulo x] [--corte 60] [--arranque ms] [--pulso izquierda] [--fantasma 20] [--tonica 0] [--modo mayor]");
     process.exit(1);
   }
   const opcion = (nombre) => {
@@ -346,6 +360,7 @@ function principal() {
     corte: opcion("corte") ? Number(opcion("corte")) : undefined,
     arranque: opcion("arranque") ? Number(opcion("arranque")) : undefined,
     pulso: opcion("pulso") ?? undefined,
+    fantasma: opcion("fantasma") ? Number(opcion("fantasma")) : undefined,
   });
   const fecha = archivo.match(/(\d{4})-(\d{2})-(\d{2})/);
   const revisar = [
