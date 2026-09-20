@@ -894,7 +894,7 @@ function disponer({
   for (const p of pentagramas) {
     for (const v of p.voces) {
       const cabezasDeLaFila = v.flatMap((n) =>
-        n.midis.map((m) => ({ nota: escribirEnPapel(m, armadura, bemoles), compas: n.compas })),
+        n.midis.map((m) => ({ nota: escribirEnPapel(m, armadura, bemoles || n.bemoles), compas: n.compas })),
       );
       const signos = signosDe(cabezasDeLaFila, armadura);
       let k = 0;
@@ -990,7 +990,7 @@ function disponer({
           16 +
           (nota.dentro / largoCompas) * (caja.ancho - 26 - aireDe(nota.compas)) +
           corrimiento(nota.compas, nota.dentro);
-        const escritas = nota.midis.map((m) => escribirEnPapel(m, armadura, bemoles));
+        const escritas = nota.midis.map((m) => escribirEnPapel(m, armadura, bemoles || nota.bemoles));
         const signos = signosPorNota.get(nota) ?? escritas.map(() => null);
         const cabezas = escritas.map((e, i) => {
           const altura = alturaEnPentagrama(e, clave);

@@ -128,6 +128,19 @@ probar("con note-off, la duración anotada manda y el aire queda como silencio",
   assert.ok(!pieza.avisos.some((a) => a.includes("note-off")));
 });
 
+probar("con --sin-duracion el note-off se ignora y el staccato desaparece de la partitura", () => {
+  const ms = 60000 / 100;
+  const notas = [
+    { t: 0, midi: 60, velocity: 80, dur: ms * 0.4 },
+    { t: ms, midi: 62, velocity: 80, dur: ms * 0.4 },
+    { t: ms * 2, midi: 64, velocity: 80, dur: ms * 0.4 },
+    { t: ms * 3, midi: 65, velocity: 80, dur: ms * 0.4 },
+  ];
+  assert.deepEqual(figs(importarGrabacion({ notas }, { bpm: 100 }).derecha), ["60:8", "s:8", "62:8", "s:8", "64:8", "s:8", "65:8", "s:8"]);
+  assert.deepEqual(figs(importarGrabacion({ notas }, { bpm: 100, sinDuracion: true }).derecha), ["60:4", "62:4", "64:4", "65:4"]);
+  assert.equal(notas[0].dur, ms * 0.4, "la grabación del que llama no se toca");
+});
+
 probar("una nota que cruza la barra se parte y se liga", () => {
   const ms = 600;
   const notas = [

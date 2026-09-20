@@ -190,6 +190,13 @@ export interface Evento {
   irregular?: { en: number; de: number };
   /** Se prolonga sobre la siguiente en vez de volver a atacarse. */
   ligada?: boolean;
+  /**
+   * Las ajenas de este evento se escriben bajando (con bemol) aunque la
+   * armadura no tenga bemoles. Es la preferencia `bemoles` de
+   * `escribirEnPapel` para un solo evento: el Si♭ de un C7 en La menor es
+   * la séptima de Do y se llama Si♭, no La♯, que es la tecla.
+   */
+  bemoles?: boolean;
 }
 
 /**

@@ -1,0 +1,360 @@
+{
+ "sampleRate": 44100,
+ "duracionMs": 13659,
+ "notas": [
+  {
+   "t": 736,
+   "midi": 69,
+   "velocity": 37,
+   "dur": 391
+  },
+  {
+   "t": 773,
+   "midi": 45,
+   "velocity": 62,
+   "dur": 338
+  },
+  {
+   "t": 1148,
+   "midi": 76,
+   "velocity": 51,
+   "dur": 352
+  },
+  {
+   "t": 1514,
+   "midi": 52,
+   "velocity": 21,
+   "dur": 380
+  },
+  {
+   "t": 1514,
+   "midi": 69,
+   "velocity": 73,
+   "dur": 372
+  },
+  {
+   "t": 1532,
+   "midi": 60,
+   "velocity": 35,
+   "dur": 264
+  },
+  {
+   "t": 2178,
+   "midi": 45,
+   "velocity": 61,
+   "dur": 272
+  },
+  {
+   "t": 2178,
+   "midi": 69,
+   "velocity": 56,
+   "dur": 227
+  },
+  {
+   "t": 2438,
+   "midi": 71,
+   "velocity": 54,
+   "dur": 256
+  },
+  {
+   "t": 2680,
+   "midi": 72,
+   "velocity": 53,
+   "dur": 233
+  },
+  {
+   "t": 2775,
+   "midi": 48,
+   "velocity": 38,
+   "dur": 580
+  },
+  {
+   "t": 2865,
+   "midi": 52,
+   "velocity": 30,
+   "dur": 448
+  },
+  {
+   "t": 2873,
+   "midi": 50,
+   "velocity": 26,
+   "dur": 109
+  },
+  {
+   "t": 2894,
+   "midi": 55,
+   "velocity": 18,
+   "dur": 376
+  },
+  {
+   "t": 2898,
+   "midi": 59,
+   "velocity": 59,
+   "dur": 315
+  },
+  {
+   "t": 2941,
+   "midi": 76,
+   "velocity": 54,
+   "dur": 186
+  },
+  {
+   "t": 3189,
+   "midi": 74,
+   "velocity": 73,
+   "dur": 413
+  },
+  {
+   "t": 3458,
+   "midi": 72,
+   "velocity": 51,
+   "dur": 214
+  },
+  {
+   "t": 3656,
+   "midi": 69,
+   "velocity": 87,
+   "dur": 344
+  },
+  {
+   "t": 3660,
+   "midi": 41,
+   "velocity": 65,
+   "dur": 304
+  },
+  {
+   "t": 4034,
+   "midi": 76,
+   "velocity": 61,
+   "dur": 202
+  },
+  {
+   "t": 4417,
+   "midi": 69,
+   "velocity": 77,
+   "dur": 319
+  },
+  {
+   "t": 4429,
+   "midi": 48,
+   "velocity": 58,
+   "dur": 344
+  },
+  {
+   "t": 4433,
+   "midi": 57,
+   "velocity": 49,
+   "dur": 215
+  },
+  {
+   "t": 5067,
+   "midi": 41,
+   "velocity": 64,
+   "dur": 315
+  },
+  {
+   "t": 5082,
+   "midi": 69,
+   "velocity": 69,
+   "dur": 203
+  },
+  {
+   "t": 5331,
+   "midi": 71,
+   "velocity": 53,
+   "dur": 211
+  },
+  {
+   "t": 5575,
+   "midi": 72,
+   "velocity": 55,
+   "dur": 142
+  },
+  {
+   "t": 5761,
+   "midi": 48,
+   "velocity": 60,
+   "dur": 425
+  },
+  {
+   "t": 5797,
+   "midi": 57,
+   "velocity": 44,
+   "dur": 237
+  },
+  {
+   "t": 5797,
+   "midi": 76,
+   "velocity": 65,
+   "dur": 149
+  },
+  {
+   "t": 6034,
+   "midi": 74,
+   "velocity": 61,
+   "dur": 322
+  },
+  {
+   "t": 6260,
+   "midi": 72,
+   "velocity": 14,
+   "dur": 198
+  },
+  {
+   "t": 6519,
+   "midi": 43,
+   "velocity": 70,
+   "dur": 374
+  },
+  {
+   "t": 6534,
+   "midi": 67,
+   "velocity": 53,
+   "dur": 306
+  },
+  {
+   "t": 6879,
+   "midi": 74,
+   "velocity": 50,
+   "dur": 289
+  },
+  {
+   "t": 7258,
+   "midi": 67,
+   "velocity": 72,
+   "dur": 296
+  },
+  {
+   "t": 7259,
+   "midi": 50,
+   "velocity": 54,
+   "dur": 405
+  },
+  {
+   "t": 7289,
+   "midi": 59,
+   "velocity": 26,
+   "dur": 261
+  },
+  {
+   "t": 7896,
+   "midi": 67,
+   "velocity": 69,
+   "dur": 211
+  },
+  {
+   "t": 7932,
+   "midi": 43,
+   "velocity": 70,
+   "dur": 238
+  },
+  {
+   "t": 8168,
+   "midi": 69,
+   "velocity": 60,
+   "dur": 251
+  },
+  {
+   "t": 8433,
+   "midi": 71,
+   "velocity": 59,
+   "dur": 149
+  },
+  {
+   "t": 8617,
+   "midi": 40,
+   "velocity": 52,
+   "dur": 496
+  },
+  {
+   "t": 8635,
+   "midi": 44,
+   "velocity": 58,
+   "dur": 540
+  },
+  {
+   "t": 8645,
+   "midi": 47,
+   "velocity": 59,
+   "dur": 520
+  },
+  {
+   "t": 8645,
+   "midi": 50,
+   "velocity": 36,
+   "dur": 442
+  },
+  {
+   "t": 8646,
+   "midi": 74,
+   "velocity": 80,
+   "dur": 333
+  },
+  {
+   "t": 8651,
+   "midi": 52,
+   "velocity": 43,
+   "dur": 159
+  },
+  {
+   "t": 8891,
+   "midi": 72,
+   "velocity": 60,
+   "dur": 430
+  },
+  {
+   "t": 9163,
+   "midi": 71,
+   "velocity": 52,
+   "dur": 212
+  },
+  {
+   "t": 9383,
+   "midi": 45,
+   "velocity": 70,
+   "dur": 353
+  },
+  {
+   "t": 9391,
+   "midi": 69,
+   "velocity": 96,
+   "dur": 1714
+  },
+  {
+   "t": 10127,
+   "midi": 52,
+   "velocity": 5,
+   "dur": 336
+  },
+  {
+   "t": 10138,
+   "midi": 60,
+   "velocity": 23,
+   "dur": 261
+  },
+  {
+   "t": 11463,
+   "midi": 48,
+   "velocity": 9,
+   "dur": 1405
+  },
+  {
+   "t": 11488,
+   "midi": 45,
+   "velocity": 5,
+   "dur": 1300
+  },
+  {
+   "t": 11513,
+   "midi": 52,
+   "velocity": 18,
+   "dur": 1340
+  },
+  {
+   "t": 11533,
+   "midi": 57,
+   "velocity": 37,
+   "dur": 1284
+  }
+ ]
+}

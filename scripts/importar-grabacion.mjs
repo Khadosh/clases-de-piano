@@ -49,12 +49,12 @@ const GRILLAS = [
 ];
 
 /** Los instantes: las teclas agrupadas por ataque, en milisegundos. */
-export function instantesDe(notas) {
+export function instantesDe(notas, ventana = VENTANA_ACORDE_MS) {
   const orden = [...notas].sort((a, b) => a.t - b.t);
   const out = [];
   for (const n of orden) {
     const u = out[out.length - 1];
-    if (u && n.t - u.notas[u.notas.length - 1].t < VENTANA_ACORDE_MS) u.notas.push(n);
+    if (u && n.t - u.notas[u.notas.length - 1].t < ventana) u.notas.push(n);
     else out.push({ t: n.t, notas: [n] });
   }
   return out;
@@ -179,7 +179,7 @@ export function importarGrabacion(grabacion, opciones = {}) {
   const avisos = [];
   const fantasma = opciones.fantasma ?? VELOCIDAD_FANTASMA;
   const rozadas = (grabacion.notas ?? []).filter((n) => n.velocity < fantasma);
-  const notas = (grabacion.notas ?? []).filter((n) => n.velocity >= fantasma);
+  const notas = (grabacion.notas ?? []).filter((n) => n.velocity >= fantasma).map((n) => ({ ...n }));
   if (notas.length === 0) throw new Error("La grabación no tiene notas MIDI.");
   if (rozadas.length) {
     avisos.push(
@@ -211,12 +211,22 @@ export function importarGrabacion(grabacion, opciones = {}) {
     };
     avisos.push(`El pulso lo puso la mano izquierda: cada uno de sus ${anclas.length} ataques es un pulso.`);
   }
+  // `sinDuracion` ignora el note-off a propósito: el que toca todo corto
+  // —pum y chá como corcheas con aire— sale más legible en negras, que es
+  // como se lee y como se practica. El staccato es del intérprete, no de la
+  // partitura.
+  if (opciones.sinDuracion) {
+    for (const n of notas) delete n.dur;
+    avisos.push("El note-off se ignoró (--sin-duracion): cada nota dura hasta la siguiente de su mano, o hasta la barra.");
+  }
   const conDur = notas.filter((n) => n.dur !== undefined).length;
-  if (conDur === 0) avisos.push("La grabación no trae note-off: cada nota dura hasta la siguiente de su mano, o hasta la barra.");
-  else if (conDur < notas.length) avisos.push(`${notas.length - conDur} notas sin note-off: ésas duran hasta la siguiente.`);
+  if (conDur === 0 && !opciones.sinDuracion) avisos.push("La grabación no trae note-off: cada nota dura hasta la siguiente de su mano, o hasta la barra.");
+  else if (conDur < notas.length && !opciones.sinDuracion) avisos.push(`${notas.length - conDur} notas sin note-off: ésas duran hasta la siguiente.`);
 
   const manos = { izquierda: [], derecha: [] };
-  for (const inst of instantesDe(notas)) {
+  // Un acorde rodado despacio pide una ventana más ancha (`--ventana 100`);
+  // con corcheas rápidas conviene dejarla como está.
+  for (const inst of instantesDe(notas, opciones.ventana ?? VENTANA_ACORDE_MS)) {
     for (const mano of ["izquierda", "derecha"]) {
       const mias = inst.notas.filter((n) => (mano === "izquierda" ? n.midi < corte : n.midi >= corte));
       if (!mias.length) continue;
@@ -347,7 +357,7 @@ function principal() {
   const args = process.argv.slice(2);
   const archivo = args.find((a) => !a.startsWith("--"));
   if (!archivo) {
-    console.error("Uso: npm run importar:grabacion -- grabacion.json [--bpm N] [--slug x] [--titulo x] [--corte 60] [--arranque ms] [--pulso izquierda] [--fantasma 20] [--tonica 0] [--modo mayor]");
+    console.error("Uso: npm run importar:grabacion -- grabacion.json [--bpm N] [--slug x] [--titulo x] [--corte 60] [--arranque ms] [--pulso izquierda] [--fantasma 20] [--ventana 40] [--sin-duracion] [--tonica 0] [--modo mayor]");
     process.exit(1);
   }
   const opcion = (nombre) => {
@@ -361,6 +371,8 @@ function principal() {
     arranque: opcion("arranque") ? Number(opcion("arranque")) : undefined,
     pulso: opcion("pulso") ?? undefined,
     fantasma: opcion("fantasma") ? Number(opcion("fantasma")) : undefined,
+    ventana: opcion("ventana") ? Number(opcion("ventana")) : undefined,
+    sinDuracion: args.includes("--sin-duracion"),
   });
   const fecha = archivo.match(/(\d{4})-(\d{2})-(\d{2})/);
   const revisar = [

@@ -13,6 +13,7 @@ export function evento(e) {
   const partes = [];
   if (e.puntillo) partes.push("puntillo: true");
   if (e.ligada) partes.push("ligada: true");
+  if (e.bemoles) partes.push("bemoles: true");
   if (e.irregular) {
     partes.push(
       e.irregular.en === 3 && e.irregular.de === 2

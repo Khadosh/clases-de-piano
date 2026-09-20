@@ -19,3 +19,4 @@ pasaron, las notas sin note-off, las duraciones raras.
 |---|---|---|
 | `pum-cha-en-la-menor.json` | Pum-chá en La menor | El primer pum-chá, 19 de septiembre de 2026. Sin note-off: es anterior a que el grabador los guardara. |
 | `pum-cha-con-los-de-paso.json` | Pum-chá en La menor, con los de paso | Un día después, con el C7 rodado y el E7 plaqué. Importada con `--pulso izquierda`; el C7 se corrigió a mano (ver el `revisar` de la pieza). Sin note-off. |
+| `pum-cha-con-los-de-paso-toma-2.json` | la misma | La segunda toma, minutos después, ya con note-off. Confirma la primera: mismo C7 con el Si natural y el Do3 rozado, mismo acorde final casi sin velocidad. Con las duraciones de verdad sale todo staccato (corchea y aire), así que se importa con `--sin-duracion --ventana 100`. |

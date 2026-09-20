@@ -109,6 +109,11 @@ probar("con la preferencia de bemoles, la misma tecla es La♭ y no Sol♯", () 
   const sinPreferencia = escribirEnPapel(68, 0);
   assert.equal(sinPreferencia.letra, 4); // Sol
   assert.equal(sinPreferencia.alter, 1);
+  // El Si♭ del C7 en La menor pide lo mismo, evento por evento: `bemoles`
+  // en el evento lo escribe Si♭ y deja al Sol♯ del E7 de al lado en paz.
+  const sib = escribirEnPapel(58, 0, true);
+  assert.equal(sib.letra, 6);
+  assert.equal(sib.alter, -1);
   // Y a una nota que la armadura ya escribe, la preferencia no la toca.
   const diatonica = escribirEnPapel(64, 0, true); // Mi4
   assert.equal(diatonica.letra, 2);

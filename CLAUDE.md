@@ -608,7 +608,11 @@ un gesto y no una etiqueta.
 
 Se agrega a `content/partituras.ts` y no se toca nada más. Cada mano es una fila
 de eventos con sus teclas y su figura; los silencios son un evento sin teclas, y
-hacen falta — si la derecha entra tarde, esa espera se escribe.
+hacen falta — si la derecha entra tarde, esa espera se escribe. Una nota ajena
+a la tonalidad se escribe subiendo (sostenido) salvo que la armadura tenga
+bemoles; cuando la nota es un bemol de verdad en una armadura sin bemoles —el
+Si♭ del C7 en La menor, la séptima de Do— el evento lleva `bemoles: true` y
+sólo ése se escribe bajando.
 
 **Están transcriptas de memoria y son un pedazo.** Las obras son de dominio
 público, pero la transcripción es nuestra y puede tener errores: sale bien el
@@ -642,6 +646,16 @@ que se supuso. Dos cosas que conviene saber:
 - **El bpm conviene pasarlo.** Si no, se estima de la mediana entre ataques de
   la mano izquierda (el acompañamiento va en pulsos, la melodía no) y el
   `revisar` avisa que es estimado.
+- **El note-off dice la verdad y a veces no conviene escucharla.** El que
+  toca todo corto sale con cada negra como corchea y silencio; `--sin-duracion`
+  lo ignora y cada nota dura hasta la siguiente, que es como se lee. El
+  staccato es del intérprete, no de la partitura.
+- **Las teclas rozadas se sacan** (velocidad menor a 20, `--fantasma`) y el
+  informe dice cuáles; **un acorde rodado es un instante** porque la ventana
+  se mide contra la tecla anterior y no contra la primera (`--ventana` la
+  ensancha para un rodado lento). Y **el pulso lo puede poner la mano
+  izquierda** (`--pulso izquierda`): cada ataque del pum-chá es un pulso y
+  el rubato de la toma queda parejo. Con la izquierda en plaqué no sirve.
 
 `npm run test:grabacion` corre el importador sobre la grabación del primer
 pum-chá y pide que salga lo que se transcribió a mano: cuatro compases que
