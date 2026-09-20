@@ -13,6 +13,7 @@ import {
   intervalsOf,
   nombreEnAcorde,
   qualityById,
+  raizEscrita,
   type ChordQuality,
   type Pitch,
 } from "@/lib/music";
@@ -29,6 +30,8 @@ import {
 import { playChord, wakeAudio } from "@/lib/audio";
 import { useArmado } from "@/lib/useArmado";
 import { anotar, elegirConMemoria } from "@/lib/memoria";
+import { PROGRESIONES, TONALIDAD_MAYOR, raizDelGrado } from "@/lib/grados";
+import type { Reparto } from "@/lib/voicing";
 
 /**
  * El dictado de voicing: sale un acorde y una disposición —"Fmaj7 abierto,
@@ -42,12 +45,50 @@ import { anotar, elegirConMemoria } from "@/lib/memoria";
  *
  * **Lo que se olvida es el reparto, no el acorde**, así que la memoria cuenta
  * por disposición (`voicing:15-37`) y no por calidad.
+ *
+ * Tiene dos modos. *Acordes sueltos*: sale cualquiera con cualquier
+ * disposición. *La vuelta*: una progresión de verdad (tonalidad ×
+ * `PROGRESIONES`, como el dado del enlace), los acordes en orden y el mismo
+ * reparto para todos — que es la tarea literal de la clase 7: "la vuelta con
+ * la izquierda en 1-5 o 1-7 y la tercera arriba". Al cierre dice cuántos
+ * salieron limpios.
  */
 
 const BASE_DE_MEMORIA = "voicing:";
 const POR_DEFECTO: Disposicion[] = ["15-37", "17-35", "una-mano"];
 
 type Ronda = PedidoDeVoicing;
+
+/** La vuelta que se está practicando: qué progresión, en qué tonalidad, con qué reparto. */
+interface Vuelta {
+  tonica: number;
+  progresion: number;
+  cuatriadas: boolean;
+  reparto: Reparto;
+  /** El acorde por el que va. */
+  paso: number;
+  /** Cómo salió cada uno: true es limpio, sin pistas. */
+  limpios: boolean[];
+  terminada: boolean;
+}
+
+/** Los acordes de una vuelta, ya con su calidad: la tríada del grado, o la cuatriada. */
+function acordesDeLaVuelta(v: Pick<Vuelta, "tonica" | "progresion" | "cuatriadas">): { root: number; q: ChordQuality }[] {
+  return PROGRESIONES[v.progresion].grados.map((g) => {
+    const grado = TONALIDAD_MAYOR[g];
+    return { root: raizDelGrado(v.tonica, g), q: qualityById(v.cuatriadas ? grado.cuatriada : grado.triada)! };
+  });
+}
+
+const sortearVuelta = (previa?: Pick<Vuelta, "tonica" | "progresion">): Pick<Vuelta, "tonica" | "progresion"> => {
+  let tonica = Math.floor(Math.random() * 12);
+  let progresion = Math.floor(Math.random() * PROGRESIONES.length);
+  while (previa && tonica === previa.tonica && progresion === previa.progresion) {
+    tonica = Math.floor(Math.random() * 12);
+    progresion = Math.floor(Math.random() * PROGRESIONES.length);
+  }
+  return { tonica, progresion };
+};
 
 export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }) {
   const qualities = useMemo(() => {
@@ -66,6 +107,18 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
   const [resuelta, setResuelta] = useState<"acerto" | "mostrado" | null>(null);
   const [racha, setRacha] = useState(0);
   const [puntaje, setPuntaje] = useState({ limpias: 0, rondas: 0 });
+  const [modo, setModo] = useState<"sueltos" | "vuelta">("sueltos");
+  // La vuelta arranca en la ii – V – I en Do y el dado la cambia: sin azar en
+  // el primer render, servidor y cliente dibujan lo mismo.
+  const [vuelta, setVuelta] = useState<Vuelta>({
+    tonica: 0,
+    progresion: 0,
+    cuatriadas: true,
+    reparto: "15-37",
+    paso: 0,
+    limpios: [],
+    terminada: false,
+  });
 
   const armado = useArmado({ activo: Boolean(ronda) && !resuelta });
   const puestas = armado.notas;
@@ -73,8 +126,23 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
   const correccion = ronda ? corregirVoicing(puestas, ronda) : null;
   const modelo = ronda ? voicingModelo(ronda) : null;
 
+  /** Arranca una ronda con ese pedido: limpia el piano, cuenta la ronda. */
+  const arrancarRonda = useCallback(
+    (pedido: Ronda) => {
+      wakeAudio();
+      setRonda(pedido);
+      setPistas(0);
+      setResuelta(null);
+      armado.borrar();
+      setN((x) => x + 1);
+      setPuntaje((p) => ({ ...p, rondas: p.rondas + 1 }));
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  /** Acordes sueltos: cualquiera, con cualquiera de las disposiciones elegidas. */
   const nueva = useCallback(() => {
-    wakeAudio();
     const q = qualities[Math.floor(Math.random() * qualities.length)];
     const cuatriada = intervalsOf(q).length >= 4;
     const posibles = DISPOSICIONES.filter(
@@ -84,14 +152,39 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
     // disposición posible: ahí va la abierta de siempre.
     const lista = posibles.length ? posibles : DISPOSICIONES.filter((d) => d.id === "15-37");
     const disposicion = elegirConMemoria(lista, (d) => BASE_DE_MEMORIA + d.id).id;
-    setRonda({ root: Math.floor(Math.random() * 12), q, disposicion });
-    setPistas(0);
-    setResuelta(null);
-    armado.borrar();
-    setN((x) => x + 1);
-    setPuntaje((p) => ({ ...p, rondas: p.rondas + 1 }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qualities, activas]);
+    setModo("sueltos");
+    arrancarRonda({ root: Math.floor(Math.random() * 12), q, disposicion });
+  }, [qualities, activas, arrancarRonda]);
+
+  /** La vuelta: el acorde que toca, con el reparto de la vuelta. */
+  const pedidoDeLaVuelta = useCallback((v: Vuelta): Ronda => {
+    const { root, q } = acordesDeLaVuelta(v)[v.paso];
+    // El 1-7 / 3-5 no existe para tríadas: ahí la vuelta pide 1-5 / 3-7.
+    const disposicion: Disposicion = intervalsOf(q).length >= 4 ? v.reparto : "15-37";
+    return { root, q, disposicion };
+  }, []);
+
+  const arrancarVuelta = useCallback(
+    (v: Vuelta) => {
+      const desdeElPrincipio = { ...v, paso: 0, limpios: [], terminada: false };
+      setVuelta(desdeElPrincipio);
+      setModo("vuelta");
+      arrancarRonda(pedidoDeLaVuelta(desdeElPrincipio));
+    },
+    [arrancarRonda, pedidoDeLaVuelta],
+  );
+
+  const seguirLaVuelta = useCallback(() => {
+    const paso = vuelta.paso + 1;
+    if (paso >= acordesDeLaVuelta(vuelta).length) {
+      setVuelta({ ...vuelta, terminada: true });
+      setRonda(null);
+      return;
+    }
+    const siguiente = { ...vuelta, paso };
+    setVuelta(siguiente);
+    arrancarRonda(pedidoDeLaVuelta(siguiente));
+  }, [vuelta, arrancarRonda, pedidoDeLaVuelta]);
 
   const cerrar = useCallback(
     (como: "acerto" | "mostrado", limpio: boolean) => {
@@ -99,6 +192,7 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
       setResuelta(como);
       const bien = como === "acerto" && limpio;
       anotar(BASE_DE_MEMORIA + ronda.disposicion, bien);
+      if (modo === "vuelta") setVuelta((v) => ({ ...v, limpios: [...v.limpios, bien] }));
       if (bien) {
         setPuntaje((p) => ({ ...p, limpias: p.limpias + 1 }));
         setRacha((r) => r + 1);
@@ -106,7 +200,7 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
         setRacha(0);
       }
     },
-    [ronda],
+    [ronda, modo],
   );
 
   // Se corrige recién con las teclas que pide, y se cierra sola al acertar.
@@ -260,6 +354,64 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
     return `${d.id === "cerrada" ? "cerrado" : d.id === "una-mano" ? "a una mano" : "abierto"}: ${d.enunciado}`;
   };
 
+  const acordesVuelta = acordesDeLaVuelta(vuelta);
+  const nombreDeLaVuelta = `${PROGRESIONES[vuelta.progresion].nombre} en ${escribirNota(raizEscrita(vuelta.tonica), "en")}`;
+  const repartoDeLaVuelta = DISPOSICIONES.find((d) => d.id === vuelta.reparto)!;
+
+  if (!ronda && modo === "vuelta" && vuelta.terminada) {
+    const limpios = vuelta.limpios.filter(Boolean).length;
+    return (
+      <div className="card p-6">
+        <p className="text-xs tracking-[0.2em] text-humo uppercase">La vuelta entera</p>
+        <p className="font-display mt-1 text-3xl font-black text-sol">
+          {limpios}
+          <span className="text-lg text-humo">/{acordesVuelta.length} sin pistas</span>
+        </p>
+        <p className="mt-2 text-sm text-humo">
+          {nombreDeLaVuelta}, {repartoDeLaVuelta.nombre}.{" "}
+          {limpios === acordesVuelta.length
+            ? "Toda la vuelta con la tercera arriba. Eso es la tarea."
+            : "Los que no salieron limpios vuelven más seguido en los acordes sueltos."}
+        </p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {acordesVuelta.map((a, i) => (
+            <span
+              key={i}
+              className={`rounded-lg px-2.5 py-1 font-mono text-sm font-bold ${
+                vuelta.limpios[i] ? "bg-menta/15 text-menta" : "bg-brasa/15 text-brasa"
+              }`}
+            >
+              {chordSymbol(a.root, a.q)}
+            </span>
+          ))}
+        </div>
+        <div className="mt-6 flex flex-wrap gap-2">
+          <button
+            onClick={() => arrancarVuelta(vuelta)}
+            className="rounded-full bg-sol px-5 py-2.5 font-bold text-noche transition hover:brightness-110"
+          >
+            <Icono de="loop" /> La misma otra vez
+          </button>
+          <button
+            onClick={() => arrancarVuelta({ ...vuelta, ...sortearVuelta(vuelta) })}
+            className="rounded-full bg-carta-2 px-4 py-2.5 text-sm font-bold transition hover:bg-borde"
+          >
+            <Icono de="dado" /> Sortear otra
+          </button>
+          <button
+            onClick={() => {
+              setModo("sueltos");
+              setVuelta((v) => ({ ...v, terminada: false }));
+            }}
+            className="rounded-full px-4 py-2.5 text-sm text-humo transition hover:text-tiza"
+          >
+            volver
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!ronda) {
     return (
       <div className="card p-6">
@@ -288,6 +440,64 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
         >
           <Icono de="dado" /> Arrancar
         </button>
+
+        {/* La tarea de la clase 7: la vuelta entera con un reparto. */}
+        <div className="mt-8 rounded-2xl border border-borde/60 bg-carta-2 p-5">
+          <p className="text-xs tracking-[0.2em] text-humo uppercase">O la tarea: la vuelta entera</p>
+          <p className="mt-2 text-sm text-humo">
+            Una progresión de verdad, acorde por acorde, con el mismo reparto en todos: la izquierda
+            pone la base y la tercera va arriba en cada uno. Al final dice cuántos salieron limpios.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+            <span className="text-humo">
+              <strong className="text-tiza">{nombreDeLaVuelta}</strong> ·{" "}
+              <span className="font-mono">{acordesVuelta.map((a) => chordSymbol(a.root, a.q)).join(" · ")}</span>
+            </span>
+            <button
+              onClick={() => setVuelta((v) => ({ ...v, ...sortearVuelta(v) }))}
+              className="rounded-xl bg-noche px-3 py-1.5 text-sm font-bold transition hover:bg-borde"
+            >
+              <Icono de="dado" /> Otra
+            </button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-humo">
+            <label className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={vuelta.cuatriadas}
+                onChange={(e) =>
+                  setVuelta((v) => ({
+                    ...v,
+                    cuatriadas: e.target.checked,
+                    reparto: e.target.checked ? v.reparto : "15-37",
+                  }))
+                }
+                className="accent-uva"
+              />
+              con séptimas
+            </label>
+            <span className="flex items-center gap-1.5">
+              {DISPOSICIONES.filter((d) => d.id === "15-37" || d.id === "17-35").map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => setVuelta((v) => ({ ...v, reparto: d.id as Reparto }))}
+                  disabled={d.soloCuatriadas && !vuelta.cuatriadas}
+                  className={`rounded-xl px-3 py-1.5 text-sm font-semibold transition disabled:opacity-40 ${
+                    vuelta.reparto === d.id ? "bg-sol text-noche" : "bg-noche text-humo hover:text-tiza"
+                  }`}
+                >
+                  {d.nombre}
+                </button>
+              ))}
+            </span>
+          </div>
+          <button
+            onClick={() => arrancarVuelta(vuelta)}
+            className="mt-4 rounded-full bg-tiza px-5 py-2.5 font-bold text-noche transition hover:brightness-110"
+          >
+            ▶ Tocar la vuelta
+          </button>
+        </div>
       </div>
     );
   }
@@ -312,6 +522,32 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
           </span>
         </span>
       </div>
+
+      {modo === "vuelta" && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-borde/60 px-5 py-3 text-sm">
+          <span className="text-humo">
+            <strong className="text-tiza">{nombreDeLaVuelta}</strong> · {repartoDeLaVuelta.nombre}
+          </span>
+          <span className="flex flex-wrap gap-1.5">
+            {acordesVuelta.map((a, i) => (
+              <span
+                key={i}
+                className={`rounded-lg px-2.5 py-1 font-mono text-sm font-bold ${
+                  i === vuelta.paso
+                    ? "bg-sol text-noche"
+                    : i < vuelta.paso
+                      ? vuelta.limpios[i]
+                        ? "bg-menta/15 text-menta"
+                        : "bg-brasa/15 text-brasa"
+                      : "bg-carta-2 text-humo"
+                }`}
+              >
+                {chordSymbol(a.root, a.q)}
+              </span>
+            ))}
+          </span>
+        </div>
+      )}
 
       <div className="p-5">
         <div className="mb-4 text-center">
@@ -347,18 +583,29 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
         </Piano>
 
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <button
-            onClick={nueva}
-            className="rounded-full bg-sol px-5 py-2.5 font-bold text-noche transition hover:brightness-110"
-          >
-            {resuelta ? (
-              "Siguiente →"
-            ) : (
-              <>
-                <Icono de="dado" /> Otro
-              </>
-            )}
-          </button>
+          {modo === "vuelta" ? (
+            resuelta && (
+              <button
+                onClick={seguirLaVuelta}
+                className="rounded-full bg-sol px-5 py-2.5 font-bold text-noche transition hover:brightness-110"
+              >
+                {vuelta.paso + 1 < acordesVuelta.length ? "Siguiente acorde →" : "Cerrar la vuelta →"}
+              </button>
+            )
+          ) : (
+            <button
+              onClick={nueva}
+              className="rounded-full bg-sol px-5 py-2.5 font-bold text-noche transition hover:brightness-110"
+            >
+              {resuelta ? (
+                "Siguiente →"
+              ) : (
+                <>
+                  <Icono de="dado" /> Otro
+                </>
+              )}
+            </button>
+          )}
           {!resuelta && (
             <button
               onClick={mostrar}
@@ -369,10 +616,24 @@ export default function DictadoVoicing({ qualityIds }: { qualityIds?: string[] }
           )}
         </div>
 
-        <div className="mt-4 border-t border-borde/60 pt-4">
-          <p className="text-xs tracking-[0.2em] text-humo uppercase">Qué pedir</p>
-          <Disposiciones activas={activas} onAlternar={alternarDisposicion} />
-        </div>
+        {modo === "sueltos" ? (
+          <div className="mt-4 border-t border-borde/60 pt-4">
+            <p className="text-xs tracking-[0.2em] text-humo uppercase">Qué pedir</p>
+            <Disposiciones activas={activas} onAlternar={alternarDisposicion} />
+          </div>
+        ) : (
+          <div className="mt-4 border-t border-borde/60 pt-4">
+            <button
+              onClick={() => {
+                setRonda(null);
+                setModo("sueltos");
+              }}
+              className="text-sm text-humo underline decoration-dotted underline-offset-4 transition hover:text-tiza"
+            >
+              dejar la vuelta
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
