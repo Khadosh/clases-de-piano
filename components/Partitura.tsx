@@ -8,7 +8,7 @@ import Midi from "./Midi";
 import { getAudioContext, notaOff, notaOn, pararTodo, wakeAudio } from "@/lib/audio";
 import { useMidi } from "@/lib/useMidi";
 import { arrancarReloj, type Pulso } from "@/lib/reloj";
-import { VENTANA_SEGUIMIENTO, juzgarInstante, resincronizar } from "@/lib/seguimiento";
+import { avanzar, seguimientoDesde, type EstadoDelSeguimiento } from "@/lib/seguimiento";
 import { duracionDeCompas, duracionDeEvento, ubicar, vocesDe } from "@/lib/pentagrama";
 import type { Pieza } from "@/content/partituras";
 
@@ -360,60 +360,35 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
   // ---- Seguirte a vos ------------------------------------------------------
 
   const caja = useRef<HTMLDivElement>(null);
-  /** Las teclas tocadas en el instante que se está esperando, como llegan. */
-  const puestasRef = useRef<number[]>([]);
-  const esperadoRef = useRef<Momento[]>(momentos);
-  esperadoRef.current = momentos;
+  /**
+   * El seguimiento entre tecla y tecla vive en `lib/seguimiento.ts` como un
+   * valor: acá sólo se lo guarda por ref y se copia a estado lo que se dibuja.
+   * `i` va aparte porque también lo mueve tocar un compás del pentagrama.
+   */
+  const seguimientoRef = useRef<EstadoDelSeguimiento>(seguimientoDesde(0));
+  const instantesRef = useRef<number[][]>([]);
+  const limiteRef = useRef(0);
+  instantesRef.current = useMemo(() => momentos.map((m) => m.midis), [momentos]);
+  // Con recorte, el seguimiento no puede saltar más allá de su última nota.
+  const primeroAfuera = recorte === null ? -1 : momentos.findIndex((m) => m.compas > recorte.hasta);
+  limiteRef.current = primeroAfuera < 0 ? momentos.length : primeroAfuera;
   const iRef = useRef(i);
   iRef.current = i;
   const siguiendoRef = useRef(siguiendo);
   siguiendoRef.current = siguiendo;
-  const recorteRef = useRef(recorte);
-  recorteRef.current = recorte;
 
-  /**
-   * Una tecla mientras te sigue.
-   *
-   * Se acepta el instante completo, no nota por nota: si el acorde tiene tres
-   * notas hay que tocar las tres, en cualquier orden y en cualquier octava —
-   * pero **contando**, que una octava son dos teclas (`juzgarInstante`). Las
-   * que sobran no se marcan como error hasta que el instante esté completo,
-   * porque al armar un acorde con las dos manos las teclas nunca caen juntas.
-   */
+  /** Una tecla mientras te sigue: se juega `avanzar` y se dibuja lo que cambió. */
   const alTocar = useCallback((midi: number) => {
     if (!siguiendoRef.current) return;
     // Durante la cuenta previa del metrónomo no entraste todavía.
     const ac = getAudioContext();
     if (ac && ac.currentTime < cuentaHastaRef.current) return;
-    const m = esperadoRef.current[iRef.current];
-    if (!m) return;
-    puestasRef.current.push(midi);
-    const { completo, sobran } = juzgarInstante(m.midis, puestasRef.current);
-    if (completo) {
-      // Si además tocaste algo que no iba, cuenta como error pero se avanza igual:
-      // quedarse trabado en un instante es peor que anotarlo y seguir.
-      if (sobran > 0) setErrores((e) => e + 1);
-      puestasRef.current = [];
-      setI((n) => n + 1);
-      return;
-    }
-    // Mientras lo que pusiste sea parte de este instante, se espera el resto.
-    // Si hay algo que no iba, capaz te comiste la nota y seguiste de largo: si
-    // lo último que tocaste es justo uno de los instantes que vienen, se salta
-    // ahí y lo salteado se anota como comido. Sin esto, errar una nota dejaba
-    // la partitura clavada esperándola y todo lo que seguía caía "de más".
-    if (sobran === 0) return;
-    const i0 = iRef.current;
-    const hasta = recorteRef.current ? recorteRef.current.hasta : Infinity;
-    const siguientes = esperadoRef.current
-      .slice(i0 + 1, i0 + 1 + VENTANA_SEGUIMIENTO)
-      .filter((x) => x.compas <= hasta)
-      .map((x) => x.midis);
-    const d = resincronizar(siguientes, puestasRef.current);
-    if (d === null) return;
-    setComidas((c) => c + d + 1);
-    puestasRef.current = [];
-    setI(i0 + d + 2);
+    const antes = { ...seguimientoRef.current, i: iRef.current };
+    const despues = avanzar(antes, instantesRef.current, midi, limiteRef.current);
+    seguimientoRef.current = despues;
+    if (despues.i !== antes.i) setI(despues.i);
+    if (despues.deMas !== antes.deMas) setErrores(despues.deMas);
+    if (despues.comidas !== antes.comidas) setComidas(despues.comidas);
   }, []);
 
   const { estado: estadoMidi, dispositivos } = useMidi({ caja, onNota: ({ midi }) => alTocar(midi) });
@@ -453,7 +428,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
     setI(indiceDelCompas(momentos, desde));
     setErrores(0);
     setComidas(0);
-    puestasRef.current = [];
+    seguimientoRef.current = seguimientoDesde(0);
     if (metronomoRef.current) contarParaSeguir();
   };
 
@@ -612,7 +587,7 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
                   setDesdeCompas(c);
                   if (siguiendo) {
                     setI(indiceDelCompas(momentos, c));
-                    puestasRef.current = [];
+                    seguimientoRef.current = { ...seguimientoRef.current, puestas: [] };
                   } else {
                     tocar(c);
                   }

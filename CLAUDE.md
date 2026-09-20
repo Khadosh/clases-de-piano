@@ -730,6 +730,14 @@ tecla, la primera coincide muchas veces con la nota suelta que viene después
 salteado se cuenta aparte, "de menos", porque no es lo mismo que una nota que
 no iba.
 
+**El loop entre tecla y tecla es `avanzar`, en `lib`, y no vive en el
+componente.** `Partitura` guarda el `EstadoDelSeguimiento` en un ref y copia a
+estado lo que se dibuja; `test:seguimiento` juega las mismas teclas contra la
+misma función. Hubo una versión en que el test reimplementaba el loop con su
+propio `for`, que es la copia que se separa sin avisar (la del script de
+calibrar el micrófono, otra vez). El recorte entra como `limite`: el
+seguimiento no salta más allá de la última nota del pedazo que se practica.
+
 ### La hoja y el riel
 
 En desktop, `/partituras/[slug]` son dos tarjetas hermanas **adentro de la

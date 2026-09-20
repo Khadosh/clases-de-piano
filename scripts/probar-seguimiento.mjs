@@ -9,7 +9,7 @@
  * tecla, como llega del MIDI.
  */
 import assert from "node:assert/strict";
-import { VENTANA_SEGUIMIENTO, juzgarInstante, resincronizar } from "../lib/seguimiento.ts";
+import { avanzar, juzgarInstante, resincronizar, seguimientoDesde } from "../lib/seguimiento.ts";
 
 // Notas sueltas: da igual la octava.
 assert.deepEqual(juzgarInstante([64], [52]), { completo: true, sobran: 0 });
@@ -55,29 +55,11 @@ assert.equal(errores, 0, "sin errores fantasma");
 // último que tocaste es exactamente uno de los dos instantes que vienen, se
 // salta ahí y lo salteado cuenta como comido.
 
-/** El seguidor tal como lo juega la partitura, tecla por tecla. */
-function seguir(instantes, tocadas) {
-  let i = 0;
-  let puestas = [];
-  let deMas = 0;
-  let comidas = 0;
-  for (const tecla of tocadas) {
-    puestas.push(tecla);
-    const v = juzgarInstante(instantes[i], puestas);
-    if (v.completo) {
-      if (v.sobran > 0) deMas++;
-      puestas = [];
-      i++;
-      continue;
-    }
-    if (v.sobran === 0) continue;
-    const d = resincronizar(instantes.slice(i + 1, i + 1 + VENTANA_SEGUIMIENTO), puestas);
-    if (d === null) continue;
-    comidas += d + 1;
-    puestas = [];
-    i += d + 2;
-  }
-  return { i, deMas, comidas };
+/** La partitura tecla por tecla, con la misma `avanzar` que usa el componente. */
+function seguir(instantes, tocadas, limite) {
+  let e = seguimientoDesde(0);
+  for (const tecla of tocadas) e = avanzar(e, instantes, tecla, limite);
+  return { i: e.i, deMas: e.deMas, comidas: e.comidas };
 }
 
 // Do Re Mi Fa Sol: te comés el Re y seguís. La partitura te alcanza en el Mi.
@@ -96,6 +78,10 @@ assert.deepEqual(seguir([[60], [62], [64], [65], [67]], [60, 67]).i, 1);
 assert.deepEqual(seguir([[60, 64, 67], [60], [64]], [60, 64, 67, 60, 64]), { i: 3, deMas: 0, comidas: 0 });
 // Y al revés: un instante de acorde salteado se alcanza cuando se toca entero el que sigue.
 assert.deepEqual(seguir([[60], [62, 65, 69], [64]], [60, 64]), { i: 3, deMas: 0, comidas: 1 });
+// El recorte manda: más allá de su última nota no se salta, se espera.
+assert.deepEqual(seguir([[60], [62], [64], [65]], [60, 64], 2).i, 1);
+assert.deepEqual(seguir([[60], [62], [64], [65]], [60, 64], 3).i, 3);
+
 // Un acorde que viene no se completa con una tecla sola.
 assert.equal(resincronizar([[62, 65, 69]], [61]), null);
 assert.equal(resincronizar([[62, 65, 69]], [61, 62, 65, 69]), 0);

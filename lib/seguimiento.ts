@@ -74,3 +74,58 @@ export function resincronizar(siguientes: number[][], puestas: number[]): number
   }
   return null;
 }
+
+/**
+ * Lo que el seguimiento lleva entre tecla y tecla.
+ *
+ * Es un valor y no estado de React a propósito: el componente lo guarda en
+ * refs, y el test lo juega tecla por tecla con la **misma** función. Antes el
+ * test reimplementaba este loop, que es la clase de copia que se separa sin
+ * avisar (ya pasó con el script de calibrar el micrófono).
+ */
+export interface EstadoDelSeguimiento {
+  /** El instante que se está esperando. */
+  i: number;
+  /** Las teclas tocadas en ese instante, como llegan. */
+  puestas: number[];
+  /** Notas que no iban, contadas por instante. */
+  deMas: number;
+  /** Instantes que se saltearon para alcanzarte. */
+  comidas: number;
+}
+
+export const seguimientoDesde = (i: number): EstadoDelSeguimiento => ({ i, puestas: [], deMas: 0, comidas: 0 });
+
+/**
+ * Una tecla más, y adónde queda el seguimiento.
+ *
+ * - Se acepta el instante completo, no nota por nota; lo que sobra se anota
+ *   como "de más" y se avanza igual, que quedarse trabado es peor.
+ * - Mientras lo puesto sea parte del instante, se espera el resto.
+ * - Si hay algo que el instante no quería, capaz te comiste una nota: si lo
+ *   último que tocaste es justo uno de los instantes que vienen (hasta
+ *   `VENTANA_SEGUIMIENTO`, y nunca más allá de `limite`), se salta ahí y lo
+ *   salteado cuenta como comido.
+ *
+ * `limite` es hasta dónde se mira (exclusivo): el recorte de compases que se
+ * está practicando termina ahí y el seguimiento no debe cruzarlo.
+ */
+export function avanzar(
+  estado: EstadoDelSeguimiento,
+  instantes: number[][],
+  tecla: number,
+  limite = instantes.length,
+): EstadoDelSeguimiento {
+  const pedido = instantes[estado.i];
+  if (!pedido) return estado;
+  const puestas = [...estado.puestas, tecla];
+  const { completo, sobran } = juzgarInstante(pedido, puestas);
+  if (completo) {
+    return { ...estado, i: estado.i + 1, puestas: [], deMas: estado.deMas + (sobran > 0 ? 1 : 0) };
+  }
+  if (sobran === 0) return { ...estado, puestas };
+  const siguientes = instantes.slice(estado.i + 1, Math.min(estado.i + 1 + VENTANA_SEGUIMIENTO, limite));
+  const d = resincronizar(siguientes, puestas);
+  if (d === null) return { ...estado, puestas };
+  return { ...estado, i: estado.i + d + 2, puestas: [], comidas: estado.comidas + d + 1 };
+}
