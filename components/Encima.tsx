@@ -14,7 +14,8 @@ import {
   type AcordeDeLaSecuencia,
 } from "@/lib/grados";
 import { candidatosDelAcorde, midiDeNota, notaDeTecla } from "@/lib/melodia";
-import { LETRAS_ES, mod12, noteName } from "@/lib/music";
+import { LETRAS_ES, identificarAcorde, mod12, noteName } from "@/lib/music";
+import { TEXTURAS_PIANO, compasDe, repartir, type TexturaPiano } from "@/lib/texturas";
 
 /** El nombre de una tecla, con el bemol que el modelo sabe escribir. */
 const nombreDeTeclaLocal = (midi: number) => {
@@ -49,7 +50,17 @@ import {
 
 const BPM_MIN = 40;
 const BPM_MAX = 120;
-const BAJO = 48;
+
+/**
+ * El acorde de la secuencia repartido para una textura: la fundamental sobre
+ * Do y la calidad que le sale a `identificarAcorde`, que es cómo también se
+ * cifra. Sin calidad no hay arpegio (el 7 u 8 sale de la receta).
+ */
+function repartido(a: AcordeDeLaSecuencia) {
+  const raiz = raizDelAcorde(a);
+  const id = identificarAcorde(midisDelAcorde(a, 48 + raiz));
+  return id ? repartir(id.root, id.quality) : null;
+}
 
 type Veredicto = "acorde" | "paso" | "aire";
 
@@ -68,6 +79,8 @@ interface NotaJuzgada {
 export default function Encima() {
   const [acordes, setAcordes] = useState<AcordeDeLaSecuencia[]>([...PROGRESIONES[2].grados]);
   const [bpm, setBpm] = useState(70);
+  /** Cómo acompaña la izquierda: plaqué es lo de siempre; pum-chá y arpegio son la clase 7. */
+  const [textura, setTextura] = useState<TexturaPiano>("plaque");
   const [tocando, setTocando] = useState(false);
   const [cargando, setCargando] = useState(false);
   const [compasActual, setCompasActual] = useState<number | null>(null);
@@ -130,13 +143,15 @@ export default function Encima() {
         for (let p = 0; p < 4; p++) {
           playClick(p === 0 ? "fuerte" : "debil", t + pulso * p);
         }
-        const a = acordes[proximoCompas % acordes.length];
-        const salto = raizDelAcorde(a);
-        playChord(
-          midisDelAcorde(a, BAJO + (salto <= 7 ? salto : salto - 12)),
-          segundosPorCompas * 0.95,
-          t,
-        );
+        // El acompañamiento del compás sale de la textura elegida: los
+        // mismos eventos en pulsos que toca la página de texturas, agendados
+        // contra el reloj del audio.
+        const rep = repartido(acordes[proximoCompas % acordes.length]);
+        if (rep) {
+          for (const e of compasDe(textura, rep)) {
+            playChord(e.pitches, Math.max(0.12, e.dur * pulso * 0.95), t + e.t * pulso);
+          }
+        }
         proximoCompas++;
       }
     };
@@ -277,6 +292,23 @@ export default function Encima() {
                 vuelta {vuelta}
               </span>
             )}
+            <span className="flex flex-wrap items-center gap-1.5">
+              {TEXTURAS_PIANO.map((tx) => (
+                <button
+                  key={tx.id}
+                  onClick={() => {
+                    parar();
+                    setTextura(tx.id);
+                  }}
+                  title={tx.bajada}
+                  className={`rounded-xl px-2.5 py-1 text-xs font-semibold transition ${
+                    textura === tx.id ? "bg-sol text-noche" : "bg-carta-2 text-humo hover:text-tiza"
+                  }`}
+                >
+                  {tx.nombre}
+                </button>
+              ))}
+            </span>
             <label className="ml-auto flex items-center gap-2 whitespace-nowrap text-sm text-humo">
               <span className="font-mono">{bpm} bpm</span>
               <input
