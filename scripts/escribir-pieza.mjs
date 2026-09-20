@@ -14,6 +14,7 @@ export function evento(e) {
   if (e.puntillo) partes.push("puntillo: true");
   if (e.ligada) partes.push("ligada: true");
   if (e.bemoles) partes.push("bemoles: true");
+  if (e.rodado) partes.push("rodado: true");
   if (e.irregular) {
     partes.push(
       e.irregular.en === 3 && e.irregular.de === 2

@@ -1264,7 +1264,7 @@ export const PIEZAS: Pieza[] = [
     dificultad: 2,
     propia: true,
     sobre:
-      "La misma vuelta del primer pum-chá —Lam, Fa, Sol, Lam— un día después, con los acordes de paso de la clase 5 metidos en el acompañamiento: en el cuarto pulso del primer compás el chá se cambia por un C7 rodado, el dominante que lleva al Fa que viene; y en el cuarto pulso del compás de Sol, un E7 plaqué con el bajo en Mi2, el dominante que lleva de vuelta a casa. Tres texturas en cuatro compases: pum-chá, el acorde rodado y el plaqué. La melodía es la misma frase de siempre, transportada con cada acorde, y el cierre es el Lam rodado, tenido.",
+      "La misma vuelta del primer pum-chá —Lam, Fa, Sol, Lam— un día después, con los acordes de paso de la clase 5 metidos en el acompañamiento: en el cuarto pulso del primer compás el chá se cambia por un C7 rodado, el dominante que lleva al Fa que viene; y en el cuarto pulso del compás de Sol, un E7 plaqué con el bajo en Mi2, el dominante que lleva de vuelta a casa. Tres texturas en cuatro compases: pum-chá, el acorde rodado —la línea ondulada delante del acorde: las teclas entran de abajo hacia arriba y quedan sonando— y el plaqué. La melodía es la misma frase de siempre, transportada con cada acorde, y el cierre es el Lam rodado, tenido.",
     hasta: "Entera: los cuatro compases y el acorde final.",
     revisar:
       "Importada con el importador de grabaciones (20 de septiembre), el pulso puesto por la mano izquierda. Dos cosas se escribieron como se pensaron y no como salieron: el C7 del primer compás, que en la toma tiene el Do3 rozado (velocidad 13) y un Si natural en vez de Si♭, y el chá del último compás, donde el Mi3 se rozó (velocidad 2) y sonó el Do4 solo. El acorde final se escribió como compás aparte, con el La de la melodía ligado: la toma no trae note-off, así que cuánto se tuvo es una suposición. Hay una segunda toma, minutos después y ya con note-off, que confirma la primera nota por nota —mismo Si natural en el C7, mismo acorde final casi sin velocidad— y muestra que todo se toca corto, corchea y aire; quedó escrita en negras igual, que es como se lee.",
@@ -1287,14 +1287,14 @@ export const PIEZAS: Pieza[] = [
     izquierda: [
       // Lam: pum, chá, pum, y el C7 rodado que pide el Fa.
       // El Si♭ es la séptima del Do y se escribe así, no La♯: por eso el `bemoles`.
-      n(La2, 4), n([Mi3, Do4], 4), n(La2, 4), n([Do3, Mi3, Sol3, Sib3], 4, { bemoles: true }),
+      n(La2, 4), n([Mi3, Do4], 4), n(La2, 4), n([Do3, Mi3, Sol3, Sib3], 4, { bemoles: true, rodado: true }),
       // Fa: pum-chá derecho.
       n(Fa2, 4), n([Do3, La3], 4), n(Fa2, 4), n([Do3, La3], 4),
       // Sol: pum, chá, pum, y el E7 plaqué con el bajo en Mi2, que pide el Lam.
       n(Sol2, 4), n([Re3, Si3], 4), n(Sol2, 4), n([Mi2, Sols2, Si2, Re3], 4),
       // Lam: pum, chá, pum, aire, y el acorde rodado tenido.
       n(La2, 4), n([Mi3, Do4], 4), n(La2, 4), silencio(4),
-      n([La2, Do3, Mi3, La3], 1),
+      n([La2, Do3, Mi3, La3], 1, { rodado: true }),
     ],
   },
   // Las importadas de Mutopia van al final: son muchas y son un libro.

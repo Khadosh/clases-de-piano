@@ -197,6 +197,14 @@ export interface Evento {
    * la séptima de Do y se llama Si♭, no La♯, que es la tecla.
    */
   bemoles?: boolean;
+  /**
+   * Rodado: las teclas del acorde entran escalonadas de abajo hacia arriba,
+   * como un arpegio rapidísimo, y quedan sonando juntas. Se dibuja con la
+   * línea ondulada delante del acorde y suena con cada tecla unos
+   * milisegundos después de la anterior. Para el que te sigue es un instante
+   * como cualquier otro: las teclas nunca caen juntas de todos modos.
+   */
+  rodado?: boolean;
 }
 
 /**

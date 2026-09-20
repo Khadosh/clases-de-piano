@@ -39,6 +39,8 @@ import { escribirPieza } from "./escribir-pieza.mjs";
 const VENTANA_ACORDE_MS = 40;
 /** Por debajo de esto una tecla se rozó, no se tocó: se saca y se avisa. */
 const VELOCIDAD_FANTASMA = 20;
+/** Un acorde cuyas teclas entran desparramadas más que esto se tocó rodado. */
+const RODADO_MS = 30;
 /** Un pulso se parte en 12: entran corcheas (6), semicorcheas (3) y tresillos (4). */
 const DOCEAVOS = 12;
 
@@ -234,6 +236,8 @@ export function importarGrabacion(grabacion, opciones = {}) {
         pulso: aPulsos(inst.t),
         midis: [...new Set(mias.map((n) => n.midi))].sort((a, b) => a - b),
         dur: mias.every((n) => n.dur !== undefined) ? Math.max(...mias.map((n) => n.dur)) / msPorPulso : null,
+        // Tres teclas o más entrando desparramadas: se rodó, y así se escribe.
+        rodado: mias.length >= 3 && Math.max(...mias.map((n) => n.t)) - Math.min(...mias.map((n) => n.t)) >= RODADO_MS,
       });
     }
   }
@@ -258,7 +262,7 @@ export function importarGrabacion(grabacion, opciones = {}) {
         const en = k * DOCEAVOS + Math.round((e.pulso - k) * g.partes) * (DOCEAVOS / g.partes);
         const previo = cuantizados.find((c) => c.en === en);
         if (previo) previo.midis = [...new Set([...previo.midis, ...e.midis])].sort((a, b) => a - b);
-        else cuantizados.push({ en, midis: e.midis, dur: e.dur, partes: g.partes });
+        else cuantizados.push({ en, midis: e.midis, dur: e.dur, partes: g.partes, rodado: e.rodado });
       }
     }
     cuantizados.sort((a, b) => a.en - b.en);
@@ -289,7 +293,7 @@ export function importarGrabacion(grabacion, opciones = {}) {
      * doceavo de pulso); partida en el pulso, cada pedazo es de una sola
      * grilla y se escribe. Es como se escribe a mano, además.
      */
-    const volcar = (desde, hasta, midis) => {
+    const volcar = (desde, hasta, midis, rodado = false) => {
       let d = desde;
       let primera = true;
       const pedazo = (cuanto) => {
@@ -298,6 +302,7 @@ export function importarGrabacion(grabacion, opciones = {}) {
           const ev = { midis, divide: f.divide };
           if (f.puntillo) ev.puntillo = true;
           if (f.irregular) ev.irregular = f.irregular;
+          if (rodado && primera) ev.rodado = true;
           if (midis.length && !primera) ev.ligada = true;
           fila.push(ev);
           primera = false;
@@ -320,7 +325,7 @@ export function importarGrabacion(grabacion, opciones = {}) {
     };
     for (const c of cuantizados) {
       if (c.en > cursor) volcar(cursor, c.en, []);
-      volcar(c.en, c.hasta, c.midis);
+      volcar(c.en, c.hasta, c.midis, c.rodado);
       cursor = c.hasta;
     }
     // Completar la última barra con silencio para que cierre.

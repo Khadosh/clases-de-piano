@@ -28,7 +28,12 @@ interface NotaSuelta {
   t: number;
   midi: number;
   duracion: number;
+  /** En un acorde rodado, cuántas teclas entran antes que ésta (de abajo hacia arriba). */
+  rodado?: number;
 }
+
+/** Cuánto tarda cada tecla de un acorde rodado en entrar después de la anterior. */
+const ESCALON_DEL_RODADO = 0.045;
 
 /** Un instante: todo lo que hay que tocar junto para que la pieza avance. */
 interface Momento {
@@ -193,8 +198,10 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
           continue;
         }
         anteriores = new Map();
+        const deAbajoArriba = [...n.midis].sort((a, b) => a - b);
         for (const midi of n.midis) {
-          const suelta = { t: n.t, midi, duracion };
+          const suelta: NotaSuelta = { t: n.t, midi, duracion };
+          if (n.rodado) suelta.rodado = deAbajoArriba.indexOf(midi);
           notas.push(suelta);
           anteriores.set(midi, suelta);
         }
@@ -296,9 +303,13 @@ export default function Partitura({ pieza }: { pieza: Pieza }) {
       for (const n of notas) {
         if (n.t < t0Musical - 1e-9) continue;
         if (n.t >= fin - 1e-9) continue;
-        const dur = n.duracion * segundosPorRedonda * 0.95;
-        eventos.push({ t: aSegundos(n.t), tipo: "on", midi: n.midi, dur });
-        eventos.push({ t: aSegundos(n.t) + dur, tipo: "off", midi: n.midi, dur });
+        // En un acorde rodado cada tecla entra un escalón después de la
+        // anterior y todas sueltan juntas: es un arpegio rapidísimo, no un
+        // acorde corrido.
+        const demora = (n.rodado ?? 0) * ESCALON_DEL_RODADO;
+        const dur = Math.max(0.05, n.duracion * segundosPorRedonda * 0.95 - demora);
+        eventos.push({ t: aSegundos(n.t) + demora, tipo: "on", midi: n.midi, dur });
+        eventos.push({ t: aSegundos(n.t) + demora + dur, tipo: "off", midi: n.midi, dur });
       }
       eventos.sort((a, b) => a.t - b.t);
       let proximo = 0;

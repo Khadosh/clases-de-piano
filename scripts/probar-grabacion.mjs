@@ -57,6 +57,18 @@ probar("un acorde rodado es un instante: se mide contra la tecla anterior, no co
   assert.deepEqual(inst[0].notas.map((n) => n.midi), [45, 48, 52, 57]);
 });
 
+probar("un acorde que entró desparramado se importa rodado; uno que cayó junto, no", () => {
+  const ms = 600;
+  const rodado = [
+    { t: 0, midi: 45, velocity: 60 }, { t: 25, midi: 48, velocity: 60 }, { t: 50, midi: 52, velocity: 60 },
+    { t: ms, midi: 45, velocity: 60 }, { t: ms + 4, midi: 48, velocity: 60 }, { t: ms + 9, midi: 52, velocity: 60 },
+  ];
+  // El corte va explícito: con tres teclas solas el hueco automático partiría el acorde.
+  const pieza = importarGrabacion({ notas: rodado }, { bpm: 100, corte: 60 });
+  assert.equal(pieza.izquierda[0].rodado, true);
+  assert.equal(pieza.izquierda[1].rodado, undefined);
+});
+
 probar("los instantes agrupan las teclas que cayeron juntas", () => {
   const inst = instantesDe(grabacion.notas);
   assert.equal(inst[0].t, 1750);

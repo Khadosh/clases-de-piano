@@ -657,8 +657,42 @@ function Nota({
       {nota.puntillo && (
         <circle cx={nota.x + 9} cy={ys[0] - 2} r={1.6} fill={color} />
       )}
+
+      {nota.rodado && (
+        <path
+          d={ondulada(
+            nota.x - RX - 5 - (nota.cabezas.some((c) => c.signo) ? 9 : 0),
+            yTope - ESPACIO * 0.6,
+            yPiso + ESPACIO * 0.6,
+          )}
+          fill="none"
+          stroke={color}
+          strokeWidth={1.1}
+          strokeLinecap="round"
+        />
+      )}
     </g>
   );
+}
+
+/**
+ * La línea ondulada del acorde rodado, vertical, de arriba abajo del acorde:
+ * el signo de arpegio de cualquier edición. Es un zigzag suavizado, y se
+ * dibuja a mano porque no es un glifo de la fuente, es una línea.
+ */
+function ondulada(x: number, desde: number, hasta: number): string {
+  const paso = 5;
+  const amplitud = 1.8;
+  let d = `M ${x} ${desde}`;
+  let y = desde;
+  let lado = 1;
+  while (y < hasta) {
+    const siguiente = Math.min(y + paso, hasta);
+    d += ` Q ${x + amplitud * lado} ${(y + siguiente) / 2} ${x} ${siguiente}`;
+    y = siguiente;
+    lado = -lado;
+  }
+  return d;
 }
 
 /**
@@ -916,7 +950,8 @@ function disponer({
   const AIRE = 10;
   const instantesConSigno = new Map<number, number[]>();
   for (const n of todas) {
-    if (!signosPorNota.get(n)?.some(Boolean)) continue;
+    // El rodado también pide aire: su línea ondulada va donde iría el signo.
+    if (!signosPorNota.get(n)?.some(Boolean) && !n.rodado) continue;
     const lista = instantesConSigno.get(n.compas) ?? [];
     if (!lista.some((d) => Math.abs(d - n.dentro) < 1e-6)) lista.push(n.dentro);
     instantesConSigno.set(n.compas, lista);

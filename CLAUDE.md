@@ -612,7 +612,12 @@ hacen falta — si la derecha entra tarde, esa espera se escribe. Una nota ajena
 a la tonalidad se escribe subiendo (sostenido) salvo que la armadura tenga
 bemoles; cuando la nota es un bemol de verdad en una armadura sin bemoles —el
 Si♭ del C7 en La menor, la séptima de Do— el evento lleva `bemoles: true` y
-sólo ése se escribe bajando.
+sólo ése se escribe bajando. Y un acorde **rodado** —las teclas entrando de
+abajo hacia arriba, como un arpegio rapidísimo que queda sonando— lleva
+`rodado: true`: se dibuja con la línea ondulada delante, suena con cada tecla
+45 ms después de la anterior y todas soltando juntas, y para el que te sigue
+es un instante como cualquier otro. El importador de grabaciones lo marca
+solo cuando tres teclas o más de un instante entraron desparramadas.
 
 **Están transcriptas de memoria y son un pedazo.** Las obras son de dominio
 público, pero la transcripción es nuestra y puede tener errores: sale bien el
