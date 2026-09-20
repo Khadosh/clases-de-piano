@@ -272,9 +272,11 @@ acorde)` devuelve `{t, dur, pitches, mano}` para un compás; el componente los
 agenda contra el reloj del audio con el patrón de los dos relojes (un timer
 que agenda la ventana que viene, un `requestAnimationFrame` que pinta lo que
 suena) y hace loop rearmando la vuelta desde adentro. `repartir()` pone el
-bajo entre Do2 y Sol2 y el acorde girado cerca del Do central; por eso el
-teclado de esa pestaña arranca en **Sol1** — el bajo de La♭ a Si cae abajo
-del Do2, y una tecla que no entra no se dibuja mal, no se dibuja.
+bajo entre Do2 y Si2 y el acorde girado con su grave entre Do3 y Mi3. Las
+ventanas salen del primer pum-chá grabado de Joaquín (La2 abajo, Mi3 · La3
+· Do4 arriba, todo en segunda inversión) y no de un diagrama: la versión
+anterior mandaba el La a La1 y el acorde desde La3, con dos octavas de hueco.
+`test:texturas` clava esos tres acordes tal cual se tocaron.
 
 - **El arpegio va 1 · 5 · 3 · 7, y con tríada la octava hace de séptima.**
   El "7/8" es interpretación de Joaquín, no de la clase; está en

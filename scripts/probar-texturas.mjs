@@ -43,16 +43,23 @@ const clases = (pitches) => new Set(pitches.map(mod12));
 
 // ---- Las del piano ----------------------------------------------------------
 
-probar("repartir: el bajo grave y el acorde entero cerca del Do central", () => {
-  const c = repartir(0, MAJ);
-  assert.equal(c.bajo, 36);
-  assert.deepEqual(clases(c.derecha), clases(chordPitches(60, MAJ)));
-  assert.ok(Math.min(...c.derecha) >= 55 && Math.min(...c.derecha) <= 65);
-  const g = repartir(7, DOM7);
-  assert.equal(g.bajo, 43);
-  assert.equal(g.derecha.length, 4);
-  const la = repartir(9, MAJ);
-  assert.equal(la.bajo, 33, "el La va abajo del Do2 para no irse agudo");
+probar("repartir: el bajo entre Do2 y Si2, el acorde girado con la grave entre Do3 y Mi3", () => {
+  const MIN = qualityById("min");
+  for (let root = 0; root < 12; root++) {
+    for (const q of [MAJ, MIN, DOM7]) {
+      const c = repartir(root, q);
+      assert.ok(c.bajo >= 36 && c.bajo <= 47, `bajo de ${root}: ${c.bajo}`);
+      assert.ok(Math.min(...c.derecha) >= 48 && Math.min(...c.derecha) <= 52, `derecha de ${root}: ${c.derecha}`);
+      assert.deepEqual(clases(c.derecha), clases(chordPitches(root, q)), "el acorde entero");
+      assert.equal(c.derecha.length, chordPitches(root, q).length);
+    }
+  }
+  // Lo que tocó Joaquín en su primer pum-chá, tal cual: es la evidencia de las ventanas.
+  assert.deepEqual(repartir(9, MIN), { root: 9, quality: MIN, bajo: 45, derecha: [52, 57, 60] }, "Lam: La2 y Mi3 · La3 · Do4");
+  assert.deepEqual(repartir(5, MAJ).derecha, [48, 53, 57], "Fa: Do3 · Fa3 · La3");
+  assert.deepEqual(repartir(7, MAJ).derecha, [50, 55, 59], "Sol: Re3 · Sol3 · Si3");
+  assert.equal(repartir(5, MAJ).bajo, 41);
+  assert.equal(repartir(7, MAJ).bajo, 43);
 });
 
 probar("cada textura del piano llena el compás y ninguna se pasa", () => {

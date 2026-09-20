@@ -63,16 +63,22 @@ export interface AcordeRepartido {
 }
 
 /**
- * Reparte un acorde para las texturas: el bajo entre Do2 y Sol2 (la
- * fundamental que le toca, grave), y arriba el acorde completo girado hasta
- * que su nota más grave caiga entre Sol3 y Fa4, que es donde la derecha
- * suena llena sin tapar al bajo.
+ * Reparte un acorde para las texturas: el bajo entre Do2 y Si2 (la
+ * fundamental que le toca, una octava abajo de la mano), y arriba el acorde
+ * completo girado hasta que su nota más grave caiga entre Do3 y Mi3.
+ *
+ * Las dos ventanas salen de una grabación de Joaquín y no de un diagrama: en
+ * su primer pum-chá el bajo de La fue La2 y los chá fueron Mi3 · La3 · Do4,
+ * Do3 · Fa3 · La3 y Re3 · Sol3 · Si3, todos en segunda inversión, con la
+ * mano casi quieta mientras el bajo se mueve. La versión anterior mandaba el
+ * La a La1 y el acorde desde La3: sonaba a diagrama, con un hueco de dos
+ * octavas en el medio.
  */
 export function repartir(root: PitchClass, quality: ChordQuality): AcordeRepartido {
-  const bajo = 36 + (root <= 7 ? root : root - 12);
+  const bajo = 36 + root;
   let derecha = chordPitches(48 + root, quality);
-  while (Math.min(...derecha) < 55) derecha = [...derecha.slice(1), derecha[0] + 12];
-  while (Math.min(...derecha) > 65) derecha = [derecha[derecha.length - 1] - 12, ...derecha.slice(0, -1)];
+  while (Math.min(...derecha) > 52) derecha = [derecha[derecha.length - 1] - 12, ...derecha.slice(0, -1)];
+  while (Math.min(...derecha) < 48) derecha = [...derecha.slice(1), derecha[0] + 12];
   return { root, quality, bajo, derecha };
 }
 

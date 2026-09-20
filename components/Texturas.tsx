@@ -332,7 +332,7 @@ function EnElPiano() {
       {/* Desde Sol1: el bajo de La♭, La, Si♭ y Si cae abajo del Do2, y una
           tecla que no entra no se dibuja mal, no se dibuja. */}
       <div className="mt-4 rounded-2xl bg-noche-2 p-3">
-        <Keyboard from={31} to={84} marks={marcas} />
+        <Keyboard from={36} to={84} marks={marcas} />
       </div>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 font-mono text-sm">
         {acordes.map((a, i) => (
