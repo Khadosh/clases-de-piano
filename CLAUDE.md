@@ -21,9 +21,50 @@ no entra en ningún bloque existente, ahí sí se agrega un tipo de bloque nuevo
 Eso es todo. La home, la línea de tiempo, los contadores, la sala de práctica y
 la navegación entre clases se actualizan solas.
 
+### Las dos casas: el taller y la sala
+
+Todo lo que no es una clase ni una partitura vive en uno de dos lugares, y lo
+que los separa es una sola pregunta: **¿esto te dice si está bien?**
+
+- **El taller** (`/taller`) son las herramientas: el círculo de quintas, las
+  armaduras, el laboratorio de acordes, las texturas, la tabla de acordes. Se
+  abren con una duda, se miran diez segundos y se cierran; varias funcionan
+  sin el piano al lado. Van **ordenadas por tema**, porque nadie entra por
+  arriba y baja hasta el final: viene a buscar una cosa.
+- **La sala** (`/practica`) son los ejercicios que te corrigen o te puntúan.
+  Va **en orden de rutina**, con "seguir con" y la tarea de la semana arriba.
+
+No hubo que catalogar nada a mano: la respuesta ya estaba en `forma` desde que
+existen los pasos. `casaDe()` es una línea —mirar y probar van al taller,
+corrige y puntúa a la sala— y `rutaDe()` arma la dirección, así que ninguna
+página escribe una ruta a mano. Antes las 32 entradas vivían juntas en la sala
+y **17 de ellas no contestaban nada**: más de la mitad de "la práctica" no era
+práctica.
+
+Tres cosas que sostienen la división:
+
+- **El puente.** Cada página muestra abajo lo que hay del otro lado sobre el
+  mismo tema (`vecinasDeTema`, que sale del área y no de una tabla de
+  parejas): mirando el círculo se quiere el quiz de armaduras, y practicando
+  el quiz se quiere volver a mirar el círculo. Sin eso, separarlas sería un
+  muro. `test:practica` clava que el puente siempre cruza de casa.
+- **Las direcciones no se rompen.** `/practica/<slug>` de algo que se mudó
+  **redirige** al taller en vez de dar 404, y al revés — con alias y todo. Un
+  slug es lo que quedó abierto en el teléfono arriba del piano, y eso no se
+  rompe porque nosotros hayamos reordenado el sitio.
+- **Una sola página.** `components/PaginaDeEjercicio.tsx` la usan las dos
+  rutas: lo único que cambia es adónde vuelven las migas. Dos copias casi
+  iguales es lo que este proyecto viene sacando desde los cuatro pianos.
+
+El menú son cuatro lugares y el logo —Clases, Taller, Práctica, Partituras—,
+que es cuando entra en una línea en el celular sin deslizar. "Acordes" se fue
+adentro del taller (es una herramienta más, la más vieja) y "Sobre" al pie,
+junto con `/preguntas`, que existía y no estaba en ningún lado.
+
 ### La sala de práctica
 
-`/practica` está agrupada **por tipo de ejercicio y no por clase**, y el
+Acá viven **los que te contestan algo**; las herramientas están en el taller
+(ver arriba). `/practica` está agrupada **por tipo de ejercicio y no por clase**, y el
 catálogo se arma solo recorriendo `LESSONS` (ver `content/practica.ts`). Cuando
 había una sola clase la sala era un reflejo fiel de esa clase y daba igual; con
 dos ya no, porque para practicar acordes querés todos juntos y no la mitad en

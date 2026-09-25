@@ -100,6 +100,28 @@ export const AREAS: Area[] = [
  */
 export type Forma = "mirar" | "probar" | "corrige" | "puntua";
 
+/**
+ * Las dos casas, y la pregunta que las separa: **¿esto te dice si está bien?**
+ *
+ * El taller son las herramientas —el círculo, las armaduras, el laboratorio—
+ * que se abren con una duda, se miran diez segundos y se cierran, muchas veces
+ * sin el piano cerca. La sala son los ejercicios que te corrigen o te puntúan:
+ * se abren con tiempo y el teléfono apoyado arriba del piano.
+ *
+ * Son dos momentos del día distintos y por eso son dos lugares. No hace falta
+ * catalogar nada a mano: la respuesta ya estaba en `forma` desde que existen
+ * los pasos — mirar y probar no contestan nada, corrige y puntúa sí. De las 32
+ * entradas, 17 eran herramientas viviendo adentro de una sala de práctica.
+ */
+export type Casa = "taller" | "sala";
+
+export const casaDe = (forma: Forma): Casa =>
+  forma === "mirar" || forma === "probar" ? "taller" : "sala";
+
+/** La dirección de una entrada. Nunca se escribe a mano: la casa decide. */
+export const rutaDe = (e: { casa: Casa; slug: string }) =>
+  `/${e.casa === "taller" ? "taller" : "practica"}/${e.slug}`;
+
 export const FORMAS: Record<Forma, { titulo: string; bajada: string }> = {
   mirar: { titulo: "Para mirar y escuchar", bajada: "No se contesta nada: se toca y se escucha." },
   probar: { titulo: "Para probar", bajada: "Un laboratorio: armás, cambiás, ves qué pasa. Sin veredicto." },
@@ -143,6 +165,8 @@ export type HerramientaSuelta =
 interface Comun {
   area: AreaId;
   forma: Forma;
+  /** Se deduce de la forma; está acá para no recalcularla en cada página. */
+  casa: Casa;
   lesson: Lesson;
   /** El pedazo de URL. Estable: es lo que alguien se guarda en favoritos. */
   slug: string;
@@ -375,7 +399,7 @@ const FICHAS: Record<
     area: "tonalidad",
     forma: "corrige",
     titulo: "¿En qué tonalidad está?",
-    emoji: "🔍",
+    emoji: "🔎",
     bajada:
       "Sale una armadura y hay que nombrarla, o sale el nombre y hay que elegir los signos. Las dos direcciones, porque abrir una partitura y escribir una no son lo mismo. Ojo con la relativa: tiene los mismos signos.",
   },
@@ -465,6 +489,7 @@ function armar(): Sala {
       id,
       slug: unico(id, lesson),
       ...FICHAS[id],
+      casa: casaDe(FICHAS[id].forma),
     });
   };
 
@@ -476,6 +501,7 @@ function armar(): Sala {
             tipo: "exercise",
             area: AREA_DE_BLOQUE.exercise!,
             forma: "corrige",
+            casa: casaDe("corrige"),
             lesson,
             block,
             slug: unico("posiciones", lesson),
@@ -489,6 +515,7 @@ function armar(): Sala {
             tipo: "hands",
             area: AREA_DE_BLOQUE.hands!,
             forma: "mirar",
+            casa: casaDe("mirar"),
             lesson,
             block,
             slug: unico("manos", lesson),
@@ -506,6 +533,7 @@ function armar(): Sala {
             tipo: "secuencia",
             area: AREA_DE_BLOQUE.secuencia!,
             forma: "puntua",
+            casa: casaDe("puntua"),
             lesson,
             block,
             slug: unico("enlace", lesson),
@@ -522,6 +550,7 @@ function armar(): Sala {
               tipo: "nomenclature",
               area: AREA_DE_BLOQUE.nomenclature!,
               forma: "corrige",
+              casa: casaDe("corrige"),
               lesson,
               block,
               slug: unico("cifrado", lesson),
@@ -573,6 +602,7 @@ function armar(): Sala {
               tipo: "notas-guia",
               area: AREA_DE_BLOQUE["notas-guia"]!,
               forma: "mirar",
+              casa: casaDe("mirar"),
               lesson,
               renglones: [{ lesson, block }],
               slug: unico("notas-guia", lesson),
@@ -656,6 +686,21 @@ function armar(): Sala {
 
 export const catalogo = (): Entrada[] => armar().entradas;
 
+/** Lo que vive en cada casa, en el mismo orden de siempre. */
+export const catalogoDe = (casa: Casa): Entrada[] =>
+  armar().entradas.filter((e) => e.casa === casa);
+
+/**
+ * Lo que hay del otro lado sobre el mismo tema: el puente entre las dos casas.
+ *
+ * Es lo único que hace que partirlas no se sienta un muro — mirando el círculo
+ * de quintas se quiere el quiz de armaduras, y al revés. Sale del área y no de
+ * una tabla de parejas: si mañana entra una herramienta nueva, su ejercicio
+ * hermano aparece solo.
+ */
+export const vecinasDeTema = (e: Entrada): Entrada[] =>
+  armar().entradas.filter((o) => o.area === e.area && o.casa !== e.casa);
+
 /** Las direcciones viejas que siguen abriendo algo. */
 export const aliases = (): Record<string, Alias> => armar().alias;
 
@@ -666,12 +711,17 @@ export const aliases = (): Record<string, Alias> => armar().alias;
 export function buscar(slug: string) {
   const { entradas, alias } = armar();
   const a = alias[slug];
-  const i = entradas.findIndex((e) => e.slug === (a ? a.slug : slug));
-  if (i < 0) return null;
+  const entrada = entradas.find((e) => e.slug === (a ? a.slug : slug));
+  if (!entrada) return null;
+  // Los vecinos del pie son los de la misma casa: el "siguiente" de una
+  // herramienta es otra herramienta, no el dictado que quedaba al lado en la
+  // lista vieja.
+  const hermanas = entradas.filter((e) => e.casa === entrada.casa);
+  const i = hermanas.indexOf(entrada);
   return {
-    entrada: entradas[i],
-    anterior: i > 0 ? entradas[i - 1] : null,
-    siguiente: i < entradas.length - 1 ? entradas[i + 1] : null,
+    entrada,
+    anterior: i > 0 ? hermanas[i - 1] : null,
+    siguiente: i < hermanas.length - 1 ? hermanas[i + 1] : null,
     renglon: a?.renglon ?? 0,
   };
 }

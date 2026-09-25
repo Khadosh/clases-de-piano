@@ -25,13 +25,20 @@ export const metadata: Metadata = {
     "Un cuaderno de clases de piano que se puede tocar: acordes, ejercicios y cifrado, un miércoles por vez.",
 };
 
+/**
+ * Cuatro lugares y el logo. Cada uno es un momento distinto: leer lo que pasó
+ * el miércoles, sacarse una duda, practicar, tocar una pieza.
+ *
+ * "Acordes" se fue adentro del taller —es una herramienta más, la más vieja—
+ * y "Sobre" al pie: nadie navega a "sobre" dos veces. Con eso los cuatro que
+ * quedan entran en una línea en el celular sin tener que deslizar.
+ */
 const NAV = [
   { href: "/", label: "Inicio" },
   { href: "/clases", label: "Clases" },
-  { href: "/acordes", label: "Acordes" },
-  { href: "/partituras", label: "Partituras" },
+  { href: "/taller", label: "Taller" },
   { href: "/practica", label: "Práctica" },
-  { href: "/sobre", label: "Sobre" },
+  { href: "/partituras", label: "Partituras" },
 ];
 
 export default function RootLayout({
@@ -80,6 +87,17 @@ export default function RootLayout({
         <main className="mx-auto max-w-5xl px-4 pb-24">{children}</main>
 
         <footer className="border-t border-borde/60 px-4 py-8 text-center text-xs leading-relaxed text-humo print:hidden">
+          <p className="mb-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+            <Link href="/sobre" className="underline underline-offset-2 hover:text-tiza">
+              Sobre el cuaderno
+            </Link>
+            <Link href="/preguntas" className="underline underline-offset-2 hover:text-tiza">
+              Lo que quedó por preguntar
+            </Link>
+            <Link href="/acordes" className="underline underline-offset-2 hover:text-tiza">
+              Todos los acordes
+            </Link>
+          </p>
           <p>
             Clases con Quique Yance · miércoles · escrito a cuatro manos con
             Claude

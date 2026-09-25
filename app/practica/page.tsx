@@ -3,7 +3,7 @@ import Icono from "@/components/Icono";
 import type { Metadata } from "next";
 import { LESSONS, latestLesson, slugOf } from "@/content";
 import { PIEZAS } from "@/content/partituras";
-import { AREAS, acordesAprendidos, catalogo } from "@/content/practica";
+import { AREAS, acordesAprendidos, catalogoDe } from "@/content/practica";
 import SeguirCon from "@/components/SeguirCon";
 import { rich } from "@/components/Blocks";
 
@@ -25,9 +25,14 @@ export const metadata: Metadata = {
  * todos acá, plegados en el teléfono y abiertos en desktop, y en desktop era
  * el índice viejo con otro sombrero: veinticinco renglones que marean para
  * elegir uno.
+ *
+ * Acá están sólo **los que te corrigen o te puntúan**. Las herramientas —el
+ * círculo, las armaduras, el laboratorio— se fueron al taller: eran 17 de 32
+ * y ninguna te contesta nada, así que la rutina venía con más de la mitad de
+ * cosas que no se practican.
  */
 export default function PracticaPage() {
-  const todo = catalogo();
+  const todo = catalogoDe("sala");
   const acordes = acordesAprendidos();
   const ultima = latestLesson();
   const fichas = todo.map((e) => ({ slug: e.slug, titulo: e.titulo, emoji: e.emoji }));
@@ -49,7 +54,12 @@ export default function PracticaPage() {
           Todo lo que hay para machacar entre un miércoles y el otro, en{" "}
           <strong className="text-tiza">orden de rutina</strong>: primero lo que
           pide dedos, después lo que pide cabeza, y al final una pieza de verdad.
-          Uno o dos por vez alcanzan.
+          Uno o dos por vez alcanzan. Todos te contestan algo: te corrigen o te
+          puntúan. Lo que se mira y se toca sin veredicto está en{" "}
+          <Link href="/taller" className="text-sol underline decoration-dotted underline-offset-4">
+            el taller
+          </Link>
+          .
         </p>
       </header>
 

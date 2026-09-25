@@ -47,6 +47,14 @@ export default function Home() {
           >
             Practicar ahora
           </Link>
+          {/* Los dos momentos del día: practicar con tiempo, o venir a
+              sacarse una duda y cerrar. */}
+          <Link
+            href="/taller"
+            className="rounded-full border border-borde bg-carta px-5 py-2.5 font-bold transition hover:bg-carta-2"
+          >
+            Abrir el taller
+          </Link>
         </div>
       </section>
 

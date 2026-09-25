@@ -2,10 +2,10 @@ import Link from "next/link";
 import Icono from "@/components/Icono";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { AREAS, FORMAS, catalogo, type AreaId, type Forma } from "@/content/practica";
+import { AREAS, FORMAS, catalogoDe, rutaDe, type AreaId, type Forma } from "@/content/practica";
 
 /**
- * Un paso de la rutina, con sus ejercicios como cards: título, dibujo, una
+ * Un paso de la rutina, con sus ejercicios de la sala como cards: título, dibujo, una
  * línea. Agrupadas por lo que se hace en cada uno —para mirar y escuchar,
  * para probar, te corrige, te puntúa— que es "primero entendé, después
  * probá, después que te corrijan".
@@ -35,7 +35,9 @@ export default async function PasoPage({ params }: { params: Promise<{ area: str
   const paso = AREAS.find((a) => a.id === area);
   if (!paso) notFound();
   const i = AREAS.findIndex((a) => a.id === (paso.id as AreaId));
-  const ejercicios = catalogo().filter((e) => e.area === paso.id);
+  const ejercicios = catalogoDe("sala").filter((e) => e.area === paso.id);
+  // Lo del mismo tema que está en el taller: se mira, no se practica.
+  const herramientas = catalogoDe("taller").filter((e) => e.area === paso.id);
   const grupos = ORDEN_FORMA.map((f) => ({
     forma: f,
     ejercicios: ejercicios.filter((e) => e.forma === f),
@@ -62,6 +64,26 @@ export default async function PasoPage({ params }: { params: Promise<{ area: str
           <p className="mt-3 max-w-2xl text-lg leading-relaxed text-humo">{paso.bajada}</p>
         </div>
       </header>
+
+      {herramientas.length > 0 && (
+        <section className="mb-10 rounded-3xl border border-borde/60 bg-noche-2 p-5">
+          <p className="mb-3 text-xs tracking-[0.2em] text-humo uppercase">
+            En el taller, para mirar sin que nadie te corrija
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {herramientas.map((e) => (
+              <Link
+                key={e.slug}
+                href={rutaDe(e)}
+                className="flex items-center gap-2 rounded-full bg-carta-2 px-3.5 py-2 text-sm font-semibold transition hover:bg-borde hover:text-sol"
+              >
+                <Icono de={e.emoji} className="text-sol" />
+                {e.titulo}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {grupos.map((g) => (
         <section key={g.forma} className="mb-10">
