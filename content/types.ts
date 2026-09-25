@@ -28,6 +28,9 @@ export type Block =
   | VoicingBlock
   | TexturasBlock
   | TritonalBlock
+  | TonalidadesBlock
+  | ArmadurasBlock
+  | CirculoBlock
   | QuoteBlock;
 
 /**
@@ -272,6 +275,38 @@ export interface TexturasBlock {
  */
 export interface TritonalBlock {
   kind: "sustitucion-tritonal";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * Las quince tonalidades de la clase 8: la misma escala arrancando de cada
+ * nota, con sostenidos y con bemoles, y las menores relativas. No lleva datos
+ * porque las tonalidades no son de una clase: son las que hay, y se deducen
+ * (`lib/tonalidades.ts`).
+ */
+export interface TonalidadesBlock {
+  kind: "tonalidades";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * La armadura: los signos del principio del renglón, su orden fijo, y la
+ * cuenta para saber qué tonalidad anuncian.
+ */
+export interface ArmadurasBlock {
+  kind: "armaduras";
+  title: string;
+  intro?: string;
+}
+
+/**
+ * El círculo de quintas: las quince en rueda, con las relativas menores
+ * adentro y las enarmónicas cruzándose abajo.
+ */
+export interface CirculoBlock {
+  kind: "circulo-de-quintas";
   title: string;
   intro?: string;
 }

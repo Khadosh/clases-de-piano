@@ -13,6 +13,9 @@ import Dominantes from "./Dominantes";
 import Voicing from "./Voicing";
 import Texturas from "./Texturas";
 import SustitucionTritonal from "./SustitucionTritonal";
+import Tonalidades from "./Tonalidades";
+import Armaduras from "./Armaduras";
+import CirculoDeQuintas from "./CirculoDeQuintas";
 import ExerciseRunner from "./ExerciseRunner";
 import HandsSwap from "./HandsSwap";
 import NomenclatureQuiz from "./NomenclatureQuiz";
@@ -274,6 +277,39 @@ export function BlockView({ block }: { block: Block }) {
             <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
           )}
           <SustitucionTritonal />
+        </section>
+      );
+
+    case "tonalidades":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Tonalidades />
+        </section>
+      );
+
+    case "armaduras":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <Armaduras />
+        </section>
+      );
+
+    case "circulo-de-quintas":
+      return (
+        <section>
+          <Titulo>{block.title}</Titulo>
+          {block.intro && (
+            <p className="mb-4 leading-relaxed text-humo">{rich(block.intro)}</p>
+          )}
+          <CirculoDeQuintas />
         </section>
       );
 

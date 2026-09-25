@@ -783,6 +783,16 @@ function ClaveFa({ x }: { x: number }) {
 }
 
 /**
+ * En qué renglón va cada signo de la armadura. Son alturas fijas —las mismas
+ * en toda partitura del mundo— y no se deducen de nada: se eligieron hace
+ * siglos para que los signos queden apretados y no se vayan del pentagrama.
+ */
+const ALTURA_SOSTENIDO: Record<number, number> = { 3: 8, 0: 5, 4: 9, 1: 6, 5: 3, 2: 7, 6: 4 };
+const ALTURA_BEMOL: Record<number, number> = { 6: 4, 2: 7, 5: 3, 1: 6, 4: 2, 0: 5, 3: 1 };
+const alturaDeSigno = (letra: number, sostenido: boolean) =>
+  (sostenido ? ALTURA_SOSTENIDO : ALTURA_BEMOL)[letra];
+
+/**
  * La armadura: los sostenidos o bemoles, en su orden y en su altura.
  *
  * El orden no es decorativo — fa do sol re la mi si — y la altura de cada uno
@@ -790,26 +800,33 @@ function ClaveFa({ x }: { x: number }) {
  * las dos claves, corridos siete pasos porque la clave de fa está una séptima
  * más abajo.
  */
-function Armadura({ x, armadura }: { x: number; armadura: number }) {
+function Armadura({
+  x,
+  armadura,
+  claves = ["sol", "fa"],
+  resaltar = null,
+}: {
+  x: number;
+  armadura: number;
+  claves?: Clave[];
+  /** Qué signo va pintado: el que decide la tonalidad, cuando se está explicando. */
+  resaltar?: number | null;
+}) {
   if (armadura === 0) return null;
   const sostenidos = armadura > 0;
   const orden = sostenidos ? ORDEN_SOSTENIDOS : ORDEN_BEMOLES;
-  // Las alturas canónicas en clave de sol, contadas desde la línea de abajo.
-  const ALTURA_SOL: Record<number, number> = sostenidos
-    ? { 3: 8, 0: 5, 4: 9, 1: 6, 5: 3, 2: 7, 6: 4 }
-    : { 6: 4, 2: 7, 5: 3, 1: 6, 4: 2, 0: 5, 3: 1 };
   return (
     <g>
-      {(["sol", "fa"] as Clave[]).map((clave) =>
+      {claves.map((clave) =>
         Array.from({ length: Math.abs(armadura) }, (_, i) => {
           const letra = orden[i];
-          const altura = ALTURA_SOL[letra] - (clave === "fa" ? 2 : 0);
+          const altura = alturaDeSigno(letra, sostenidos) - (clave === "fa" ? 2 : 0);
           const glifo = sostenidos ? GLIFOS.sostenido : GLIFOS.bemol;
           return (
             <path
               key={`${clave}${i}`}
               d={glifo.d}
-              fill="#e8e3d6"
+              fill={i === resaltar ? "#ffcb3d" : "#e8e3d6"}
               fillRule="evenodd"
               transform={`translate(${x + i * ANCHO_ALTERACION} ${yDeAltura(altura, clave)}) scale(${ESPACIO})`}
             />
@@ -817,6 +834,63 @@ function Armadura({ x, armadura }: { x: number; armadura: number }) {
         }),
       )}
     </g>
+  );
+}
+
+/**
+ * La armadura sola, sin música: el pentagrama, la clave y los signos.
+ *
+ * La usa la clase de las tonalidades para mostrar de qué está hablando. Vive
+ * acá y no en su propio archivo porque dibujar una clave, una alteración y
+ * cinco líneas ya estaba resuelto tres funciones más arriba, y dos dibujos
+ * casi iguales es exactamente lo que este proyecto viene evitando.
+ */
+export function ArmaduraSola({
+  armadura,
+  dosClaves = false,
+  resaltar = null,
+  alto = 1,
+}: {
+  armadura: number;
+  /** Con las dos claves, como en una partitura de piano. */
+  dosClaves?: boolean;
+  resaltar?: number | null;
+  /** Escala del dibujo, por si va grande. */
+  alto?: number;
+}) {
+  const claves: Clave[] = dosClaves ? ["sol", "fa"] : ["sol"];
+  const ancho = anchoEncabezado(armadura) - 8;
+  const arriba = MARGEN_ARRIBA - 14;
+  const abajo = dosClaves
+    ? yDeAltura(0, "fa") + 14
+    : yDeAltura(0, "sol") + 14;
+  const trazo = "#cfd6e6";
+  return (
+    <svg
+      viewBox={`0 ${arriba} ${ancho} ${abajo - arriba}`}
+      width={ancho * alto}
+      height={(abajo - arriba) * alto}
+      role="img"
+      aria-label={`Armadura de ${Math.abs(armadura)} ${armadura > 0 ? "sostenidos" : "bemoles"}`}
+    >
+      {claves.map((clave) =>
+        [0, 2, 4, 6, 8].map((altura) => (
+          <line
+            key={`${clave}${altura}`}
+            x1={0}
+            x2={ancho}
+            y1={yDeAltura(altura, clave)}
+            y2={yDeAltura(altura, clave)}
+            stroke={trazo}
+            strokeWidth={1}
+            opacity={0.55}
+          />
+        )),
+      )}
+      <ClaveSol x={X_CLAVE} />
+      {dosClaves && <ClaveFa x={X_CLAVE} />}
+      <Armadura x={X_ARMADURA} armadura={armadura} claves={claves} resaltar={resaltar} />
+    </svg>
   );
 }
 

@@ -21,6 +21,10 @@ import Voicing from "./Voicing";
 import DictadoVoicing from "./DictadoVoicing";
 import Texturas from "./Texturas";
 import SustitucionTritonal from "./SustitucionTritonal";
+import Tonalidades from "./Tonalidades";
+import Armaduras from "./Armaduras";
+import CirculoDeQuintas from "./CirculoDeQuintas";
+import QueTonalidad from "./QueTonalidad";
 import ExerciseRunner from "./ExerciseRunner";
 import Figuras from "./Figuras";
 import HandsSwap from "./HandsSwap";
@@ -104,6 +108,14 @@ export default function EjercicioDePractica({
           return <Texturas />;
         case "tritonal":
           return <SustitucionTritonal />;
+        case "tonalidades":
+          return <Tonalidades />;
+        case "armaduras":
+          return <Armaduras />;
+        case "circulo":
+          return <CirculoDeQuintas />;
+        case "que-tonalidad":
+          return <QueTonalidad />;
         case "que-compas":
           return <CompasQuiz modo="numero" />;
         case "completar-compas":

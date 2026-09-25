@@ -22,7 +22,7 @@ import type {
  * oro. Sólo hay que sumar acá si aparece un *tipo* de bloque que no existía.
  */
 
-export type AreaId = "manos" | "acordes" | "armonia" | "melodia" | "tiempo";
+export type AreaId = "manos" | "acordes" | "tonalidad" | "armonia" | "melodia" | "tiempo";
 
 export interface Area {
   id: AreaId;
@@ -35,12 +35,17 @@ export interface Area {
  * El orden es el de una rutina, no el de las clases: primero el cuerpo, después
  * la cabeza. Si vas a practicar media hora, arrancás por arriba.
  *
- * Son cinco y no cuatro desde la clase 5: "acordes" había juntado 16 de 25
- * ejercicios porque las clases 3, 4 y 5 no tenían otro lugar adonde caer, y
- * adentro convivían un dictado de tres minutos con un lienzo de veinte. Armar
- * un acorde, entender la armonía y ponerle melodía son tres habilidades, y
- * ahora son tres pasos. "Lectura" se fue: el cifrado es de armar acordes y los
- * semitonos son de la armonía.
+ * Son seis. Fueron cinco desde la clase 5, cuando "acordes" había juntado 16
+ * de 25 ejercicios porque las clases 3, 4 y 5 no tenían otro lugar adonde
+ * caer: armar un acorde, entender la armonía y ponerle melodía son tres
+ * habilidades y pasaron a ser tres pasos. Con la clase 8 se sumó el sexto,
+ * "las tonalidades": saber en qué tonalidad estás y cómo se escribe es otra
+ * cosa que saber qué hace cada grado adentro, y si no, la armonía se llevaba
+ * cuatro ejercicios más y volvía a ser el cajón de antes. Va antes de la
+ * armonía porque primero hay que saber dónde estás parado.
+ *
+ * "Lectura" no volvió: el cifrado es de armar acordes y los semitonos son de
+ * la armonía. Las escalas siguen en las manos, que es lo que son — dedos.
  */
 export const AREAS: Area[] = [
   {
@@ -56,6 +61,13 @@ export const AREAS: Area[] = [
     emoji: "🎹",
     bajada:
       "Armarlos, girarlos, reconocerlos y encadenarlos. Casi todos piden tener el piano al lado.",
+  },
+  {
+    id: "tonalidad",
+    titulo: "Las tonalidades",
+    emoji: "🧭",
+    bajada:
+      "En qué tonalidad estás, qué notas tiene y cómo se escribe. La brújula: sin esto, los grados son de mentira.",
   },
   {
     id: "armonia",
@@ -121,6 +133,10 @@ export type HerramientaSuelta =
   | "dictado-voicing"
   | "texturas"
   | "tritonal"
+  | "tonalidades"
+  | "armaduras"
+  | "circulo"
+  | "que-tonalidad"
   | "semitonos";
 
 /** Lo que comparten todas: dónde va, qué se hace, de qué clase salió y cómo se llama su URL. */
@@ -330,6 +346,38 @@ const FICHAS: Record<
     emoji: "🧩",
     bajada:
       "El número está puesto y falta una figura para que la cuenta cierre. 3/4 son tres negras para gastar — hay que encontrar la que gasta justo lo que sobra.",
+  },
+  tonalidades: {
+    area: "tonalidad",
+    forma: "mirar",
+    titulo: "Las quince tonalidades",
+    emoji: "🪜",
+    bajada:
+      "La misma escala arrancando de cada nota: la lista del cuaderno, de Do hasta las siete alteraciones para cada lado, con la nota nueva pintada y cada fila para escuchar. Y las menores, que son las mismas siete notas empezadas en el sexto grado.",
+  },
+  armaduras: {
+    area: "tonalidad",
+    forma: "mirar",
+    titulo: "La armadura",
+    emoji: "🔑",
+    bajada:
+      "Los signos del principio del renglón, en su orden —que es fijo y no se elige—, y la cuenta para saber qué tonalidad anuncian: el último sostenido más un semitono, o el anteúltimo bemol.",
+  },
+  circulo: {
+    area: "tonalidad",
+    forma: "mirar",
+    titulo: "El círculo de quintas",
+    emoji: "🧭",
+    bajada:
+      "Las quince en rueda: cada paso a la derecha es una quinta arriba y un sostenido más. Adentro las relativas menores, y abajo, donde los dos caminos se cruzan, la misma tecla con dos nombres.",
+  },
+  "que-tonalidad": {
+    area: "tonalidad",
+    forma: "corrige",
+    titulo: "¿En qué tonalidad está?",
+    emoji: "🔍",
+    bajada:
+      "Sale una armadura y hay que nombrarla, o sale el nombre y hay que elegir los signos. Las dos direcciones, porque abrir una partitura y escribir una no son lo mismo. Ojo con la relativa: tiene los mismos signos.",
   },
   semitonos: {
     area: "armonia",
@@ -566,6 +614,18 @@ function armar(): Sala {
           break;
         case "sustitucion-tritonal":
           sumarSuelta("tritonal", lesson);
+          break;
+        case "tonalidades":
+          sumarSuelta("tonalidades", lesson);
+          break;
+        case "armaduras":
+          sumarSuelta("armaduras", lesson);
+          // Reconocerla es la sala practicando lo que el bloque enseña:
+          // cuelga de acá porque recién con la armadura vista hay qué leer.
+          sumarSuelta("que-tonalidad", lesson);
+          break;
+        case "circulo-de-quintas":
+          sumarSuelta("circulo", lesson);
           break;
         case "section":
         case "prose":

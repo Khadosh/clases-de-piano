@@ -7,12 +7,13 @@ import clase04 from "@/content/lessons/clase-04";
 import clase05 from "@/content/lessons/clase-05";
 import clase06 from "@/content/lessons/clase-06";
 import clase07 from "@/content/lessons/clase-07";
+import clase08 from "@/content/lessons/clase-08";
 
 /**
  * El índice de clases. Para agregar una clase nueva: crear el archivo en
  * content/lessons/ y sumarlo acá. Nada más.
  */
-export const LESSONS: Lesson[] = [clase01, clase02, clase03, clase04, clase05, clase06, clase07].sort((a, b) => a.n - b.n);
+export const LESSONS: Lesson[] = [clase01, clase02, clase03, clase04, clase05, clase06, clase07, clase08].sort((a, b) => a.n - b.n);
 
 export const lessonBySlug = (slug: string) =>
   LESSONS.find((l) => slugOf(l) === slug);
@@ -51,6 +52,7 @@ export function temarioDe(lesson: Lesson) {
   let voicing = false;
   let texturas = false;
   let tritonal = false;
+  let tonalidades = false;
   for (const b of lesson.blocks) {
     if (b.kind === "chord-lab") {
       b.qualities.forEach((q) => qualityIds.add(q));
@@ -90,6 +92,13 @@ export function temarioDe(lesson: Lesson) {
       // Los dos lados de la sustitución son dominantes.
       qualityIds.add("dom7");
     }
+    if (b.kind === "tonalidades" || b.kind === "armaduras" || b.kind === "circulo-de-quintas") {
+      tonalidades = true;
+      // La tónica de una tonalidad es una tríada mayor o menor: con eso la
+      // clase tiene su pregunta de armar en el teclado, que es la única que
+      // no se acierta de casualidad.
+      for (const q of ["maj", "min"]) qualityIds.add(q);
+    }
     if (b.kind === "notas-guia") {
       // El renglón usa inversiones para el bajo que baja: se pueden preguntar.
       inversiones = true;
@@ -109,6 +118,7 @@ export function temarioDe(lesson: Lesson) {
     voicing,
     texturas,
     tritonal,
+    tonalidades,
   };
 }
 

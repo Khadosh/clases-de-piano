@@ -27,11 +27,13 @@ const SLUGS = [
   "manos", "posiciones", "escalas",
   // 2 · armar acordes
   "texturas", "laboratorio", "identificador", "voicing", "oido", "contrarreloj", "cifrado", "dictado-voicing", "enlace",
-  // 3 · la armonía
+  // 3 · las tonalidades
+  "tonalidades", "armaduras", "circulo", "que-tonalidad",
+  // 4 · la armonía
   "semitonos", "funciones", "paralelas", "dominantes", "tritonal", "grados", "cadencias", "inventor",
-  // 4 · la melodía
+  // 5 · la melodía
   "notas-guia", "grilla", "melodia", "encima",
-  // 5 · el tiempo
+  // 6 · el tiempo
   "figuras", "compases", "que-compas", "completar-compas",
 ];
 

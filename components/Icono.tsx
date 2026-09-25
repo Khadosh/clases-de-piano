@@ -37,6 +37,20 @@ const CUERPOS: Record<string, JSX.Element> = {
       <path d="M8.2 15.5h7.6" strokeWidth={1.4} />
     </g>
   ),
+  brujula: (
+    <g {...S}>
+      <circle cx={12} cy={12} r={9} />
+      {/* La aguja: el círculo de quintas también es una rueda con norte. */}
+      <path d="m15.5 8.5-2 5.2-5.2 2 2-5.2 5.2-2z" />
+      <circle cx={12} cy={12} r={0.9} fill="currentColor" strokeWidth={0} />
+    </g>
+  ),
+  llave: (
+    <g {...S}>
+      <circle cx={8} cy={12} r={4} />
+      <path d="M12 12h9M18.5 12v3M15.5 12v2.2" />
+    </g>
+  ),
   lupa: (
     <g {...S}>
       <circle cx={10.5} cy={10.5} r={6.5} />
@@ -330,6 +344,8 @@ const DE_EMOJI: Record<string, string> = {
   "⚖️": "balanza",
   "🧶": "ovillo",
   "🔀": "cruce",
+  "🧭": "brujula",
+  "🔑": "llave",
 };
 
 export default function Icono({

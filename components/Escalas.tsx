@@ -5,7 +5,8 @@ import Icono from "./Icono";
 import Keyboard, { type Mark } from "./Keyboard";
 import Midi from "./Midi";
 import Pistas, { type Pista } from "./Pistas";
-import { escribirNota, mod12, noteName, raizEscrita } from "@/lib/music";
+import { escribirNota, mod12, raizEscrita } from "@/lib/music";
+import { escalaLegible } from "@/lib/tonalidades";
 import {
   ESCALAS,
   notasDeEscala,
@@ -43,6 +44,13 @@ export default function Escalas() {
     () => notasDeEscala(BASE + tonica, escala),
     [tonica, escala],
   );
+  /**
+   * Los nombres, que no son los de las teclas: la escala de Fa tiene Si♭ y no
+   * La♯, porque una escala usa las siete letras una vez cada una. Es la regla
+   * de la clase 8, la misma que ordena los acordes.
+   */
+  const escritas = useMemo(() => escalaLegible(tonica, escala), [tonica, escala]);
+  const nombre = (n: number) => escribirNota(escritas[n % 7]);
   const terminada = i >= notas.length;
 
   const reiniciar = useCallback(() => {
@@ -128,11 +136,11 @@ export default function Escalas() {
               </>
             ) : (
               <>
-                desde {noteName(notas[i - 1])}, subí{" "}
+                desde {nombre(i - 1)}, subí{" "}
                 <strong>
                   {saltos[i - 1] === 1 ? "un semitono" : `${saltos[i - 1] / 2 === 1 ? "un tono" : `${saltos[i - 1]} semitonos`}`}
                 </strong>
-                : es <strong>{noteName(notas[i])}</strong>.
+                : es <strong>{nombre(i)}</strong>.
               </>
             ),
         },
@@ -213,7 +221,7 @@ export default function Escalas() {
           ) : (
             <>
               <p className="font-display my-2 text-5xl font-black text-sol">
-                {noteName(notas[i])}
+                {nombre(i)}
               </p>
               <p className="text-sm text-humo">
                 Nota {i + 1} de {notas.length}. Tocá la escala subiendo, de la
@@ -281,7 +289,7 @@ export default function Escalas() {
                     n < i ? "text-menta" : n === i ? "text-sol" : "text-humo"
                   }
                 >
-                  {noteName(p)}
+                  {nombre(n)}
                 </span>
                 {n < saltos.length && (
                   <span className="rounded bg-carta-2 px-1.5 text-[11px] text-humo">

@@ -52,11 +52,16 @@ desktop, y en desktop era el índice viejo con otro sombrero: marea para
 elegir uno. Cierra con un paso más, el repertorio, que apunta a
 `/partituras`: los ejercicios entrenan las partes, la partitura las junta.
 
-Los pasos son cinco: las manos, armar acordes, la armonía, la melodía y el
-tiempo. Eran cuatro y "acordes" había juntado 16 de 25 ejercicios porque las
-clases 3, 4 y 5 no tenían otro lugar adonde caer; armar un acorde, entender
-la armonía y ponerle melodía son tres habilidades. "Lectura" se fue: el
-cifrado es de armar acordes y los semitonos son de la armonía.
+Los pasos son seis: las manos, armar acordes, las tonalidades, la armonía, la
+melodía y el tiempo. Eran cuatro y "acordes" había juntado 16 de 25 ejercicios
+porque las clases 3, 4 y 5 no tenían otro lugar adonde caer; armar un acorde,
+entender la armonía y ponerle melodía son tres habilidades. El sexto lo trajo
+la clase 8: saber en qué tonalidad estás y cómo se escribe no es lo mismo que
+saber qué hace cada grado adentro, y sin él la armonía se llevaba cuatro
+ejercicios más y volvía a ser el cajón de antes. Va **antes** de la armonía
+porque primero hay que saber dónde estás parado. "Lectura" no volvió: el
+cifrado es de armar acordes y los semitonos son de la armonía; las escalas
+siguen en las manos, que es lo que son — dedos.
 
 **Seguir con es un marcador, no un puntaje.** Guarda los últimos tres slugs,
 en orden, sin fecha ni cuenta: con una fecha se vuelve "hace cuatro días que
@@ -133,6 +138,7 @@ las escalas del bloque de semitonos — así que aparecen recién cuando hay con
 | **Dictado de voicing** | Sale el acorde con su disposición —"Fmaj7 abierto, 1 y 5 en la izquierda, 3 y 7 en la derecha"— y lo tocás. Corrige las notas, el bajo y dónde quedó cada grado; la tercera abajo se dice con nombre. `corregirVoicing`, `lib/voicing.ts`. |
 | **Texturas** | Una vuelta en plaqué, pum-chá o arpegios, en loop; y los cuatro tipos sobre la misma frase. `lib/texturas.ts`. |
 | **La sustitución tritonal** | La tabla con las dos notas compartidas y la ii-V-I con y sin. `SUSTITUTOS_TRITONALES`, `lib/grados.ts`. |
+| **¿En qué tonalidad está?** | Sale una armadura y hay que nombrarla, o sale el nombre y hay que elegir los signos. Las dos direcciones, porque abrir una partitura y escribir una no son lo mismo. Los distractores son los que de verdad se confunden: la relativa, la vecina de un signo, la del signo opuesto (`confundiblesCon`). |
 | **La grilla** | La escala en columnas, los acordes de la vuelta en filas, un punto donde la nota cae parada. Es la imagen de un curso de armonía pop que Joaquín hace aparte, y es lo mismo que las fichas verdes de la melodía visto todo junto: la nota que puede quedarse quieta salta a la vista. Los nombres de las funciones son los de Quique; los apodos del pop (casa mayor, casa menor, tensión, el que eleva) van de alias en I, VIm, V y IV. |
 
 De oído y contrarreloj son **el mismo componente** (`components/Dictado.tsx`)
@@ -162,6 +168,12 @@ ejercicio al cambiar la progresión; sin eso el puntaje anterior quedaba colgado
 deduce de la receta —es una tabla por tonalidad y por mano— y ponerla mal
 enseñaría algo peor que no ponerla. Está dicho en la página y queda para
 preguntarle al profe.
+
+**Pero sí traen los nombres bien escritos**, desde la clase 8: la escala de Fa
+dice Si♭ y no La♯, porque una escala usa las siete letras una vez cada una
+(`escalaLegible`, más abajo). Antes esa pantalla llamaba a `noteName`, que da
+la tecla y no el nombre — el error que este proyecto persigue desde la clase
+1, escondido en el único lugar donde nadie lo había mirado.
 
 **La melodía se piensa en grados de la escala, no en semitonos** — con una
 sola excepción, que son los préstamos. `lib/melodia.ts` compone con las
@@ -335,6 +347,57 @@ secas, y ahí el que se traba tiene dos opciones: adivinar o rendirse.
   sin decir con qué inversión, que muy seguido son dos y elegir una sería
   mentir.
 
+### Las tonalidades (clase 8)
+
+`lib/tonalidades.ts`, y **no tiene ni una tabla**. Sale todo de la regla que
+ya ordena los acordes: *una escala usa las siete letras, una por una*. Si la
+mayor arranca en Sol, la séptima nota tiene que llamarse Fa —es la letra que
+toca— y como la tecla está un semitono más arriba, se llama Fa♯. Nadie eligió
+el sostenido: lo pidió el abecedario.
+
+- **La armadura es una cuenta.** Se escribe la escala y se suman los signos.
+  Que salgan siempre en el orden fa-do-sol-re-la-mi-si es *consecuencia*, no
+  dato, y por eso es un test: `test:tonalidades` verifica que los signos de
+  cada tonalidad son un prefijo de ese orden sin habérselo dicho al módulo.
+- **Las quince son las que se escriben sin doble signo.** No hay lista:
+  `TONALIDADES` recorre todas las tónicas posibles y descarta las que pedirían
+  un doble —Sol♯ mayor tendría Fa♯♯— y quedan exactamente las quince del
+  cuaderno, de Do♭ (7♭) a Do♯ (7♯). La relativa menor tampoco está escrita: es
+  el sexto grado.
+- **La regla del profe para leer una armadura está verificada contra la
+  lista.** `leerArmadura` hace la cuenta que uno hace mirando un papel (el
+  último sostenido más un semitono; el anteúltimo bemol) y el test pide que
+  coincida con las quince. Es la única forma honesta de afirmar que la regla
+  funciona — y de paso deja a la vista su única excepción, la de un solo bemol,
+  que no tiene anteúltimo y hay que aprender suelta.
+- **La tabla de armaduras del pentagrama se fue.** `armaduraDe` ya no guarda
+  doce números por modo: cuenta con este módulo. Lo único que se decide en
+  `lib/pentagrama.ts` es **cuál enarmónica usa una tecla** —gana la de menos
+  signos, y en el empate a seis la de sostenidos, que es como se escribe Fa♯
+  mayor— porque eso sí es costumbre y no cuenta. El test clava que las dos
+  fuentes no puedan discrepar.
+- **El círculo de quintas no tiene posiciones escritas.** El lugar de cada
+  tonalidad es su armadura módulo 12, y por eso Fa♯ (6♯) y Sol♭ (6♭) caen
+  solas en la misma casilla — que es justo lo que el círculo viene a mostrar.
+- **`escalaLegible` es para el ejercicio de escalas, que acepta cualquier
+  tecla como tónica.** Prueba las escrituras de esa tecla y se queda con la
+  que no pide dobles (la menor armónica de Mi♭ tiene Re natural; la de Re♯
+  tendría Do♯♯), con la de costumbre adelante para que no discrepe con el
+  botón de la tónica. Antes esa pantalla mostraba `noteName`, o sea la tecla:
+  la escala de Fa decía La♯ en vez de Si♭.
+
+Dos trampas de hidratación que costaron y valen para cualquier ejercicio nuevo:
+
+- **`elegirConMemoria` no se puede sembrar.** Usa su propio `Math.random` y
+  lee `localStorage`, que en el servidor no existe: una primera ronda elegida
+  con memoria sale distinta en el server y en el cliente. Por eso la primera
+  pregunta de "¿en qué tonalidad está?" va con azar sembrado y **sin**
+  memoria, y el bombo cargado entra recién al pedir otra.
+- **Un porcentaje con decimales no sobrevive al viaje.** El círculo ubica cada
+  casilla con trigonometría y el servidor serializaba `28.5%` donde el cliente
+  ponía `28.499999999999982%`. Van con `toFixed(3)`: tres decimales son una
+  milésima de la rueda.
+
 ### La fecha
 
 Es el miércoles de esa clase, en ISO (`"2026-08-12"`). La racha de la home
@@ -367,6 +430,9 @@ Están definidos en `content/types.ts`. Cada uno se renderiza en
 | `voicing` | El mismo acorde repartido entre las manos: cerrado, abierto a dos manos, a una mano sin la fundamental | Selector de acorde y disposición, teclado con las manos en colores y la tercera con aro, los saltos entre vecinas con nombre, y "cerrada y después abierta" (`lib/voicing.ts`) |
 | `texturas` | Los cuatro tipos de textura y las tres del piano | Una vuelta en plaqué, pum-chá o arpegios en loop, y la misma frase vestida de monofonía, melodía acompañada, homofonía y polifonía (`lib/texturas.ts`) |
 | `sustitucion-tritonal` | El dominante cambiado por el que está a un tritono | La tabla deducida de `DOMINANTES` con las dos notas compartidas marcadas, y la ii-V-I con el G7 y con el D♭7 (`SUSTITUTOS_TRITONALES`, `lib/grados.ts`) |
+| `tonalidades` | Las quince escalas, con sostenidos y con bemoles | Las dos listas del cuaderno con el signo nuevo pintado, y la elegida con sus notas, su armadura, el teclado y el sonido (`lib/tonalidades.ts`) |
+| `armaduras` | Los signos del principio del renglón y qué anuncian | La armadura dibujada en las dos claves con el signo que decide en color, el orden fijo de los sostenidos y los bemoles, y la regla de lectura |
+| `circulo-de-quintas` | Las quince en rueda, con las relativas adentro | El círculo con las mayores afuera y las menores adentro, las enarmónicas cruzándose abajo, y cada una para escuchar |
 | `dominantes-secundarios` | Los acordes de paso: el X7 y el X° de cada llegada | La tabla de Do mayor sonando con un interruptor dominantes/disminuidos (la nota ajena pintada, el destino dado vuelta para oír el efectivo) y la vuelta: arranca con la del cuaderno y cualquier progresión se llena de a uno, ciclando X7 → X° → nada (datos en `DOMINANTES` y `DISMINUIDOS`, `lib/grados.ts`) |
 
 **Usá `section`.** Una clase con más de tres o cuatro bloques sin secciones se
@@ -1432,6 +1498,7 @@ npm run test:lilypond # el lector de LilyPond: octava relativa, duraciones, repe
 npm run test:grabacion # el importador de grabaciones contra el primer pum-chá
 npm run test:practica # la sala: las direcciones congeladas y los alias
 npm run test:grados  # los grados de una tonalidad y las escalas
+npm run test:tonalidades # las quince tonalidades, las armaduras y el círculo
 npm run test:melodia # la melodía generada, contra sus propias reglas
 npm run test:voicing # el reparto del acorde entre las manos: la tercera nunca abajo
 npm run test:texturas # plaqué, pum-chá, arpegios y los cuatro tipos sobre la frase
@@ -1441,3 +1508,13 @@ npm run test:notas   # segmentación y puntaje del micrófono
 npm run test:pitch   # el detector de altura
 npm run test:seguimiento # el juez de "seguime": la octava pide dos teclas
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

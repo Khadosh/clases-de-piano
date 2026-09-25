@@ -17,37 +17,59 @@
  */
 
 import { LETRAS_PC, mod12, type PitchClass } from "./music.ts";
+import {
+  ORDEN_BEMOLES,
+  ORDEN_SOSTENIDOS,
+  TONALIDADES,
+  armaduraDeTono,
+  type Modo,
+} from "./tonalidades.ts";
 import { duracionDe, figuraQueDivide, type Compas, type Figura } from "./ritmo.ts";
 
 // ---------------------------------------------------------------------------
 // La armadura
 // ---------------------------------------------------------------------------
 
-export type Modo = "mayor" | "menor";
+export type { Modo };
+export { ORDEN_BEMOLES, ORDEN_SOSTENIDOS };
 
+/**
+ * La tonalidad de una pieza, identificada por la **tecla** de su tónica. Es lo
+ * cómodo para escribir una partitura, donde uno sabe que la pieza está "en
+ * mi♭" y no le importa cómo se deletrea. La tonalidad escrita —Fa♯ y Sol♭ como
+ * dos cosas distintas— es `Tono`, en `lib/tonalidades.ts`.
+ */
 export interface Tonalidad {
   tonica: PitchClass;
   modo: Modo;
 }
 
-/** El orden en que aparecen los sostenidos: fa do sol re la mi si. */
-export const ORDEN_SOSTENIDOS = [3, 0, 4, 1, 5, 2, 6] as const;
-/** Y el de los bemoles, que es el mismo al revés: si mi la re sol do fa. */
-export const ORDEN_BEMOLES = [6, 2, 5, 1, 4, 0, 3] as const;
-
 /**
  * Cuántas alteraciones tiene la tonalidad. Positivo sostenidos, negativo
  * bemoles.
  *
- * La tabla es la que es: cada quinta que subís agrega un sostenido. Se escribe
- * a mano porque las enarmónicas se eligen por costumbre y no por cuenta — Fa♯
- * mayor y Sol♭ mayor son la misma tecla y la misma música, y cuál se usa lo
- * decide qué se lee más fácil.
+ * El número no se escribe a mano: lo cuenta `lib/tonalidades.ts` de la escala
+ * misma. Lo único que se decide acá es **cuál de las dos enarmónicas se usa**
+ * cuando una tecla es dos tonalidades, y esa sí es costumbre y no cuenta: gana
+ * la que se lee con menos signos —Re♭ mayor (cinco bemoles) antes que Do♯
+ * (siete sostenidos)— y en el empate a seis, la de sostenidos, que es como se
+ * escribe Fa♯ mayor.
  */
-const ARMADURAS: Record<Modo, Record<number, number>> = {
-  mayor: { 0: 0, 7: 1, 2: 2, 9: 3, 4: 4, 11: 5, 6: 6, 1: -5, 8: -4, 3: -3, 10: -2, 5: -1 },
-  menor: { 9: 0, 4: 1, 11: 2, 6: 3, 1: 4, 8: 5, 3: 6, 10: -5, 5: -4, 0: -3, 7: -2, 2: -1 },
-};
+const ARMADURAS: Record<Modo, Record<number, number>> = (() => {
+  const out: Record<Modo, Record<number, number>> = { mayor: {}, menor: {} };
+  for (const modo of ["mayor", "menor"] as Modo[]) {
+    for (const t of TONALIDADES) {
+      const tono = modo === "mayor" ? t.mayor : t.menor;
+      const pc = mod12(tono.tonica.pc);
+      const n = armaduraDeTono(tono);
+      const previo = out[modo][pc];
+      if (previo === undefined || Math.abs(n) < Math.abs(previo) || (Math.abs(n) === Math.abs(previo) && n > previo)) {
+        out[modo][pc] = n;
+      }
+    }
+  }
+  return out;
+})();
 
 export function armaduraDe(t: Tonalidad): number {
   return ARMADURAS[t.modo][mod12(t.tonica)] ?? 0;

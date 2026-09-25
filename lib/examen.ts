@@ -1,4 +1,5 @@
 import {
+  mod12,
   CHORD_QUALITIES,
   LETRAS_ES,
   LETRAS_PC,
@@ -49,6 +50,15 @@ import {
   destinoDadoVuelta,
 } from "./grados.ts";
 import { ESCALAS, triadasDeEscala } from "./escalas.ts";
+import {
+  TONALIDADES,
+  armadurasConfundiblesCon,
+  confundiblesCon,
+  leerArmadura,
+  nombreDeTono,
+  notasDeTono,
+  signosDeArmadura,
+} from "./tonalidades.ts";
 
 /**
  * Las preguntas del examen de cada clase.
@@ -583,6 +593,8 @@ export interface OpcionesExamen {
   paralelas?: boolean;
   /** ¿Vio los dominantes secundarios? */
   dominantes?: boolean;
+  /** ¿Vio las tonalidades, las armaduras y el círculo de quintas? */
+  tonalidades?: boolean;
   /** ¿Vio el voicing, el reparto del acorde entre las manos? */
   voicing?: boolean;
   /** ¿Vio las texturas? */
@@ -590,6 +602,112 @@ export interface OpcionesExamen {
   /** ¿Vio la sustitución tritonal? */
   tritonal?: boolean;
   cantidad?: number;
+}
+
+
+/** Cómo se dice una armadura: "3 sostenidos (fa♯ do♯ sol♯)", "un bemol (si♭)". */
+function armaduraEnPalabras(n: number): string {
+  if (n === 0) return "ninguna alteración";
+  const cuantos = Math.abs(n);
+  const signos = signosDeArmadura(n)
+    .map((x) => escribirNota(x).toLowerCase())
+    .join(" ");
+  const nombre = n > 0 ? "sostenido" : "bemol";
+  return cuantos === 1
+    ? `un ${nombre} (${signos})`
+    : `${cuantos} ${nombre}${n > 0 ? "s" : "es"} (${signos})`;
+}
+
+/** Lo mismo con el verbo puesto, que en castellano no sale de pegar strings. */
+const armaduraQueLleva = (n: number) =>
+  n === 0 ? "no lleva ninguna alteración" : `lleva ${armaduraEnPalabras(n)}`;
+
+/**
+ * De la armadura a la tonalidad, que es lo que se hace abriendo una
+ * partitura. Las opciones equivocadas son las que de verdad se confunden: la
+ * relativa, la vecina de un signo, la del signo opuesto.
+ */
+function preguntaArmadura(): Pregunta {
+  const t = pickRandom(TONALIDADES.filter((x) => Math.abs(x.armadura) <= 5));
+  const modo = Math.random() < 0.5 ? "mayor" : "menor";
+  const correcto = modo === "mayor" ? t.mayor : t.menor;
+  const opciones = shuffle([correcto, ...confundiblesCon(correcto, 3)]);
+  return {
+    tipo: "opciones",
+    consigna: `Una partitura ${armaduraQueLleva(t.armadura)}. Si la pieza es ${modo}, ¿en qué tonalidad está?`,
+    destacado: t.armadura === 0 ? "—" : `${Math.abs(t.armadura)}${t.armadura > 0 ? "♯" : "♭"}`,
+    opciones: opciones.map((o) => nombreDeTono(o)),
+    correcta: opciones.indexOf(correcto),
+    // La regla del papel da siempre la mayor, así que cuando la pregunta es
+    // por la menor hay que decir el paso que falta: si no, la explicación
+    // nombra una tónica que no es la de la respuesta.
+    explicacion:
+      modo === "mayor"
+        ? `${leerArmadura(t.armadura).regla} Es ${nombreDeTono(t.mayor)}. Su relativa menor, ${nombreDeTono(t.menor)}, lleva los mismos signos.`
+        : `${leerArmadura(t.armadura).regla} Esa es la mayor, ${nombreDeTono(t.mayor)}; la menor que comparte su armadura es la del sexto grado: ${nombreDeTono(t.menor)}.`,
+  };
+}
+
+/** Y al revés: de la tonalidad a los signos, que es lo que se hace escribiendo. */
+function preguntaCuantasAlteraciones(): Pregunta {
+  const t = pickRandom(TONALIDADES.filter((x) => Math.abs(x.armadura) <= 5));
+  const modo = Math.random() < 0.5 ? "mayor" : "menor";
+  const tono = modo === "mayor" ? t.mayor : t.menor;
+  const opciones = shuffle([t.armadura, ...armadurasConfundiblesCon(t.armadura, 3)]);
+  return {
+    tipo: "opciones",
+    consigna: `¿Con qué armadura se escribe ${nombreDeTono(tono)}?`,
+    destacado: nombreDeTono(tono, "en"),
+    opciones: opciones.map((n) => (n === 0 ? "ninguna" : armaduraEnPalabras(n))),
+    correcta: opciones.indexOf(t.armadura),
+    explicacion: `${nombreDeTono(tono)} ${armaduraQueLleva(t.armadura)}: ${notasDeTono(tono).map((x) => escribirNota(x)).join(" · ")}.`,
+  };
+}
+
+/** La relativa: la misma armadura, otra casa. Es el error clásico. */
+function preguntaRelativa(): Pregunta {
+  const t = pickRandom(TONALIDADES.filter((x) => Math.abs(x.armadura) <= 5));
+  const deMayor = Math.random() < 0.5;
+  const dada = deMayor ? t.mayor : t.menor;
+  const correcto = deMayor ? t.menor : t.mayor;
+  const otras = TONALIDADES.filter((o) => o !== t)
+    .map((o) => (deMayor ? o.menor : o.mayor));
+  const opciones = shuffle([correcto, ...shuffle(otras).slice(0, 3)]);
+  return {
+    tipo: "opciones",
+    consigna: `¿Cuál es la relativa ${deMayor ? "menor" : "mayor"} de ${nombreDeTono(dada)}?`,
+    destacado: nombreDeTono(dada, "en"),
+    opciones: opciones.map((o) => nombreDeTono(o)),
+    correcta: opciones.indexOf(correcto),
+    explicacion: deMayor
+      ? `El sexto grado de ${nombreDeTono(dada)} es ${escribirNota(correcto.tonica)}: las mismas siete notas empezadas ahí dan ${nombreDeTono(correcto)}, con la misma armadura.`
+      : `El tercer grado de ${nombreDeTono(dada)} es ${escribirNota(correcto.tonica)}: ésa es su relativa mayor, con la misma armadura.`,
+  };
+}
+
+/**
+ * De la armadura al teclado: la única de tonalidades que no se puede acertar
+ * de casualidad. Encadena las dos cosas de la clase —leer los signos y saber
+ * qué tonalidad anuncian— con lo de todas las anteriores, que es armar el
+ * acorde.
+ */
+function preguntaTonica(): Pregunta {
+  const t = pickRandom(TONALIDADES.filter((x) => Math.abs(x.armadura) <= 5));
+  const modo = Math.random() < 0.5 ? "mayor" : "menor";
+  const tono = modo === "mayor" ? t.mayor : t.menor;
+  const q = qualityById(modo === "mayor" ? "maj" : "min")!;
+  const root = mod12(tono.tonica.pc);
+  return {
+    tipo: "armar",
+    consigna: `Una pieza ${modo} ${armaduraQueLleva(t.armadura)}. Armá su acorde de tónica en el teclado.`,
+    destacado:
+      t.armadura === 0
+        ? `— · ${modo}`
+        : `${Math.abs(t.armadura)}${t.armadura > 0 ? "♯" : "♭"} · ${modo}`,
+    pitches: chordPitches(BASE + root, q),
+    notas: notasDeAcorde(root, q),
+    explicacion: `${leerArmadura(t.armadura).regla} La ${modo} de esa armadura es ${nombreDeTono(tono)}, y su tónica es ${chordSymbol(root, q)}.`,
+  };
 }
 
 /**
@@ -610,6 +728,7 @@ export function generarExamen({
   voicing,
   texturas,
   tritonal,
+  tonalidades,
   cantidad = 8,
 }: OpcionesExamen): Pregunta[] {
   const pozo = qualityIds
@@ -641,6 +760,12 @@ export function generarExamen({
   if (voicing) fabricas.push(preguntaVoicing);
   if (texturas) fabricas.push(preguntaTextura);
   if (tritonal) fabricas.push(preguntaSustituto);
+  if (tonalidades) {
+    fabricas.push(preguntaArmadura);
+    fabricas.push(preguntaCuantasAlteraciones);
+    fabricas.push(preguntaRelativa);
+    fabricas.push(preguntaTonica);
+  }
 
   const preguntas: Pregunta[] = [];
   // Se garantiza una de armar y después se completa mezclando.
