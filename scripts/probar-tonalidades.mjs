@@ -27,9 +27,10 @@ import {
   signosDeArmadura,
   teclasDeTono,
   tonoDeArmadura,
+  vecindadDe,
 } from "../lib/tonalidades.ts";
-import { ESCALAS, escalaPorId } from "../lib/escalas.ts";
-import { escribirNota, mod12 } from "../lib/music.ts";
+import { ESCALAS, escalaPorId, triadasDeEscala } from "../lib/escalas.ts";
+import { escribirNota, identificarAcorde, mod12 } from "../lib/music.ts";
 import { armaduraDe } from "../lib/pentagrama.ts";
 
 const escritas = (t) => notasDeTono(t).map((n) => escribirNota(n));
@@ -210,3 +211,36 @@ for (const e of ESCALAS) {
 }
 
 console.log("escalas legibles: todo bien ✓");
+
+// --- La vecindad: los acordes de la tonalidad son las casillas pegadas ----
+
+// Lo que hace útil al círculo. Se cruza contra el camino largo —apilar
+// terceras de la propia escala e identificar cada acorde— porque la
+// afirmación es fuerte: si fuera falsa, el dibujo enseñaría algo que no es.
+for (const t of TONALIDADES) {
+  if (Math.abs(t.armadura) > 6) continue; // en los extremos los nombres son enarmónicos
+  const tonica = 60 + mod12(t.mayor.tonica.pc);
+  const triadas = triadasDeEscala(tonica, escalaPorId("mayor"));
+  const vecinos = Object.fromEntries(vecindadDe(t.armadura).map((v) => [v.grado, v]));
+  const cifras = ["I", "ii", "iii", "IV", "V", "vi"];
+  for (let g = 0; g < 6; g++) {
+    const acorde = identificarAcorde(triadas[g]);
+    const v = vecinos[cifras[g]];
+    assert.ok(v, `${nombreDeTono(t.mayor)} sin vecino para ${cifras[g]}`);
+    assert.equal(
+      v.tono.tonica.pc,
+      mod12(acorde.root),
+      `el ${cifras[g]} de ${nombreDeTono(t.mayor)}: la casilla dice ${nombreDeTono(v.tono)}`,
+    );
+    assert.equal(v.modo, acorde.quality.id === "min" ? "menor" : "mayor");
+  }
+  // El séptimo es disminuido y por eso no tiene casilla en el círculo.
+  assert.equal(identificarAcorde(triadasDeEscala(tonica, escalaPorId("mayor"))[6]).quality.id, "dim");
+}
+
+// Y en los extremos la vecindad no se rompe: se completa con la enarmónica.
+const extremo = vecindadDe(-7);
+assert.equal(extremo.length, 6);
+assert.ok(extremo.find((v) => v.grado === "IV").enarmonica);
+
+console.log("la vecindad del círculo: todo bien ✓");

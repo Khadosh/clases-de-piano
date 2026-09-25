@@ -307,3 +307,57 @@ export function escalaLegible(pc: number, escala: Escala): NotaEscrita[] {
   );
   return escalaEscrita(limpia ?? candidatas[0], escala);
 }
+
+/**
+ * La vecindad: los seis acordes de una tonalidad, que en el círculo son las
+ * casillas pegadas.
+ *
+ * Esto es *para qué existe* el círculo de quintas, y no se ve si uno sólo mira
+ * los nombres: la casilla de una tonalidad, la de su izquierda y la de su
+ * derecha son su I, su IV y su V; las tres de adentro, sus tres menores (vi,
+ * ii, iii). Seis de los siete acordes del campo armónico están tocándose. El
+ * que falta es el VII°, que es disminuido y por eso no tiene casilla.
+ *
+ * No hay nada escrito acá tampoco: sale de que una quinta arriba es un
+ * sostenido más, que es lo mismo que decir que el V de una tonalidad está en
+ * la casilla siguiente. `test:tonalidades` lo cruza contra las tríadas que
+ * `triadasDeEscala` saca de la escala, que es el camino largo.
+ */
+export interface Vecino {
+  /** "I", "IV", "V", "ii", "iii", "vi". */
+  grado: string;
+  /** Cuántas casillas a la derecha (−1 es una a la izquierda). */
+  paso: number;
+  modo: Modo;
+  tono: Tono;
+  /** La casilla existe pero con otro nombre: pasa en los extremos del círculo. */
+  enarmonica?: boolean;
+}
+
+export function vecindadDe(armadura: number): Vecino[] {
+  const pedidos: { grado: string; paso: number; modo: Modo }[] = [
+    { grado: "IV", paso: -1, modo: "mayor" },
+    { grado: "I", paso: 0, modo: "mayor" },
+    { grado: "V", paso: 1, modo: "mayor" },
+    { grado: "ii", paso: -1, modo: "menor" },
+    { grado: "vi", paso: 0, modo: "menor" },
+    { grado: "iii", paso: 1, modo: "menor" },
+  ];
+  const out: Vecino[] = [];
+  for (const p of pedidos) {
+    const directo = tonoDeArmadura(armadura + p.paso, p.modo);
+    if (directo) {
+      out.push({ ...p, tono: directo });
+      continue;
+    }
+    // En los extremos la casilla de al lado existe igual, pero se llama de la
+    // otra manera: el IV de Do♭ (7♭) ocupa el lugar de Mi mayor (4♯). Es la
+    // misma tecla, y decirlo es mejor que dejar el lugar vacío.
+    const casilla = mod12(armadura + p.paso);
+    const otra = TONALIDADES.find((t) => mod12(t.armadura) === casilla);
+    if (otra) {
+      out.push({ ...p, tono: p.modo === "mayor" ? otra.mayor : otra.menor, enarmonica: true });
+    }
+  }
+  return out;
+}

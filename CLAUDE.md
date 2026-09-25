@@ -379,6 +379,22 @@ el sostenido: lo pidió el abecedario.
 - **El círculo de quintas no tiene posiciones escritas.** El lugar de cada
   tonalidad es su armadura módulo 12, y por eso Fa♯ (6♯) y Sol♭ (6♭) caen
   solas en la misma casilla — que es justo lo que el círculo viene a mostrar.
+  Es una rueda SVG de tres anillos (la armadura afuera, las mayores, las
+  menores adentro) y las tres casillas de abajo se parten al medio porque
+  tienen dos tonalidades, como en los círculos impresos. El tinte lo pone el
+  signo —sostenidos en `sol`, bemoles en `menta`— y la intensidad, cuántos
+  son: se ve de lejos que a la derecha se acumulan sostenidos, a la izquierda
+  bemoles, y abajo se cruzan.
+- **La vecindad es para qué existe el círculo.** Las casillas pegadas a una
+  tonalidad son sus acordes: la de la derecha el V, la de la izquierda el IV,
+  y las tres de adentro el vi, el ii y el iii. Seis de los siete del campo
+  armónico tocándose; el que falta es el VII°, que es disminuido y no tiene
+  casilla. `vecindadDe` lo calcula de la armadura y `test:tonalidades` lo
+  cruza **contra el camino largo** —apilar terceras de la escala con
+  `triadasDeEscala` e identificar cada acorde— porque es una afirmación
+  fuerte: si fuera falsa, el dibujo estaría enseñando algo que no es. En los
+  extremos (±7) la casilla de al lado existe con nombre enarmónico y el
+  vecino se marca como tal en vez de dejar el lugar vacío.
 - **`escalaLegible` es para el ejercicio de escalas, que acepta cualquier
   tecla como tónica.** Prueba las escrituras de esa tecla y se queda con la
   que no pide dobles (la menor armónica de Mi♭ tiene Re natural; la de Re♯
@@ -393,10 +409,14 @@ Dos trampas de hidratación que costaron y valen para cualquier ejercicio nuevo:
   con memoria sale distinta en el server y en el cliente. Por eso la primera
   pregunta de "¿en qué tonalidad está?" va con azar sembrado y **sin**
   memoria, y el bombo cargado entra recién al pedir otra.
-- **Un porcentaje con decimales no sobrevive al viaje.** El círculo ubica cada
-  casilla con trigonometría y el servidor serializaba `28.5%` donde el cliente
-  ponía `28.499999999999982%`. Van con `toFixed(3)`: tres decimales son una
-  milésima de la rueda.
+- **Un número con decimales no sobrevive al viaje.** Todo lo que sale de
+  trigonometría —las coordenadas de los paths, las opacidades calculadas— va
+  redondeado, porque el servidor serializa `28.5` donde el cliente pone
+  `28.499999999999982` y React lo canta como diferencia. Dos decimales son una
+  centésima de la rueda.
+- **Un `<title>` de SVG lleva un solo string.** Con dos hijos (`{nombre}{cond
+  ? extra : ""}`) el servidor los concatena y el cliente espera dos nodos, y
+  es otra vez el mismo error. La condición se resuelve antes, en la variable.
 
 ### La fecha
 
