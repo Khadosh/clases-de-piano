@@ -1,11 +1,13 @@
 import Link from "next/link";
 import Icono from "@/components/Icono";
 import type { Metadata } from "next";
-import { LESSONS, latestLesson, slugOf } from "@/content";
+import { LESSONS, formatDate, latestLesson, slugOf } from "@/content";
 import { PIEZAS } from "@/content/partituras";
 import { AREAS, acordesAprendidos, catalogoDe } from "@/content/practica";
 import SeguirCon from "@/components/SeguirCon";
 import { rich } from "@/components/Blocks";
+import Hoy from "@/components/Hoy";
+import { minutosDe, semanaVigente } from "@/content/semanas";
 
 export const metadata: Metadata = {
   title: "Práctica",
@@ -35,6 +37,7 @@ export default function PracticaPage() {
   const todo = catalogoDe("sala");
   const acordes = acordesAprendidos();
   const ultima = latestLesson();
+  const semana = semanaVigente();
   const fichas = todo.map((e) => ({ slug: e.slug, titulo: e.titulo, emoji: e.emoji }));
   const pasos = AREAS.map((a) => ({ ...a, cuantos: todo.filter((e) => e.area === a.id).length })).filter(
     (a) => a.cuantos > 0,
@@ -65,6 +68,33 @@ export default function PracticaPage() {
 
       <div className="mb-8 flex flex-col gap-3">
         <SeguirCon fichas={fichas} />
+
+        {/* La semana armada, cuando no hubo clase: manda sobre la tarea. */}
+        {semana && (
+          <Link
+            href="/practica/semana"
+            className="card group block px-5 py-4 transition hover:border-sol/40"
+          >
+            <span className="text-xs tracking-[0.2em] text-humo uppercase">
+              La semana armada
+            </span>
+            <span className="font-display mt-1 block text-2xl font-black tracking-tight group-hover:text-sol">
+              {semana.titulo} →
+            </span>
+            <ul className="mt-3 grid gap-x-6 gap-y-1 sm:grid-cols-2">
+              {semana.dias.map((d) => (
+                <li key={d.fecha} className="flex items-center gap-2 text-sm text-humo">
+                  <span className="w-20 shrink-0 capitalize">
+                    {formatDate(d.fecha, { weekday: true }).split(",")[0]}
+                  </span>
+                  <span className="text-tiza">{d.titulo}</span>
+                  <span className="font-mono text-xs">{minutosDe(d)}′</span>
+                  <Hoy fecha={d.fecha} />
+                </li>
+              ))}
+            </ul>
+          </Link>
+        )}
 
         {/* La tarea del miércoles: es lo que decide qué se practica esta semana. */}
         {ultima.homework && ultima.homework.length > 0 && (

@@ -9,6 +9,7 @@
  */
 
 import assert from "node:assert/strict";
+import { SEMANAS, destinoDe, minutosDe } from "../content/semanas.ts";
 import { AREAS, FORMAS, aliases, buscar, casaDe, catalogo, catalogoDe, rutaDe, vecinasDeTema } from "../content/practica.ts";
 
 let bien = 0;
@@ -155,6 +156,24 @@ probar("los renglones de notas guía viven en una sola página", () => {
   assert.equal(ng.length, 1);
   assert.equal(ng[0].renglones.length, 3);
   assert.deepEqual(ng[0].renglones.map((r) => r.lesson.n), [4, 5, 6]);
+});
+
+// Las semanas armadas mandan a páginas de la sala, del taller, de las
+// partituras y de las clases. Un plan que apunta a una dirección que se
+// mudó es peor que no tener plan.
+probar("cada tramo de cada semana armada lleva a algo que existe", () => {
+  for (const s of SEMANAS) {
+    for (const d of s.dias) {
+      assert.ok(minutosDe(d) > 0, `${s.desde} · ${d.fecha} sin minutos`);
+      for (const t of d.tramos) {
+        if (t.ir) assert.ok(destinoDe(t.ir), `${d.fecha} · ${t.que}: ${JSON.stringify(t.ir)}`);
+      }
+    }
+    // Los días en orden y sin repetir: es un calendario.
+    const fechas = s.dias.map((d) => d.fecha);
+    assert.deepEqual(fechas, [...new Set(fechas)].sort(), s.desde);
+    assert.equal(fechas[0], s.desde);
+  }
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

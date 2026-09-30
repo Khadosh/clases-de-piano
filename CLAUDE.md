@@ -135,6 +135,23 @@ aparecen una sola vez, con la clase donde se vieron primero, y el laboratorio
 ofrece **los acordes aprendidos hasta ahora** y no todos los que existen en
 el código.
 
+### La semana armada
+
+Cuando un miércoles no hay clase, la semana igual se arma: `content/semanas.ts`
+es un plan día por día —cada día con su tema y sus tramos, cada tramo con sus
+minutos, cómo encararlo y adónde ir— y se ve en `/practica/semana`. **No es una
+clase**: no la dio nadie, no tiene examen y no cuenta para la racha, así que no
+va en `LESSONS`. Cada tramo apunta a un ejercicio, una herramienta del taller,
+una partitura o una clase (`ir`), y el enlace se resuelve contra el catálogo
+con `destinoDe`, nunca escrito a mano; `test:practica` clava que todos
+existan. Los minutos del día se suman de los tramos.
+
+Armar otra es sumar una entrada a `SEMANAS` con `desde` = el primer día. La
+sala la muestra arriba de la tarea mientras sea posterior a la última clase
+(`semanaVigente`): al publicar la clase siguiente se va sola. El "hoy" se
+decide en el cliente (`components/Hoy.tsx`), porque el servidor dibujó la
+página el día del build.
+
 ### El piano de los ejercicios
 
 Hay **un solo piano** y es `components/Piano.tsx`: el teclado, las fichas de lo
