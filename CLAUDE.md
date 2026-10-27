@@ -823,6 +823,35 @@ instante quedaban con la duración más larga de todas, y en la Oda a la alegrí
 las negras de la derecha sonaban un compás entero como la redonda de la
 izquierda. Son dos vistas de lo mismo y tienen que vivir separadas.
 
+### La armonía, pintada por tensión
+
+Abajo de la partitura, cuando la pieza tiene análisis: la progresión frase
+por frase, cada acorde del color de su función —los tres del mapa de la
+clase 3: reposo en menta, media tensión en sol, tensión en brasa—, una curva
+de tensión de la pieza entera, lo que pasa contado en castellano, y un botón
+de **explicación técnica** que suma (no reemplaza) los grados, las cadencias
+con nombre y los pivotes. Cada acorde suena al tocarlo y cada frase se
+escucha de corrido. Es `components/Progresion.tsx` con `lib/armonia.ts`.
+
+Se agrega como las clases: una entrada en `content/armonias.ts` con el
+`slug` de la pieza, y la página la encuentra sola. Va aparte de la pieza
+porque las de Mutopia se generan y no se editan, y porque es una lectura de
+las notas y no las notas. Tres reglas:
+
+- **Se escribe el grado, no la función.** El color sale de
+  `FUNCION_DE_GRADO`, igual en mayor que en menor (los índices coinciden:
+  i, III y VI reposo; ii° y iv media; v/V y VII tensión). Un dominante
+  secundario se declara por adónde va (`dominanteDe`) y es tensión siempre.
+  El romano ("IVm", "V7/IIm") y la cadencia de cada frase (sus dos últimos
+  acordes) también se deducen.
+- **Cada frase dice en qué tonalidad está** (`en`), y cuando se va de casa
+  se lee contra la nueva: el Fa de la primera parte del minueto es el V de
+  Si♭, no el VII de Sol menor.
+- **`test:armonia` verifica el análisis contra la partitura**: que cada
+  cifrado esté sobre el grado que dice y que el bajo que suena de verdad en
+  ese instante sea el del cifrado (el de la barra, si tiene). Qué es nota de
+  paso y qué es acorde lo decide el oído; lo dudoso va en `revisar`.
+
 ### La edición completa
 
 Las piezas importadas declaran `fuente` (su `.mxl`, servido desde
@@ -1585,6 +1614,7 @@ npm run test:enlace  # el enlace de acordes
 npm run test:notas   # segmentación y puntaje del micrófono
 npm run test:pitch   # el detector de altura
 npm run test:seguimiento # el juez de "seguime": la octava pide dos teclas
+npm run test:armonia # el análisis de cada partitura contra sus propias notas
 ```
 
 <!-- BEGIN:nextjs-agent-rules -->

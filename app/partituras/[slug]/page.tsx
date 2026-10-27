@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { PIEZAS, piezaPorSlug } from "@/content/partituras";
 import Partitura from "@/components/Partitura";
+import Progresion from "@/components/Progresion";
+import { armoniaDe } from "@/content/armonias";
 
 export function generateStaticParams() {
   return PIEZAS.map((p) => ({ slug: p.slug }));
@@ -27,6 +29,7 @@ export default async function PiezaPage({
   const { slug } = await params;
   const pieza = piezaPorSlug(slug);
   if (!pieza) notFound();
+  const armonia = armoniaDe(pieza.slug);
 
   return (
     <div className="pt-10">
@@ -47,9 +50,31 @@ export default async function PiezaPage({
         <p className="mt-3 max-w-3xl leading-relaxed text-humo print:hidden">
           {pieza.sobre}
         </p>
+        {armonia && (
+          <a
+            href="#armonia"
+            className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-sol transition hover:text-tiza print:hidden"
+          >
+            <span className="flex gap-0.5" aria-hidden>
+              <span className="h-2.5 w-2.5 rounded-full bg-menta" />
+              <span className="h-2.5 w-2.5 rounded-full bg-sol" />
+              <span className="h-2.5 w-2.5 rounded-full bg-brasa" />
+            </span>
+            La armonía, pintada por tensión ↓
+          </a>
+        )}
       </header>
 
       <Partitura pieza={pieza} />
+
+      {armonia && (
+        <Progresion
+          armonia={armonia}
+          tonalidad={pieza.tonalidad}
+          tiempos={pieza.compas.numerador}
+          bpm={pieza.bpm}
+        />
+      )}
 
       {/* La honestidad al pie: qué es esto exactamente y qué habría que chequear.
           No sirve en el papel: si algo no cierra, se pregunta mirando la pantalla. */}
