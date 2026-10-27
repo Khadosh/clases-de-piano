@@ -27,14 +27,18 @@
     "test:grabacion": "node --experimental-strip-types scripts/probar-grabacion.mjs",
     "lilypond": "node --experimental-strip-types scripts/lilypond-a-musicxml.mjs",
     "test:lilypond": "node --experimental-strip-types scripts/probar-lilypond.mjs",
-    "importar:mutopia": "node --experimental-strip-types scripts/importar-mutopia.mjs"
+    "importar:mutopia": "node --experimental-strip-types scripts/importar-mutopia.mjs",
+    "mcp": "node --experimental-strip-types --no-warnings mcp/servidor.ts",
+    "test:mcp": "node --experimental-strip-types --no-warnings scripts/probar-mcp.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "next": "^16.3.0",
     "opensheetmusicdisplay": "^2.1.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tone": "^15.1.22"
+    "tone": "^15.1.22",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",

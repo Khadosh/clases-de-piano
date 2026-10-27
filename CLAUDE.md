@@ -1536,6 +1536,32 @@ Hace falta Chrome o Edge —Safari no lo soporta, Firefox lo trae apagado— y
 denegado) tienen su cartel: quedarse sin decir nada es lo peor que puede pasar
 acá, porque el que no ve nada asume que está roto.
 
+## El MCP de composición
+
+`mcp/`. El motor de `lib/` servido por MCP (stdio), para que un modelo pueda
+componer y analizar con las reglas de las clases: `npm run mcp` lo levanta, y
+`.mcp.json` lo registra para Claude Code en este repo. Son ocho herramientas:
+`progresion`, `progresiones_conocidas`, `acorde`, `enlazar`, `voicing`,
+`analizar`, `tonalidad` y `componer`.
+
+- **Nada musical vive en `mcp/`.** `mcp/herramientas.ts` son funciones puras
+  que llaman a `lib/` y devuelven objetos serializables; `mcp/servidor.ts`
+  sólo declara las herramientas y traduce JSON. Si el motor aprende un acorde
+  o una textura, el MCP lo aprende solo. Las herramientas se prueban sin
+  levantar nada, y el mismo test levanta el servidor por stdio con un cliente
+  MCP real, que es la condición en la que falla de verdad (`npm run test:mcp`).
+- **Los grados se escriben como en el papel** —`ii`, `V7`, `bVI`, `iv`— y la
+  calidad la pone la escala, no la mayúscula: en Do mayor "II" es Re menor y
+  se avisa. Préstamos con bemol o minúscula; en menor, el `V` mayúsculo sale
+  de la armónica y el `v` de la natural.
+- **`componer` devuelve una pieza del cuaderno**: un compás de textura por
+  acorde, la melodía de `lib/melodia.ts` transportada si se pide, el código
+  listo para pegar en `content/partituras.ts` (`propia: true`) y, con
+  `archivoMidi`, un `.mid` para escucharla afuera. `mcp/midi.ts` escribe el
+  SMF sin dependencias.
+- **Un pedido inválido vuelve como error legible** (`PedidoInvalido`), nunca
+  como excepción: el modelo tiene que poder corregir el pedido solo.
+
 ## Convenciones
 
 - **Todo en castellano rioplatense**, incluidos los nombres de variables de
@@ -1585,6 +1611,8 @@ npm run test:enlace  # el enlace de acordes
 npm run test:notas   # segmentación y puntaje del micrófono
 npm run test:pitch   # el detector de altura
 npm run test:seguimiento # el juez de "seguime": la octava pide dos teclas
+npm run mcp        # el MCP de composición por stdio (ver "El MCP de composición")
+npm run test:mcp   # las herramientas del MCP y el servidor levantado de verdad
 ```
 
 <!-- BEGIN:nextjs-agent-rules -->
