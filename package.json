@@ -28,6 +28,7 @@
     "lilypond": "node --experimental-strip-types scripts/lilypond-a-musicxml.mjs",
     "test:lilypond": "node --experimental-strip-types scripts/probar-lilypond.mjs",
     "importar:mutopia": "node --experimental-strip-types scripts/importar-mutopia.mjs",
+    "test:armonia": "node --experimental-strip-types --import ./scripts/alias.mjs scripts/probar-armonia.mjs",
     "mcp": "node --experimental-strip-types --no-warnings mcp/servidor.ts",
     "test:mcp": "node --experimental-strip-types --no-warnings scripts/probar-mcp.mjs"
   },
