@@ -102,8 +102,8 @@ interface NotaDibujable extends NotaUbicada {
   yBarra?: number;
   /** El compás tiene dos voces sonando: los silencios se corren para su voz. */
   aDosVoces?: boolean;
-  /** Para qué lado se corre este silencio (lo decide `acomodarPlicas`). */
-  silencioAbajo?: boolean;
+  /** Cuánto se corre este silencio, y para qué lado (lo decide `acomodarPlicas`). */
+  silencioDy?: number;
 }
 
 export default function Pentagrama({
@@ -565,7 +565,7 @@ function Nota({
     // Del mismo color que las notas: un silencio es música, no un hueco. En un
     // compás a dos voces se corre un espacio para el lado libre, que es lo
     // que hace cualquier edición para que no se pise con la otra voz.
-    const dy = nota.aDosVoces ? (nota.silencioAbajo ? ESPACIO : -ESPACIO) : 0;
+    const dy = nota.aDosVoces ? (nota.silencioDy ?? 0) : 0;
     return (
       <g opacity={apagada ? 0.25 : 1} transform={dy ? `translate(0 ${dy})` : undefined}>
         <Silencio nota={nota} color={color} />
@@ -1242,20 +1242,55 @@ function acomodarPlicas(notas: NotaDibujable[]) {
     // ponía el silencio del tenor pegado a la blanca del bajo — las dos cosas
     // viven arriba del pentagrama. Se mira dónde están las notas de la otra
     // voz y el silencio se va para el otro lado.
+    //
+    // **Y se corre lo que haga falta, no un espacio fijo.** Un espacio alcanza
+    // cuando la otra voz anda lejos; en la Gymnopédie la melodía canta Si4 y
+    // La4 —el renglón del medio, con la plica para arriba— justo cuando el
+    // acorde de la otra voz descansa, y el silencio de negra, que mide tres
+    // espacios, quedaba encima de la cabeza o atravesado por la plica. Contra
+    // lo que ocupa la otra voz mientras dura el silencio (cabezas y plicas),
+    // se mira cuánto habría que correrlo para cada lado y gana el más corto.
     for (const n of delCompas) {
       if (n.midis.length > 0) continue;
       const centro = yDeAltura(4, n.clave);
-      const ajenas = delCompas
-        .filter((o) => o.voz !== n.voz && o.midis.length > 0)
-        .flatMap((o) => o.cabezas.map((c) => c.y));
+      const ajenasDe = (o: NotaDibujable) => o.voz !== n.voz && o.midis.length > 0;
+      const ajenas = delCompas.filter(ajenasDe).flatMap((o) => o.cabezas.map((c) => c.y));
       if (!ajenas.length) {
-        n.silencioAbajo = !n.arriba;
+        n.silencioDy = n.arriba ? -ESPACIO : ESPACIO;
         continue;
       }
       const cercana = ajenas.reduce((a, b) =>
         Math.abs(b - centro) < Math.abs(a - centro) ? b : a,
       );
-      n.silencioAbajo = cercana < centro;
+      const porCercania = cercana < centro ? ESPACIO : -ESPACIO;
+      const fin = n.t + duracionDeEvento(n);
+      const encima = delCompas.filter(
+        (o) => ajenasDe(o) && o.t < fin - HOLGURA && n.t < o.t + duracionDeEvento(o) - HOLGURA,
+      );
+      if (!encima.length) {
+        n.silencioDy = porCercania;
+        continue;
+      }
+      // Lo que ocupa la otra voz: de la cabeza más alta a la más baja, más la
+      // plica para su lado.
+      let techo = Infinity;
+      let piso = -Infinity;
+      for (const o of encima) {
+        const ys = o.cabezas.map((c) => c.y);
+        const plica = tienePlica(figuraDeEvento(o)) ? 26 : 0;
+        techo = Math.min(techo, Math.min(...ys) - ESPACIO / 2 - (o.arriba ? plica : 0));
+        piso = Math.max(piso, Math.max(...ys) + ESPACIO / 2 + (o.arriba ? 0 : plica));
+      }
+      // Medio alto del glifo, en espacios: el de negra y el de semicorchea son
+      // los altos; los de redonda y blanca, un rectangulito.
+      const divide = figuraDeEvento(n).divide;
+      const medio = (divide <= 2 ? 0.5 : divide === 8 ? 1 : 1.5) * ESPACIO;
+      const aire = ESPACIO / 2;
+      const abajo = Math.max(ESPACIO, Math.ceil((piso + aire + medio - centro) / ESPACIO) * ESPACIO);
+      const arriba = Math.min(-ESPACIO, Math.floor((techo - aire - medio - centro) / ESPACIO) * ESPACIO);
+      const dy =
+        abajo === -arriba ? porCercania : abajo < -arriba ? abajo : arriba;
+      n.silencioDy = Math.max(-4 * ESPACIO, Math.min(4 * ESPACIO, dy));
     }
   }
 }

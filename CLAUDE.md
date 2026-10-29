@@ -703,12 +703,17 @@ tablas de casos.
   espacios de pentagrama y cada familia trae el origen donde VexFlow lo apoya
   (las claves en su línea, las banderas en la punta de la plica), así que caen
   solos.
-- **En un compás a dos voces los silencios se corren un espacio, para el lado
-  libre.** Sin correrlos, el de una voz y el de la otra caían en el mismo
+- **En un compás a dos voces los silencios se corren para el lado libre, lo
+  que haga falta.** Sin correrlos, el de una voz y el de la otra caían en el mismo
   renglón uno arriba del otro. Y el lado no es "arriba el de la voz de
   arriba": en el preludio eso ponía el silencio del tenor pegado a la blanca
   del bajo, porque las dos voces viven arriba del pentagrama. Se mira dónde
-  están las notas de la otra voz y el silencio va para el otro lado.
+  están las notas de la otra voz y el silencio va para el otro lado. Y si la
+  otra voz está sonando mientras dura el silencio, se mide lo que ocupa
+  —cabezas y plica— y gana el lado que pide correrlo menos: en la Gymnopédie
+  la melodía canta en el renglón del medio con la plica para arriba justo
+  cuando el acorde descansa, y un espacio dejaba el silencio encima de la
+  cabeza.
 
 Las cabezas, las plicas, las banderas y los silencios salen del mismo número que
 ya usa `FiguraSVG`: en cuántas partes divide la figura a la redonda. Si aparece
@@ -1124,8 +1129,14 @@ Tres cosas de LilyPond que no son obvias y costaron:
 - **La octava relativa sí es de la música.** Cada nota cae a menos de una
   quinta de la anterior (hasta la cuarta se queda, la quinta cambia de lado,
   y las comillas se suman *después*); adentro de un acorde, de la nota
-  anterior del acorde, y al salir se sigue desde la primera. Después de un
-  `<< >>` se sigue desde la última nota de la **primera** rama. Los adornos
+  anterior del acorde, y al salir se sigue desde la primera. Las ramas de un
+  `<< >>` **se encadenan** como las notas de un acorde —la segunda arranca
+  desde la última nota de la primera— y después se sigue desde la última de
+  la **última** rama (`music_list_to_relative` en el código de LilyPond). Hubo
+  una época en que cada rama arrancaba de cero, y la segunda mitad del
+  minueto en sol menor salió una octava arriba sin que nada lo gritara; lo
+  destapó el final de la Gymnopédie, que caía dos octavas arriba. Un silencio
+  con altura (`d4\rest`) no suena pero mueve la referencia igual. Los adornos
   y las casillas de repetición que se descartan mueven la referencia igual,
   así que se recorren aunque no suenen.
 - **Las repeticiones no se desenrollan**: cada sección va una vez, con la
