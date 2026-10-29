@@ -205,6 +205,7 @@ const CON_ARGUMENTOS = {
   transposition: 1, tweak: 2, shape: 2, offset: 3, "tag": 1, "keepWithTag": 1,
   "removeWithTag": 1, "pushToTag": 1, "appendToTag": 1, finger: 1, bendAfter: 1,
   textMark: 1, textEndMark: 1, language: 1, version: 1, "footnote": 3,
+  barNumberCheck: 1,
   "tempo": 0, // se maneja aparte
 };
 
@@ -538,6 +539,15 @@ class Parser {
       return null;
     }
     const dur = this.duracionEfectiva();
+    // `e4\rest`: un silencio con altura, que sólo dice dónde dibujarlo. No
+    // suena, pero adentro de un \relative mueve la referencia de octava
+    // igual que una nota (la Gymnopédie lo usa: `d,4\rest <a' fis cis a>2`).
+    if (this.esCmd("rest")) {
+      this.next();
+      const nota = { t: "nota", alturas: [], silencio: "r", conAltura: a, dur, lig: false };
+      this.postEventos(nota);
+      return nota;
+    }
     const nota = { t: "nota", alturas: [a], dur, lig: false };
     this.postEventos(nota);
     return nota;
@@ -781,6 +791,11 @@ function tieneNotas(nodo, variables, vistos = new Set()) {
   }
 }
 
+/** Una rama que es directamente una voz con nombre: `\context Voice = "x" { }`. */
+function conVozPropia(nodo) {
+  return nodo.t === "contexto" && (nodo.tipo === "Voice" || nodo.tipo === "CueVoice") && nodo.nombre !== null;
+}
+
 function tieneStaff(nodo) {
   if (!nodo) return false;
   switch (nodo.t) {
@@ -912,7 +927,12 @@ class Recorrido {
         }
         const interno = { ...st };
         if (nodo.tipo === "Staff" || nodo.tipo === "RhythmicStaff" || nodo.tipo === "TabStaff") {
-          interno.staff = nodo.nuevo && !nodo.nombre ? this.staffLlamado(null) : this.staffLlamado(nodo.nombre);
+          // `\context Staff` sin nombre adentro de un pentagrama es ése mismo,
+          // no uno nuevo: así lo resuelve LilyPond (la Gymnopédie arma cada
+          // mano con una variable que empieza así).
+          interno.staff = !nodo.nuevo && !nodo.nombre && st.staff
+            ? st.staff
+            : nodo.nuevo && !nodo.nombre ? this.staffLlamado(null) : this.staffLlamado(nodo.nombre);
           // La voz lleva el nombre de su pentagrama: si un \change la manda a
           // la otra mano por un rato, sigue siendo otra voz que la de esa mano
           // y no se pisan.
@@ -975,23 +995,32 @@ class Recorrido {
     let fin = t;
     let primera = null;
     let k = 0;
+    // La octava relativa se encadena de rama en rama, como en un acorde: la
+    // primera nota de cada rama es relativa a la última de la anterior, y
+    // después del << >> se sigue desde la última de la última (así lo hace
+    // LilyPond, `music_list_to_relative` en lily/music-sequence.cc).
+    let cadena = st.rel;
     nodo.ramas.forEach((rama, i) => {
-      const interno = { ...st };
+      const interno = { ...st, rel: cadena };
       if (comoStaffs) {
         if (conNotas[i]) interno.staff = this.staffLlamado(null);
-      } else if (conNotas[i]) {
+      } else if (conNotas[i] && !conVozPropia(rama)) {
         // La primera rama con notas sigue en la voz de afuera; las demás son
-        // voces nuevas. Con \\ o sin \\, es lo mismo para nosotros.
+        // voces nuevas. Con \\ o sin \\, es lo mismo para nosotros. Una rama
+        // que declara su propia \context Voice no cuenta: ésa ya tiene voz, y
+        // la de afuera le queda a la siguiente (`<< \context Voice = "x" {..} e,2. >>`
+        // en la Gymnopédie: el e, es el bajo de siempre).
         if (k > 0 && cuantas > 1) interno.voz = `${st.voz ?? "1"}/${k + 1}`;
         k++;
       }
       const finRama = this.recorrer(rama, interno, t);
+      if (cadena !== null && interno.rel !== null) cadena = interno.rel;
       if (cmp(finRama, fin) > 0) fin = finRama;
       if (primera === null && conNotas[i]) primera = interno;
       else if (primera === null && !conNotas[i]) this.heredar(st, interno);
     });
-    // La octava sigue desde la última nota de la primera rama.
     if (primera) this.heredar(st, primera);
+    if (st.rel !== null) st.rel = cadena;
     return fin;
   }
 
@@ -1006,6 +1035,7 @@ class Recorrido {
       return suma(t, real);
     }
     if (nodo.silencio) {
+      if (nodo.conAltura && st.rel !== null) st.rel = relativa(nodo.conAltura, st.rel);
       this.emitir(st, {
         t, dur: real, escrita: nodo.dur, tuplets: st.tuplets, alturas: [],
         tipo: nodo.silencio === "s" ? "espacio" : "silencio",

@@ -62,10 +62,29 @@ probar("relativa: adentro del acorde cada nota sigue a la anterior, y después s
   assert.deepEqual(midis(p.derecha[0]), [[60, 64, 67], [60], [67, 71, 74], [67]]);
 });
 
-probar("relativa: después de un << >> se sigue desde la última nota de la primera rama", () => {
+probar("relativa: las ramas de un << >> se encadenan, y después se sigue desde la última", () => {
+  // Como LilyPond (music_list_to_relative): el c, es relativo al g de la
+  // primera rama, y el c del final al e de la segunda. Antes cada rama
+  // arrancaba de cero y la segunda mitad del minueto en sol menor salía una
+  // octava arriba.
   const p = pieza(`\\relative c' { c4 << { e g } \\\\ { c, e } >> c }`);
-  assert.deepEqual(solas(p.derecha[0]), [60, 64, 67, 72]);
-  assert.deepEqual(solas(p.derecha[1]), [48, 52]);
+  assert.deepEqual(solas(p.derecha[0]), [60, 64, 67, 60]);
+  assert.deepEqual(solas(p.derecha[1]), [60, 64]);
+});
+
+probar("relativa: un silencio con altura (e4\\rest) no suena pero mueve la referencia", () => {
+  const p = pieza(`\\relative c'' { c4 d,4\\rest a'4 }`);
+  assert.deepEqual(solas(p.derecha[0]), [72, 69]);
+  assert.ok(!p.avisos.some((a) => /rest/.test(a)));
+});
+
+probar("un \\context Staff sin nombre adentro de un pentagrama es ése mismo", () => {
+  const p = pieza(`\\score { \\new PianoStaff <<
+    \\context Staff = "arriba" << \\clef treble \\context Staff \\relative c'' { c2 c } \\context Voice = "medio" \\relative c' { e2 e } >>
+    \\context Staff = "abajo" { \\clef bass \\context Staff \\relative c { c1 } }
+  >> }`);
+  assert.ok(!p.avisos.some((a) => /pentagramas/.test(a)), p.avisos.join(" / "));
+  assert.deepEqual(solas(p.izquierda[0]), [48]);
 });
 
 probar("relativa: los adornos no suenan pero mueven la referencia", () => {
