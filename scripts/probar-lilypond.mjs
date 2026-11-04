@@ -232,6 +232,24 @@ probar("el << >> con variables sin notas al lado no inventa voces", () => {
   assert.deepEqual(p.compas, { numerador: 3, denominador: 4 });
 });
 
+probar("una tercera voz que suena donde otra calla se muda a ésa y no se pierde", () => {
+  // La izquierda del compás 37 de la Gymnopédie: el bajo, los acordes de un
+  // pasaje y, más tarde, un Si · Mi suelto. Nunca suenan las tres a la vez.
+  const p = pieza(`\\score { \\new PianoStaff << \\new Staff = "up" { c''1 c''1 } \\new Staff = "down" <<
+    \\context Voice = "a" { c,1 c,1 } \\context Voice = "b" { r4 e2. s1 } \\context Voice = "c" { s1 r4 g2. } >> >> }`);
+  assert.equal(p.izquierda.length, 2);
+  assert.deepEqual(midis(p.izquierda[0]), [[52], [55]]);
+  assert.deepEqual(midis(p.izquierda[1]), [[36], [36]]);
+  assert.deepEqual(p.avisos.filter((a) => /voces/.test(a)), []);
+});
+
+probar("tres voces sonando a la vez: se pierde la que menos tiene y se avisa", () => {
+  const p = pieza(`\\score { \\new PianoStaff << \\new Staff = "up" { c''1 } \\new Staff = "down" <<
+    \\context Voice = "a" { c,4 c, c, c, } \\context Voice = "b" { e2 e } \\context Voice = "c" { g1 } >> >> }`);
+  assert.equal(p.izquierda.length, 2);
+  assert.ok(p.avisos.some((a) => /3 voces que suenan a la vez/.test(a)));
+});
+
 probar("la armadura menor y el tempo del \\midi llegan al otro lado", () => {
   const p = pieza(`
     \\score { \\new Staff \\relative c'' { \\key g \\minor g4 a bes c } \\layout {} \\midi { \\tempo 4 = 140 } }

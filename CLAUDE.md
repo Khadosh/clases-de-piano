@@ -1073,7 +1073,10 @@ modelo es más pobre que MusicXML y conviene saber qué se perdió:
 
 - **Hasta dos voces por mano.** Se quedan las que más notas tienen —no las más
   agudas: en la izquierda eso tiraba el bajo y dejaba el pentagrama vacío— y se
-  avisa cuántas notas se perdieron.
+  avisa cuántas notas se perdieron. **Una tercera que suena donde otra calla se
+  muda a ésa** y no se pierde: en la Gymnopédie la izquierda tiene tres voces
+  en el archivo (el bajo, los acordes de los compases 19–31 y el Si · Mi del
+  37) pero nunca suenan las tres juntas.
 - **Los tresillos entran** (se leen del `<time-modification>`), pero una figura
   que no reconocemos se saltea igual.
 - **Sin compases incompletos.** La anacrusa se rellena con silencios, así que los

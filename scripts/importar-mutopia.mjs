@@ -53,7 +53,7 @@ const FICHAS = {
     sobre:
       "Lento y doloroso, dice arriba. La izquierda hace siempre lo mismo —un bajo grave en el primer tiempo y un acorde en el medio del teclado en el segundo— y arriba la melodía flota, casi sin apoyarse. Los dos acordes del principio se mecen durante compases y compases sin ir a ningún lado: es la pieza que enseña que la armonía también puede quedarse quieta. El salto de la izquierda, del bajo al acorde, es el ejercicio.",
     revisar:
-      "La pieza se toca dos veces con finales distintos; acá va una sola, con el segundo final, el que cierra en Re menor. Los acordes del segundo tiempo de los compases 1–18 y 32–39 van escritos en el pentagrama de arriba, como en la edición de Satie, pero se tocan con la izquierda: ahí, con «sólo la izquierda», suena nada más el bajo. Las dos voces que faltan son el Si y el Mi de la izquierda en el compás 37.",
+      "La pieza se toca dos veces con finales distintos; acá va una sola, con el segundo final, el que cierra en Re menor. Los acordes del segundo tiempo de los compases 1–18 y 32–39 van escritos en el pentagrama de arriba, como en la edición de Satie, pero se tocan con la izquierda: ahí, con «sólo la izquierda», suena nada más el bajo.",
   },
   "BurgmullerJFF-O100-25EF-01": {
     slug: "burgmuller-01-candor", titulo: "Candor", numero: 1, dificultad: 2, bpm: 100,
