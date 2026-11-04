@@ -1681,7 +1681,7 @@ export const MUTOPIA: Pieza[] = [
       "Lento y doloroso, dice arriba. La izquierda hace siempre lo mismo —un bajo grave en el primer tiempo y un acorde en el medio del teclado en el segundo— y arriba la melodía flota, casi sin apoyarse. Los dos acordes del principio se mecen durante compases y compases sin ir a ningún lado: es la pieza que enseña que la armonía también puede quedarse quieta. El salto de la izquierda, del bajo al acorde, es el ejercicio.",
     hasta: "Entera: 39 compases, sin las repeticiones.",
     revisar:
-      "Importada del LilyPond de Mutopia (SatieE-gymnopedie_1.ly). Las repeticiones no están escritas: cada sección va una vez, con su última casilla. La mano izquierda tiene 3 voces y sólo entran dos. Se quedaron las que más notas tienen; se perdieron 2 notas. La pieza se toca dos veces con finales distintos; acá va una sola, con el segundo final, el que cierra en Re menor. Los acordes del segundo tiempo de los compases 1–18 y 32–39 van escritos en el pentagrama de arriba, como en la edición de Satie, pero se tocan con la izquierda: ahí, con «sólo la izquierda», suena nada más el bajo. Las dos voces que faltan son el Si y el Mi de la izquierda en el compás 37.",
+      "Importada del LilyPond de Mutopia (SatieE-gymnopedie_1.ly). Las repeticiones no están escritas: cada sección va una vez, con su última casilla. La pieza se toca dos veces con finales distintos; acá va una sola, con el segundo final, el que cierra en Re menor. Los acordes del segundo tiempo de los compases 1–18 y 32–39 van escritos en el pentagrama de arriba, como en la edición de Satie, pero se tocan con la izquierda: ahí, con «sólo la izquierda», suena nada más el bajo.",
     derecha: [
       [
         silencio(2, { puntillo: true }), silencio(2, { puntillo: true }),
@@ -1749,7 +1749,7 @@ export const MUTOPIA: Pieza[] = [
         n([62, 57, 54, 48], 2), silencio(2, { puntillo: true }),
         silencio(2, { puntillo: true }), silencio(2, { puntillo: true }),
         silencio(2, { puntillo: true }), silencio(2, { puntillo: true }),
-        silencio(2, { puntillo: true }), silencio(2, { puntillo: true }),
+        silencio(4), n(47, 4), n(52, 4), silencio(2, { puntillo: true }),
         silencio(2, { puntillo: true }),
       ],
       [
