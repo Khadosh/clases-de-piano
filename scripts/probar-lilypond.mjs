@@ -232,6 +232,22 @@ probar("el << >> con variables sin notas al lado no inventa voces", () => {
   assert.deepEqual(p.compas, { numerador: 3, denominador: 4 });
 });
 
+probar("la voz que calla un compás de 3/4 entero se rellena con blanca con puntillo, no con tresillos", () => {
+  const p = pieza(`\\relative c' { \\time 3/4 c2. | << { d2. } \\\\ { b2. } >> | e2. | }`);
+  const callada = p.derecha[1].filter((e) => e.midis.length === 0);
+  assert.deepEqual(callada, [
+    { midis: [], divide: 2, puntillo: true },
+    { midis: [], divide: 2, puntillo: true },
+  ]);
+});
+
+probar("un hueco de tresillo sigue rellenándose con tresillos", () => {
+  // Media negra de tresillo de silencio no es ninguna figura binaria.
+  const p = pieza(`\\relative c' { \\time 2/4 \\tuplet 3/2 { r8 c d } e4 | }`);
+  assert.deepEqual(p.derecha[0][0], { midis: [], divide: 8, irregular: { en: 3, de: 2 } });
+  assert.deepEqual(sinRepeticiones(p.avisos), []);
+});
+
 probar("la armadura menor y el tempo del \\midi llegan al otro lado", () => {
   const p = pieza(`
     \\score { \\new Staff \\relative c'' { \\key g \\minor g4 a bes c } \\layout {} \\midi { \\tempo 4 = 140 } }
