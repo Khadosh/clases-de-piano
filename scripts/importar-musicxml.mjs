@@ -570,28 +570,43 @@ function armarFila(crudas, divisions, avisos, nombre, largoCompas) {
 /**
  * Llena `cuanto` divisiones con silencios, de la figura más larga a la más
  * corta. Devuelve lo que no entró en ninguna.
+ *
+ * **Primero sin tresillos.** Con las figuras de tresillo mezcladas en la misma
+ * lista, la avidez elegía la redonda de tresillo (2/3) antes que la blanca con
+ * puntillo, y un compás de 3/4 callado salía «redonda de tresillo + corchea de
+ * tresillo»: suma bien y no lo escribe nadie. Las binarias, con puntillo, van
+ * primero; los tresillos sólo si con ellas queda resto, que es cuando el hueco
+ * de verdad cae en tercios.
  */
 function rellenar(cuanto, divisions, fila) {
-  let falta = cuanto;
-  // De la más larga a la más corta, y con la versión de tresillo de cada una:
-  // en una pieza con tresillos los huecos también caen en tercios, y sin esto
-  // quedaba siempre un resto que no entraba en ninguna figura binaria.
-  const opciones = [];
+  const binarias = [];
+  const conTresillos = [];
   for (const divide of [1, 2, 4, 8, 16, 32, 64]) {
     const entera = (divisions * 4) / divide;
-    opciones.push({ divide, unidad: entera });
-    opciones.push({ divide, unidad: (entera * 2) / 3, irregular: { en: 3, de: 2 } });
+    binarias.push({ divide, unidad: entera });
+    if (divide < 64) binarias.push({ divide, puntillo: true, unidad: entera * 1.5 });
+    conTresillos.push({ divide, unidad: entera });
+    conTresillos.push({ divide, unidad: (entera * 2) / 3, irregular: { en: 3, de: 2 } });
   }
-  opciones.sort((a, b) => b.unidad - a.unidad);
-  for (const o of opciones) {
-    while (falta >= o.unidad - 1e-6) {
-      const silencio = { midis: [], divide: o.divide };
-      if (o.irregular) silencio.irregular = o.irregular;
-      fila.push(silencio);
-      falta -= o.unidad;
+  const llenar = (opciones) => {
+    opciones.sort((a, b) => b.unidad - a.unidad);
+    let falta = cuanto;
+    const silencios = [];
+    for (const o of opciones) {
+      while (falta >= o.unidad - 1e-6) {
+        const silencio = { midis: [], divide: o.divide };
+        if (o.puntillo) silencio.puntillo = true;
+        if (o.irregular) silencio.irregular = o.irregular;
+        silencios.push(silencio);
+        falta -= o.unidad;
+      }
     }
-  }
-  return falta < 1e-6 ? 0 : falta;
+    return { silencios, falta: falta < 1e-6 ? 0 : falta };
+  };
+  let r = llenar(binarias);
+  if (r.falta > 0) r = llenar(conTresillos);
+  fila.push(...r.silencios);
+  return r.falta;
 }
 
 /**
