@@ -409,11 +409,33 @@ export function importar(xml, { hasta = Infinity } = {}) {
       if (!conNota.length) return -Infinity;
       return conNota.reduce((s, n) => s + Math.max(...n.midis), 0) / conNota.length;
     };
-    const elegidas = [...suyas].sort((a, b) => conNotas(b) - conNotas(a)).slice(0, 2);
-    if (suyas.length > 2) {
-      const dejadas = suyas.filter((v) => !elegidas.includes(v));
+    const elegidas = [...suyas]
+      .sort((a, b) => conNotas(b) - conNotas(a))
+      .slice(0, 2)
+      .map((v) => ({ ...v, notas: [...v.notas] }));
+    // **Una tercera voz que cae donde otra calla se muda a ésa.** En la
+    // Gymnopédie la izquierda tiene tres: el bajo, los acordes que bajan del
+    // pentagrama de arriba en los compases 19–31 y el Si · Mi del 37. Nunca
+    // suenan las tres a la vez, pero por ser voces distintas del archivo el
+    // Si · Mi se perdía entero. Se prueba primero la elegida de altura más
+    // parecida; los silencios de ella que la recién llegada pisa se van.
+    const dejadas = [];
+    for (const v of suyas.filter((v) => !elegidas.some((e) => e.voz === v.voz))) {
+      const suenan = v.notas.filter((n) => n.midis.length);
+      const pisa = (a, b) => a.t < b.t + b.duracion - 1e-9 && b.t < a.t + a.duracion - 1e-9;
+      const destino = [...elegidas]
+        .sort((a, b) => Math.abs(altura(a) - altura(v)) - Math.abs(altura(b) - altura(v)))
+        .find((e) => !e.notas.some((n) => n.midis.length && suenan.some((m) => pisa(n, m))));
+      if (!destino) {
+        dejadas.push(v);
+        continue;
+      }
+      destino.notas = destino.notas.filter((n) => !suenan.some((m) => pisa(n, m)));
+      destino.notas.push(...suenan);
+    }
+    if (dejadas.length) {
       avisos.push(
-        `La mano ${nombre} tiene ${suyas.length} voces y sólo entran dos. Se quedaron las que más notas tienen; se perdieron ${dejadas.reduce((s, v) => s + conNotas(v), 0)} notas.`,
+        `La mano ${nombre} tiene ${suyas.length} voces que suenan a la vez y sólo entran dos. Se quedaron las que más notas tienen; se perdieron ${dejadas.reduce((s, v) => s + conNotas(v), 0)} notas.`,
       );
     }
     elegidas.sort((a, b) => altura(b) - altura(a));
