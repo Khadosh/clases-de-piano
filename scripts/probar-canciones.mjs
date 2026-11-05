@@ -22,6 +22,7 @@ import {
   voicingAnterior,
   vecinaDeLaTercera,
   notaDeLaEscala,
+  rangoDeCompases,
 } from "../lib/capas.ts";
 import { CANCIONES, cancionPorSlug } from "../content/canciones.ts";
 import { mod12 } from "../lib/music.ts";
@@ -67,27 +68,46 @@ probar("las cinco capas, en orden", () => {
   assert.deepEqual(sol.capas.map((c) => c.tipo), ["acordes", "riff", "ritmo", "progresion", "todo"]);
 });
 
-probar("la base: La, Re, Mi7 con los voicings del análisis", () => {
+probar("la base: La, Re, Si7, Mi7 con los voicings del análisis", () => {
   const b = capa("acordes");
-  assert.deepEqual(b.acordes.map(cifradoDeVoicing), ["A", "D", "E7"]);
-  assert.deepEqual(b.acordes.map((v) => v.derecha), [[69, 73, 76], [69, 74, 78], [68, 71, 74, 76]]);
-  assert.deepEqual(b.acordes.map((v) => v.izquierda.map(mod12)), [[9], [2], [4]], "la izquierda en las fundamentales");
+  assert.deepEqual(b.acordes.map(cifradoDeVoicing), ["A", "D", "B7", "E7"]);
+  assert.deepEqual(b.acordes.map((v) => v.derecha), [[69, 73, 76], [69, 74, 78], [66, 69, 71, 75], [68, 71, 74, 76]]);
+  assert.deepEqual(b.acordes.map((v) => v.izquierda.map(mod12)), [[9], [2], [11], [4]], "la izquierda en las fundamentales");
 });
 
-probar("la base: la tecla que se queda entre vecinos es La, Re, Mi", () => {
-  const [la, re, mi7] = capa("acordes").acordes;
+// Lo que suena en loop es la `vuelta`, no la lista de `acordes`: comparar los
+// acordes dejaba pasar una vuelta sin el Si7 o con el Si7 en otro lado.
+probar("la vuelta de la base pasa por el Si7 (el V del V) justo antes del Mi7", () => {
+  const vuelta = capa("acordes").vuelta;
+  assert.deepEqual(vuelta.map(cifradoDeCompas), ["A", "D", "B7", "E7", "A"]);
+  const [, , si7, mi7] = capa("acordes").acordes;
+  assert.equal(saltoDeFundamental(si7, mi7), 5, "Si7 → Mi7 cae una quinta (sube una cuarta)");
+  assert.deepEqual(gradoEnMayor(si7, sol.tonica).romano, "II7");
+});
+
+probar("la estrofa del todo junto va en el mismo orden que la base", () => {
+  const estrofa = capa("todo").secciones.find((s) => s.nombre === "Estrofa");
+  const base = capa("acordes").vuelta.map(cifradoDeCompas).slice(0, 4);
+  const cifrados = estrofa.compases.map(cifradoDeCompas);
+  assert.equal(cifrados.length % 4, 0);
+  for (let i = 0; i < cifrados.length; i += 4) assert.deepEqual(cifrados.slice(i, i + 4), base, `vuelta ${i / 4 + 1}`);
+});
+
+probar("la base: la tecla que se queda entre vecinos es La, La, Si, Mi", () => {
+  const [la, re, si7, mi7] = capa("acordes").acordes;
   assert.deepEqual(teclasQueSeQuedan(la, re), [69]);
-  assert.deepEqual(teclasQueSeQuedan(re, mi7), [74]);
+  assert.deepEqual(teclasQueSeQuedan(re, si7), [69]);
+  assert.deepEqual(teclasQueSeQuedan(si7, mi7), [71]);
   assert.deepEqual(teclasQueSeQuedan(mi7, la), [76]);
   assert.deepEqual(teclasQueSeQuedan(null, la), []);
 });
 
 probar("la vuelta en loop: en cada compás el teclado es su acorde y la tecla que se queda va con «=»", () => {
   const { vuelta, acordes } = capa("acordes");
-  const [la, re, mi7] = acordes;
+  const [la, re, si7, mi7] = acordes;
   // El primer La viene del Mi7 (el La del final es el mismo acorde: de ahí no llega la mano).
-  assert.deepEqual([0, 1, 2, 3].map((i) => voicingAnterior(vuelta, i)), [mi7, la, re, mi7]);
-  const esperado = [[76], [69], [74], [76]]; // Mi7→La: Mi; La→Re: La; Re→Mi7: Re; Mi7→La: Mi
+  assert.deepEqual([0, 1, 2, 3, 4].map((i) => voicingAnterior(vuelta, i)), [mi7, la, re, si7, mi7]);
+  const esperado = [[76], [69], [69], [71], [76]]; // Mi7→La: Mi; La→Re: La; Re→Si7: La; Si7→Mi7: Si; Mi7→La: Mi
   vuelta.forEach((c, i) => {
     for (const corchea of [null, ...Array.from({ length: corcheasDe(c.grupos) }, (_, k) => k)]) {
       const t = teclasDelCompas(vuelta, i, corchea);
@@ -148,7 +168,7 @@ probar("el riff es la escalera: Mi, Re, Do♯, Si y La largo, con el acorde quie
   assert.equal(cifradoDeVoicing(c.voicing), "A");
   const izq = c.eventos.filter((e) => e.mano === "izq");
   assert.equal(izq.length, 1, "la izquierda ataca una sola vez");
-  assert.deepEqual(izq[0].teclas, [45, 52, 61], "el La entero, abierto");
+  assert.deepEqual(izq[0].teclas, [45, 49, 52], "el La entero, cerrado");
   assert.equal(izq[0].dur, corcheasDe(c.grupos), "y lo sostiene todo el compás");
   const der = c.eventos.filter((e) => e.mano === "der").sort((a, b) => a.t - b.t);
   assert.ok(der.every((e) => e.teclas.length === 1), "la derecha toca de a una tecla");
@@ -173,7 +193,7 @@ probar("parado, el teclado del riff muestra la escalera entera apagada sobre el 
   const teclas = teclasDelCompas(r, 0, null);
   assert.deepEqual(teclas.filter((t) => t.mano === "der").map((t) => t.pitch).sort(), [69, 71, 73, 74, 76]);
   assert.ok(teclas.filter((t) => t.mano === "der").every((t) => !t.suena));
-  assert.deepEqual(teclasDelCompas(r, 0, 2).filter((t) => t.suena).map((t) => t.pitch).sort(), [45, 52, 61, 73].sort());
+  assert.deepEqual(teclasDelCompas(r, 0, 2).filter((t) => t.suena).map((t) => t.pitch).sort(), [45, 49, 52, 73].sort());
 });
 
 probar("el punteo previo: la izquierda quieta en la fundamental y la derecha mueve sólo 2ª, 3ª y 4ª", () => {
@@ -198,6 +218,26 @@ probar("lo que suena y lo que arranca en una corchea", () => {
   const c = capa("riff").previo.compases[0];
   assert.deepEqual(arrancanEn(c, 2).flatMap((e) => e.teclas), [71]);
   assert.deepEqual(sonandoEn(c, 2).flatMap((e) => e.teclas).sort(), [45, 69, 71, 76].sort());
+});
+
+probar("en el celular cada mano entra entera: ninguna capa pide más de 11 blancas por mano", () => {
+  // 390 px de pantalla dejan ~292 px de teclado y Keyboard pide 26 px por blanca: 11 entran, 12 ya scrollean
+  // y cortan la derecha (#6). Tocador iguala las dos manos a la más ancha, así que cuenta la peor.
+  const blancas = ({ from, to }) =>
+    Array.from({ length: to - from + 1 }, (_, i) => from + i).filter((p) => ![1, 3, 6, 8, 10].includes(mod12(p))).length;
+  const tocadores = sol.capas.flatMap((k) =>
+    k.tipo === "acordes" ? [k.vuelta]
+    : k.tipo === "riff" ? [k.compases, ...(k.previo ? [k.previo.compases] : [])]
+    : k.tipo === "progresion" ? [k.compases]
+    : k.tipo === "todo" ? [k.secciones.flatMap((s) => s.compases)]
+    : [],
+  );
+  for (const compases of tocadores) {
+    for (const mano of ["izq", "der"]) {
+      const r = rangoDeCompases(compases, mano);
+      assert.ok(blancas(r) <= 11, `${mano} de ${r.from} a ${r.to}: ${blancas(r)} blancas`);
+    }
+  }
 });
 
 probar("ninguna canción trae letra, melodía ni audio: sólo capas de acordes, riff y ritmo", () => {

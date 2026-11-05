@@ -92,13 +92,19 @@ export interface Cancion {
 // ---------------------------------------------------------------------------
 
 /**
- * Los tres de la estrofa, del análisis: la derecha arriba del La central con
+ * Tres de los cuatro de la estrofa, del análisis: la derecha arriba del La central con
  * notas comunes entre vecinos (La se queda de La a Re, Re de Re a Mi7, Mi de
  * Mi7 a La) y la izquierda en las fundamentales.
  */
 const LA: Voicing = { izquierda: [45], derecha: [69, 73, 76] };
 const RE: Voicing = { izquierda: [50], derecha: [69, 74, 78] };
 const MI7: Voicing = { izquierda: [52], derecha: [68, 71, 74, 76] };
+/**
+ * El V del V, que prepara al Mi7. El La se queda del Re y el Si se queda para
+ * el Mi7; el Re♯ arriba sube medio tono al Mi. Va completo (con el Fa♯ abajo)
+ * para que el teclado lo nombre Si7 y no adivine.
+ */
+const SI7: Voicing = { izquierda: [47], derecha: [66, 69, 71, 75] };
 
 /**
  * Los cinco del puente, enlazados para que cada uno deje una tecla quieta:
@@ -133,11 +139,13 @@ const PUNTEO: CompasDeCapa[] = [
 /**
  * El riff: la respuesta que baja después de «here comes the sun». La
  * derecha camina la escala de La mayor de Mi a La, cuatro corcheas y el La
- * largo; la izquierda sostiene el La entero, abierto (La · Mi · Do♯) para que
- * el acorde quede quieto abajo mientras la escalera pasa por encima.
- * `test:canciones` clava el orden: si se lo cambia, deja de ser el riff.
+ * largo; la izquierda sostiene el La entero, cerrado (La2 · Do♯3 · Mi3), para
+ * que el acorde quede quieto abajo mientras la escalera pasa por encima.
+ * Cerrado y no abierto a propósito: no sube más que el Mi3 de la izquierda de
+ * la base, así en el celular el teclado de cada mano no se ensancha y la
+ * derecha entra entera (#6). `test:canciones` clava el orden y el rango.
  */
-const LA_ABAJO: Voicing = { izquierda: [45, 52, 61], derecha: [] };
+const LA_ABAJO: Voicing = { izquierda: [45, 49, 52], derecha: [] };
 export const ESCALERA: PasoDeEscalera[] = [
   [5, 1],
   [4, 1],
@@ -147,8 +155,12 @@ export const ESCALERA: PasoDeEscalera[] = [
 ];
 const RIFF: CompasDeCapa[] = [compasDeEscalera(LA_ABAJO, 69, ESCALERA)];
 
-/** La estrofa entera: el punteo sobre los tres acordes y la escalera que cae en casa. */
-const ESTROFA: CompasDeCapa[] = [...PUNTEO.slice(1), ...RIFF];
+/**
+ * La estrofa del todo junto: la misma vuelta de la base, con la escalera en el
+ * La y el punteo en los otros tres. En el loop el La llega después del Mi7,
+ * así que la escalera es la que cae en casa.
+ */
+const ESTROFA: CompasDeCapa[] = [...RIFF, ...[RE, SI7, MI7].map((v) => compasDeRiff(v, VECINAS))];
 
 const TRES_TRES_DOS = [3, 3, 2];
 const PUENTE: CompasDeCapa[] = [DO, SOL, RE_PUENTE, LA_PUENTE, MI7_PUENTE].map((v) => plaque(v, TRES_TRES_DOS));
@@ -162,19 +174,20 @@ const HERE_COMES_THE_SUN: Cancion = {
   tonica: 9,
   tempo: 128,
   bajada:
-    "En La mayor, que es lo que suena (la guitarra la toca con cejilla en el 7 y formas de Re). Cinco capas, una arriba de la otra: los tres acordes de la estrofa, el riff, el ritmo del puente sin notas, el puente con sus acordes y todo junto.",
+    "En La mayor, que es lo que suena (la guitarra la toca con cejilla en el 7 y formas de Re). Cinco capas, una arriba de la otra: los cuatro acordes de la estrofa, el riff, el ritmo del puente sin notas, el puente con sus acordes y todo junto.",
   capas: [
     {
       tipo: "acordes",
       titulo: "La base armónica",
-      bajada: "La, Re y Mi7, con los voicings que dejan un dedo quieto entre acorde y acorde.",
+      bajada: "La, Re, Si7 y Mi7, con los voicings que dejan un dedo quieto entre acorde y acorde.",
       como: [
         "*Primero de a uno.* Tocá cada acorde y mirá cuál de las teclas de la derecha ya estaba apretada en el anterior: ésa no se mueve.",
-        "*La izquierda va a las fundamentales* —La, Re, Mi— y la derecha casi no viaja.",
+        "*La izquierda va a las fundamentales* —La, Re, Si, Mi— y la derecha casi no viaja.",
+        "*El Si7 es el dominante del Mi7*, como el Mi7 lo es del La. Si, Mi, La: cada uno baja una quinta hasta caer en casa. Es la escalera del puente al revés, y por eso empuja hacia el final de la frase.",
         "*Después la vuelta en loop*, al 50 %, hasta que el cambio salga sin mirar.",
       ],
-      acordes: [LA, RE, MI7],
-      vuelta: [LA, RE, MI7, LA].map((v) => plaque(v, [2, 2, 2, 2])),
+      acordes: [LA, RE, SI7, MI7],
+      vuelta: [LA, RE, SI7, MI7, LA].map((v) => plaque(v, [2, 2, 2, 2])),
     },
     {
       tipo: "riff",
@@ -183,7 +196,7 @@ const HERE_COMES_THE_SUN: Cancion = {
       como: [
         "*La derecha baja por la escala de La mayor*, un dedo por tecla: 5 en el Mi, 4 en el Re, 3 en el Do♯, 2 en el Si y 1 en el La. Así no se cruza nada.",
         "*Cuatro corcheas parejas y el La largo*: la escalera se apura y la tónica descansa.",
-        "*La izquierda no se mueve*: La, Mi y Do♯ apoyados todo el compás.",
+        "*La izquierda no se mueve*: La, Do♯ y Mi apoyados todo el compás.",
         "*Al 50 % hasta que salga tres veces seguidas limpio*, recién ahí se sube.",
       ],
       previo: {
@@ -233,7 +246,7 @@ const HERE_COMES_THE_SUN: Cancion = {
     {
       tipo: "todo",
       titulo: "Todo junto",
-      bajada: "La estrofa dos vueltas, el puente, y de nuevo: lo que cambia es el peso de la mano.",
+      bajada: "La estrofa dos vueltas con el punteo y la escalera, el puente, y de nuevo: lo que cambia es el peso de la mano.",
       como: [
         "*Primero al 50 %* y con el click; después sin el click.",
         "*Se puede tocar encima de la grabación* poniéndola desde donde la escuches; el cuaderno no la trae.",
@@ -250,6 +263,7 @@ const HERE_COMES_THE_SUN: Cancion = {
     },
   ],
   revisar: [
+    "Dónde cae el Si7 en la estrofa (en qué compás y en qué vueltas): acá va en todas, entre el Re y el Mi7. Confirmalo de oído con la grabación al 50 %.",
     "Cuántos compases de 3+3+2 y cuántos largos tiene el puente, y dónde van: acá el ejercicio pone un acorde por compás de 3+3+2, que es para practicar el agrupamiento y no la forma exacta. Contalo con la grabación.",
     "La escalera del riff (Mi · Re · Do♯ · Si · La, cuatro corcheas y el La largo) sale del análisis y no está chequeada contra la grabación: confirmala de oído al 50 %. Si en la grabación la bajada pasa sobre el Mi7 y el La cae recién con el acorde siguiente, la escalera se corre un compás.",
   ],
