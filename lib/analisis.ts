@@ -116,14 +116,16 @@ export interface DominanteLeido {
 }
 
 /**
- * Un X7 leído por adónde cae, cinco semitonos arriba: si cae en el I es el
+ * Una quinta mayor (el X7, o la tríada mayor que hace de V) leída por adónde cae, cinco semitonos arriba: si cae en el I es el
  * dominante; si cae en otro grado del campo, secundario (V7 de ese grado);
  * si cae afuera, efectivo — lleva a otro campo armónico. Es la tabla de la
  * clase 5 (`DOMINANTES`, en Do) corrida a la tónica de la canción.
  */
 export function leerDominante(v: Voicing, t: Tono): DominanteLeido {
   const a = identificarVoicing(v);
-  if (a.quality.id !== "dom7") throw new Error(`${a.quality.id} no es un X7`);
+  if (a.quality.id !== "dom7" && a.quality.id !== "maj") throw new Error(`${a.quality.id} no es una quinta mayor`);
+  // La tríada mayor hace de dominante igual (el La del Canon, el Sol de la Oda): se lee igual, sin el 7.
+  const siete = a.quality.id === "dom7" ? "7" : "";
   const d = DOMINANTES.find((x) => x.raiz === mod12(a.root - t.tonica.pc));
   const notas = notasDeTono(t);
   const escrita = (pc: number) => notas.find((n) => n.pc === pc);
@@ -133,17 +135,17 @@ export function leerDominante(v: Voicing, t: Tono): DominanteLeido {
   if (!d || !nombreRaiz || !nombreDestino) {
     // El X7 sobre una nota que la escala no tiene: lleva afuera.
     return {
-      romano: "V7/afuera",
+      romano: `V${siete}/afuera`,
       nombre: chordSymbol(a.root, a.quality),
       va: chordSymbol(destino, a.quality),
       tipo: "efectivo",
     };
   }
   const romano =
-    d.tipo === "principal" ? "V7" : d.destino === null ? "V7/afuera" : `V7/${TONALIDAD_MAYOR[d.destino].cifra}`;
+    d.tipo === "principal" ? `V${siete}` : d.destino === null ? `V${siete}/afuera` : `V${siete}/${TONALIDAD_MAYOR[d.destino].cifra}`;
   return {
     romano,
-    nombre: `${escribirNota(nombreRaiz)}7`,
+    nombre: `${escribirNota(nombreRaiz)}${siete}`,
     va: escribirNota(nombreDestino),
     tipo: d.tipo,
   };

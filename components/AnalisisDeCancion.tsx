@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { rich } from "./rich";
-import type { Cancion } from "@/content/canciones";
+import type { Aprendizaje } from "@/content/aprender";
 import {
   PASOS_DEL_ANALISIS,
   armaduraEscrita,
@@ -62,7 +62,7 @@ function Ficha({
   );
 }
 
-export default function AnalisisDeCancion({ cancion }: { cancion: Cancion }) {
+export default function AnalisisDeCancion({ cancion }: { cancion: Aprendizaje }) {
   const [tecnica, setTecnica] = useState(false);
   const ana = cancion.analisis;
   const tono = tonoMayorDe(cancion.tonica);
@@ -137,7 +137,7 @@ export default function AnalisisDeCancion({ cancion }: { cancion: Cancion }) {
               <p className={`mt-2 text-lg leading-snug font-semibold ${paso.tarea ? "text-sol" : "text-tiza"}`}>
                 {paso.respuesta}
               </p>
-              {muestra[clave] && <div className="mt-3 flex flex-wrap gap-2">{muestra[clave]}</div>}
+              {(muestra[clave] as ReactNode[] | undefined)?.length ? <div className="mt-3 flex flex-wrap gap-2">{muestra[clave]}</div> : null}
               <ul className="mt-3 space-y-1.5">
                 {(tecnica ? [...paso.simple, ...paso.tecnica] : paso.simple).map((t, j) => (
                   <li key={j} className="flex gap-2 text-sm leading-relaxed text-tiza">

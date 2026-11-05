@@ -24,7 +24,8 @@ import {
   notaDeLaEscala,
   rangoDeCompases,
 } from "../lib/capas.ts";
-import { CANCIONES, cancionPorSlug } from "../content/canciones.ts";
+import { APRENDER, aprenderDe } from "../content/aprender/index.ts";
+import { piezaPorSlug } from "../content/partituras.ts";
 import { escribirNota, mod12 } from "../lib/music.ts";
 import {
   PASOS_DEL_ANALISIS,
@@ -46,7 +47,7 @@ const probar = (que, fn) => {
   }
 };
 
-const sol = cancionPorSlug("here-comes-the-sun");
+const sol = aprenderDe("here-comes-the-sun");
 const capa = (tipo) => sol.capas.find((c) => c.tipo === tipo);
 
 probar("los acentos: 3+3+2 es fuerte en el 1, medio en el 4 y en el 7", () => {
@@ -148,7 +149,7 @@ probar("todo junto en loop: la escalera deja el La4 al Re y entra desde el Mi5 d
 });
 
 probar("al lado de la cuenta va sólo el cifrado, corto en todas las capas (la de todo junto trae la sección en la etiqueta)", () => {
-  for (const c of CANCIONES)
+  for (const c of APRENDER)
     for (const k of c.capas) {
       const compases = k.tipo === "todo" ? k.secciones.flatMap((s) => s.compases) : k.tipo === "ritmo" ? [] : k.tipo === "acordes" ? k.vuelta : k.compases;
       for (const m of compases) {
@@ -263,8 +264,9 @@ probar("en el celular cada mano entra entera: ninguna capa pide más de 11 blanc
   }
 });
 
-probar("ninguna canción trae letra, melodía ni audio: sólo capas de acordes, riff y ritmo", () => {
-  for (const c of CANCIONES) {
+probar("ninguna canción con derechos trae letra, melodía ni audio: sólo capas de acordes, riff y ritmo", () => {
+  // Las que salen de una partitura son de dominio público y tocan lo que está escrito: ésas sí traen la melodía.
+  for (const c of APRENDER.filter((c) => !piezaPorSlug(c.slug))) {
     const texto = JSON.stringify(c);
     assert.ok(!/\.(mp3|wav|ogg|m4a)/i.test(texto), "un archivo de audio");
     assert.ok(!c.capas.some((k) => ["melodia", "letra"].includes(k.tipo)));
@@ -278,7 +280,7 @@ const tono = tonoMayorDe(sol.tonica);
 
 probar("el análisis trae los seis pasos del profe, en orden, cada uno con su respuesta", () => {
   assert.deepEqual(PASOS_DEL_ANALISIS.map((p) => p.clave), ["tonalidad", "campo", "armadura", "dominantes", "otroCampo", "prestamo"]);
-  for (const c of CANCIONES) {
+  for (const c of APRENDER) {
     for (const { clave } of PASOS_DEL_ANALISIS) {
       const paso = c.analisis?.[clave];
       assert.ok(paso, `${c.slug}: falta el paso ${clave}`);

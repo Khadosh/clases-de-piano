@@ -24,6 +24,12 @@ export type Mano = "izq" | "der";
 export interface Voicing {
   izquierda: Pitch[];
   derecha: Pitch[];
+  /**
+   * Las teclas con que se nombra el acorde, si las manos no lo tocan entero:
+   * la izquierda de la Oda toca Do y Sol, y el Mi lo pone la melodía. Sólo
+   * para nombrarlo; lo que suena y se dibuja son las dos manos.
+   */
+  acorde?: Pitch[];
 }
 
 /** Algo que suena: `t` y `dur` en corcheas desde el arranque del compás. */
@@ -82,7 +88,7 @@ export const compasVacio = (grupos: number[]): CompasDeCapa => ({ grupos, evento
 export const teclasDeVoicing = (v: Voicing) => [...v.izquierda, ...v.derecha];
 
 export function identificarVoicing(v: Voicing) {
-  const a = identificarAcorde(teclasDeVoicing(v));
+  const a = identificarAcorde(v.acorde ?? teclasDeVoicing(v));
   if (!a) throw new Error(`el voicing ${teclasDeVoicing(v).join(" ")} no es un acorde con nombre`);
   return a;
 }
@@ -130,24 +136,29 @@ function compasAnterior(compases: readonly CompasDeCapa[], i: number): number | 
   return null;
 }
 
-/** Lo que la derecha tiene apretado en la corchea `c` del compás. */
-const derechaEn = (compas: CompasDeCapa, c: number) =>
-  sonandoEn(compas, c).filter((e) => e.mano === "der").flatMap((e) => e.teclas);
+/** Lo que una mano tiene apretado en la corchea `c` del compás. */
+const manoEn = (compas: CompasDeCapa, c: number, mano: Mano) =>
+  sonandoEn(compas, c).filter((e) => e.mano === mano).flatMap((e) => e.teclas);
 
 /**
- * Las teclas que se quedan al entrar al compás `i`: las que la derecha tenía
+ * Las teclas que se quedan al entrar al compás `i`: las que la mano tenía
  * apretadas al terminar el compás anterior y vuelve a apretar al empezar éste.
  * Mirando sólo los voicings alcanzaba mientras la derecha tocaba su acorde;
  * la escalera no tiene acorde en la derecha (lo sostiene la izquierda), así
  * que del Mi7 entra por el Mi5 y al Re le deja el La4, y comparando voicings
  * no se marcaba ninguna de las dos (#9).
+ *
+ * La izquierda cuenta sólo cuando toca acordes de los dos lados: en Here
+ * Comes the Sun va a las fundamentales y salta igual, pero en la Oda deja el
+ * Sol quieto de Do a Sol, y eso es lo que hay que ver (#11).
  */
-function quedanAlEntrar(compases: readonly CompasDeCapa[], i: number): Pitch[] {
+function quedanAlEntrar(compases: readonly CompasDeCapa[], i: number, mano: Mano): Pitch[] {
   const k = compasAnterior(compases, i);
   if (k === null) return [];
   const antes = compases[k];
-  const alTerminar = derechaEn(antes, corcheasDe(antes.grupos) - 1);
-  return derechaEn(compases[i], 0).filter((p) => alTerminar.includes(p));
+  if (mano === "izq" && [antes, compases[i]].some((c) => (c.voicing?.izquierda.length ?? 0) < 2)) return [];
+  const alTerminar = manoEn(antes, corcheasDe(antes.grupos) - 1, mano);
+  return manoEn(compases[i], 0, mano).filter((p) => alTerminar.includes(p));
 }
 
 /**
@@ -175,9 +186,10 @@ export function teclasDelCompas(compases: readonly CompasDeCapa[], i: number, co
   const actual = compases[i];
   const v = actual?.voicing;
   if (!v) return [];
-  const quedan = quedanAlEntrar(compases, i);
+  const quedan = quedanAlEntrar(compases, i, "der");
+  const quedanIzq = quedanAlEntrar(compases, i, "izq");
   const suenan = new Set(corchea === null ? teclasDeVoicing(v) : sonandoEn(actual, corchea).flatMap((e) => e.teclas));
-  const out: TeclaDeCapa[] = v.izquierda.map((p) => ({ pitch: p, mano: "izq", suena: suenan.has(p), queda: false }));
+  const out: TeclaDeCapa[] = v.izquierda.map((p) => ({ pitch: p, mano: "izq", suena: suenan.has(p), queda: quedanIzq.includes(p) }));
   // Lo que la derecha va a tocar en el compás también se ve apagado: la escalera entera, las vecinas de la tercera.
   const camino = actual.eventos.filter((e) => e.mano === "der").flatMap((e) => e.teclas);
   const derecha = new Set([...v.derecha, ...camino, ...[...suenan].filter((p) => !v.izquierda.includes(p))]);
@@ -312,6 +324,22 @@ export function compasDeEscalera(v: Voicing, tonica: Pitch, pasos: PasoDeEscaler
   const grupos = Array.from({ length: Math.round(total / 2) }, () => 2);
   return { grupos, eventos, voicing: v, etiqueta: etiqueta ?? cifradoDeVoicing(v) };
 }
+
+/** Las manos que tienen alguna tecla en los compases, derecha primero (como se dibujan en el celular). */
+export const manosDeCompases = (compases: CompasDeCapa[]): Mano[] =>
+  (["der", "izq"] as const).filter((m) =>
+    compases.some((c) => c.eventos.some((e) => e.mano === m && e.teclas.length) || (m === "izq" ? c.voicing?.izquierda : c.voicing?.derecha)?.length),
+  );
+
+/**
+ * En el celular cada mano va en su teclado, y tiene que entrar entera: 390 px
+ * de pantalla dejan ~292 de teclado. Con blancas de 18 px entran 16, que es
+ * lo que pide el arpegio del Canon (15) y sobra para Here Comes the Sun
+ * (11). Es un teclado de mirar —las capas no se tocan en la pantalla—, así
+ * que puede ser más angosto que el de apretar (#6, #11).
+ */
+export const ANCHO_DE_TECLADO_EN_CELULAR = 292;
+export const BLANCA_MINIMA_EN_CELULAR = 18;
 
 /** Lo que suena en la corchea `c` del compás: para pintar el teclado. */
 export const sonandoEn = (compas: CompasDeCapa, c: number) =>

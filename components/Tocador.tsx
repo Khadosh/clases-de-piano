@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
 import { getAudioContext, playChord, playClick, pararTodo, wakeAudio } from "@/lib/audio";
 import {
+  BLANCA_MINIMA_EN_CELULAR,
+  manosDeCompases,
   acentosDeGrupos,
   arrancanEn,
   cifradoDeCompas,
@@ -131,22 +133,26 @@ export default function Tocador({
 
   // El acorde de fondo apagado, lo que suena encendido, y la tecla que se
   // queda del acorde anterior en amarillo con "=": es la que no hay que mover.
-  const marks: Mark[] = teclasDelCompas(compases, Math.min(pos.compas, compases.length - 1), sonando ? pos.corchea : null).map(
-    (t) => ({
+  const teclas = teclasDelCompas(compases, Math.min(pos.compas, compases.length - 1), sonando ? pos.corchea : null);
+  const marcas = (de: typeof teclas): Mark[] =>
+    de.map((t) => ({
       pitch: t.pitch,
       tone: t.queda ? "sol" : t.mano,
       label: t.queda ? "=" : undefined,
       ghost: !t.suena,
       active: t.suena,
-    }),
-  );
+    }));
+  const marks = marcas(teclas);
+  // En el celular cada teclado lleva sólo lo de su mano, y una mano sin teclas en la capa no se dibuja:
+  // en la izquierda sola del Canon, el teclado vacío de la derecha caía sobre las mismas teclas y las repetía.
+  const manos = manosDeCompases(compases);
   const rango = rangoDeCompases(compases);
   // Las dos manos con la misma cantidad de blancas: si no, la de menos teclas se dibuja más grande.
   const porMano = (() => {
     const r = { der: rangoDeCompases(compases, "der"), izq: rangoDeCompases(compases, "izq") };
     const blancas = (x: { from: number; to: number }) =>
       Array.from({ length: x.to - x.from + 1 }, (_, i) => x.from + i).filter((p) => ![1, 3, 6, 8, 10].includes(p % 12)).length;
-    const n = Math.max(blancas(r.der), blancas(r.izq));
+    const n = Math.max(...manos.map((m) => blancas(r[m])));
     for (const m of ["der", "izq"] as const) {
       while (blancas(r[m]) < n) {
         r[m] = { from: r[m].from - 1, to: r[m].to };
@@ -191,10 +197,10 @@ export default function Tocador({
           </div>
           {/* En el celular, una mano arriba de la otra: el teclado entero no entra sin cortar la derecha. */}
           <div className="flex flex-col gap-2 rounded-2xl bg-noche-2 p-3 sm:hidden">
-            {(["der", "izq"] as const).map((m) => (
+            {manos.map((m) => (
               <div key={m}>
                 <p className="mb-1 text-xs text-humo">{m === "der" ? "derecha" : "izquierda"}</p>
-                <Keyboard {...porMano[m]} marks={marks} />
+                <Keyboard {...porMano[m]} marks={marcas(teclas.filter((t) => t.mano === m))} minBlanca={BLANCA_MINIMA_EN_CELULAR} />
               </div>
             ))}
           </div>
