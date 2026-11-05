@@ -114,13 +114,40 @@ export function teclasQueSeQuedan(antes: Voicing | null | undefined, ahora: Voic
  * mano la última vez que cambió, y ése es el Mi7.
  */
 export function voicingAnterior(compases: readonly CompasDeCapa[], i: number): Voicing | null {
+  const k = compasAnterior(compases, i);
+  return k === null ? null : compases[k].voicing!;
+}
+
+/** El índice del compás de `voicingAnterior`: el último con otro acorde, dando la vuelta. */
+function compasAnterior(compases: readonly CompasDeCapa[], i: number): number | null {
   const actual = compases[i]?.voicing;
   if (!actual) return null;
   for (let k = 1; k < compases.length; k++) {
-    const v = compases[(i - k + compases.length) % compases.length].voicing;
-    if (v && v !== actual) return v;
+    const j = (i - k + compases.length) % compases.length;
+    const v = compases[j].voicing;
+    if (v && v !== actual) return j;
   }
   return null;
+}
+
+/** Lo que la derecha tiene apretado en la corchea `c` del compás. */
+const derechaEn = (compas: CompasDeCapa, c: number) =>
+  sonandoEn(compas, c).filter((e) => e.mano === "der").flatMap((e) => e.teclas);
+
+/**
+ * Las teclas que se quedan al entrar al compás `i`: las que la derecha tenía
+ * apretadas al terminar el compás anterior y vuelve a apretar al empezar éste.
+ * Mirando sólo los voicings alcanzaba mientras la derecha tocaba su acorde;
+ * la escalera no tiene acorde en la derecha (lo sostiene la izquierda), así
+ * que del Mi7 entra por el Mi5 y al Re le deja el La4, y comparando voicings
+ * no se marcaba ninguna de las dos (#9).
+ */
+function quedanAlEntrar(compases: readonly CompasDeCapa[], i: number): Pitch[] {
+  const k = compasAnterior(compases, i);
+  if (k === null) return [];
+  const antes = compases[k];
+  const alTerminar = derechaEn(antes, corcheasDe(antes.grupos) - 1);
+  return derechaEn(compases[i], 0).filter((p) => alTerminar.includes(p));
 }
 
 /**
@@ -141,14 +168,14 @@ export interface TeclaDeCapa {
 /**
  * Lo que dibuja el teclado en el compás `i`: el acorde de fondo, lo que suena
  * en la corchea `corchea` (o todo el acorde si está parado, `null`) y las
- * teclas que se quedan contra `voicingAnterior`. Vive acá y no en el
+ * teclas que se quedan al llegar del compás anterior. Vive acá y no en el
  * componente para que `test:canciones` lo pruebe contra la vuelta.
  */
 export function teclasDelCompas(compases: readonly CompasDeCapa[], i: number, corchea: number | null): TeclaDeCapa[] {
   const actual = compases[i];
   const v = actual?.voicing;
   if (!v) return [];
-  const quedan = teclasQueSeQuedan(voicingAnterior(compases, i), v);
+  const quedan = quedanAlEntrar(compases, i);
   const suenan = new Set(corchea === null ? teclasDeVoicing(v) : sonandoEn(actual, corchea).flatMap((e) => e.teclas));
   const out: TeclaDeCapa[] = v.izquierda.map((p) => ({ pitch: p, mano: "izq", suena: suenan.has(p), queda: false }));
   // Lo que la derecha va a tocar en el compás también se ve apagado: la escalera entera, las vecinas de la tercera.

@@ -124,6 +124,21 @@ probar("la vuelta en loop: en cada compás el teclado es su acorde y la tecla qu
   });
 });
 
+probar("todo junto en loop: la escalera deja el La4 al Re y entra desde el Mi5 del Mi7, los dos con «=» (#9)", () => {
+  const compases = capa("todo").secciones.flatMap((s) => s.compases);
+  const quedan = (i, corchea) => teclasDelCompas(compases, i, corchea).filter((x) => x.queda).map((x) => x.pitch);
+  // 0 escalera, 1 Re, 2 Si7, 3 Mi7, 4 escalera de la segunda vuelta, 5 Re.
+  assert.deepEqual(compases.slice(0, 6).map(cifradoDeCompas), ["A", "D", "B7", "E7", "A", "D"]);
+  for (const corchea of [null, 0]) {
+    assert.deepEqual(quedan(1, corchea), [69], `La → Re, corchea ${corchea}: el La4`);
+    assert.deepEqual(quedan(5, corchea), [69], `La → Re de la segunda vuelta, corchea ${corchea}: el La4`);
+    assert.deepEqual(quedan(4, corchea), [76], `Mi7 → La, corchea ${corchea}: el Mi5`);
+  }
+  // Las de en medio siguen como en la base.
+  assert.deepEqual(quedan(2, null), [69], "Re → Si7: el La");
+  assert.deepEqual(quedan(3, null), [71], "Si7 → Mi7: el Si");
+});
+
 probar("al lado de la cuenta va sólo el cifrado, corto en todas las capas (la de todo junto trae la sección en la etiqueta)", () => {
   for (const c of CANCIONES)
     for (const k of c.capas) {
