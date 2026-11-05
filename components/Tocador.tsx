@@ -9,9 +9,8 @@ import {
   corcheasDe,
   cuentaDeGrupos,
   rangoDeCompases,
-  sonandoEn,
   teclasDeVoicing,
-  teclasQueSeQuedan,
+  teclasDelCompas,
   type CompasDeCapa,
 } from "@/lib/capas";
 
@@ -123,34 +122,22 @@ export default function Tocador({
   }, [sonando, tempo]);
 
   const actual = compases[Math.min(pos.compas, compases.length - 1)];
-  const anterior = compases[(pos.compas - 1 + compases.length) % compases.length];
   const grupos = actual.grupos;
   const acentos = acentosDeGrupos(grupos);
   const cuenta = cuentaDeGrupos(grupos);
   const bpm = Math.round((tempo * porcentaje) / 100);
 
-  const marks: Mark[] = [];
-  if (actual.voicing) {
-    // El acorde de fondo apagado, lo que suena encendido, y la tecla que se
-    // queda del acorde anterior en amarillo: es la que no hay que mover.
-    const quedan =
-      anterior !== actual && anterior.voicing !== actual.voicing
-        ? teclasQueSeQuedan(anterior.voicing, actual.voicing)
-        : [];
-    const suenan = new Set(sonando ? sonandoEn(actual, pos.corchea).flatMap((e) => e.teclas) : teclasDeVoicing(actual.voicing));
-    for (const p of actual.voicing.izquierda) marks.push({ pitch: p, tone: "izq", ghost: !suenan.has(p), active: suenan.has(p) });
-    const derecha = new Set([...actual.voicing.derecha, ...[...suenan].filter((p) => !actual.voicing!.izquierda.includes(p))]);
-    for (const p of derecha) {
-      const queda = quedan.includes(p);
-      marks.push({
-        pitch: p,
-        tone: queda ? "sol" : "der",
-        label: queda ? "=" : undefined,
-        ghost: !suenan.has(p),
-        active: suenan.has(p),
-      });
-    }
-  }
+  // El acorde de fondo apagado, lo que suena encendido, y la tecla que se
+  // queda del acorde anterior en amarillo con "=": es la que no hay que mover.
+  const marks: Mark[] = teclasDelCompas(compases, Math.min(pos.compas, compases.length - 1), sonando ? pos.corchea : null).map(
+    (t) => ({
+      pitch: t.pitch,
+      tone: t.queda ? "sol" : t.mano,
+      label: t.queda ? "=" : undefined,
+      ghost: !t.suena,
+      active: t.suena,
+    }),
+  );
   const rango = rangoDeCompases(compases);
   // Las dos manos con la misma cantidad de blancas: si no, la de menos teclas se dibuja más grande.
   const porMano = (() => {
@@ -214,6 +201,12 @@ export default function Tocador({
 
       {/* La cuenta del compás: un casillero por corchea, más grande donde cae el acento. */}
       <div className="flex items-end gap-1" aria-label={`compás ${grupos.join("+")}`}>
+        {/* El acorde del compás pegado a su cuenta: sin él, los cuatro "1 2" de un 4/4 se leían como los cuatro acordes de la vuelta. */}
+        {hayAcordes && actual.etiqueta && (
+          <span className="mr-1 flex h-14 min-w-12 items-center justify-center rounded-lg bg-tiza px-2 font-mono text-sm font-bold whitespace-nowrap text-noche sm:mr-2">
+            {actual.etiqueta}
+          </span>
+        )}
         {cuenta.map((n, i) => {
           const ahora = sonando && i === pos.corchea;
           const alto = acentos[i] === "fuerte" ? "h-14" : acentos[i] === "medio" ? "h-11" : "h-8";

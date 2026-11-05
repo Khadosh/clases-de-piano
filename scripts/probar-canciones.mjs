@@ -16,7 +16,9 @@ import {
   leerGrupos,
   saltoDeFundamental,
   sonandoEn,
+  teclasDelCompas,
   teclasQueSeQuedan,
+  voicingAnterior,
   vecinaDeLaTercera,
 } from "../lib/capas.ts";
 import { CANCIONES, cancionPorSlug } from "../content/canciones.ts";
@@ -76,6 +78,28 @@ probar("la base: la tecla que se queda entre vecinos es La, Re, Mi", () => {
   assert.deepEqual(teclasQueSeQuedan(re, mi7), [74]);
   assert.deepEqual(teclasQueSeQuedan(mi7, la), [76]);
   assert.deepEqual(teclasQueSeQuedan(null, la), []);
+});
+
+probar("la vuelta en loop: en cada compás el teclado es su acorde y la tecla que se queda va con «=»", () => {
+  const { vuelta, acordes } = capa("acordes");
+  const [la, re, mi7] = acordes;
+  // El primer La viene del Mi7 (el La del final es el mismo acorde: de ahí no llega la mano).
+  assert.deepEqual([0, 1, 2, 3].map((i) => voicingAnterior(vuelta, i)), [mi7, la, re, mi7]);
+  const esperado = [[76], [69], [74], [76]]; // Mi7→La: Mi; La→Re: La; Re→Mi7: Re; Mi7→La: Mi
+  vuelta.forEach((c, i) => {
+    for (const corchea of [null, ...Array.from({ length: corcheasDe(c.grupos) }, (_, k) => k)]) {
+      const t = teclasDelCompas(vuelta, i, corchea);
+      const donde = `compás ${i + 1} (${c.etiqueta}), corchea ${corchea}`;
+      assert.deepEqual(
+        t.map((x) => x.pitch).sort((a, b) => a - b),
+        [...c.voicing.izquierda, ...c.voicing.derecha].sort((a, b) => a - b),
+        `${donde}: el teclado muestra otro acorde`,
+      );
+      const quedan = t.filter((x) => x.queda);
+      assert.deepEqual(quedan.map((x) => x.pitch), esperado[i], `${donde}: la que se queda`);
+      assert.ok(quedan.every((x) => x.mano === "der" && x.suena), `${donde}: la que se queda suena, en la derecha`);
+    }
+  });
 });
 
 probar("el puente: Do, Sol, Re, La, Mi7 — ♭III ♭VII IV I V7", () => {
