@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Tocador from "./Tocador";
+import AnalisisDeCancion from "./AnalisisDeCancion";
 import { rich } from "./rich";
 import { cancionPorSlug, type Capa } from "@/content/canciones";
 import { compasVacio, gradoEnMayor, leerGrupos, textoDeGrupos, cifradoDeVoicing } from "@/lib/capas";
@@ -26,6 +27,8 @@ const COLOR: Record<Funcion, string> = {
 export default function CancionPorCapas({ slug }: { slug: string }) {
   const cancion = cancionPorSlug(slug)!;
   const [elegida, setElegida] = useState(0);
+  /** La ficha «Analizar» en vez de una capa: no es una capa ni cuenta para «ya me sale». */
+  const [analizando, setAnalizando] = useState(false);
   const [hechas, setHechas] = useState<number[]>([]);
 
   useEffect(() => {
@@ -33,6 +36,7 @@ export default function CancionPorCapas({ slug }: { slug: string }) {
     const irAlHash = () => {
       const m = /^#capa-(\d)$/.exec(window.location.hash);
       if (m) setElegida(Math.min(Number(m[1]) - 1, cancion.capas.length - 1));
+      setAnalizando(window.location.hash === "#analizar");
     };
     leer();
     irAlHash();
@@ -46,7 +50,13 @@ export default function CancionPorCapas({ slug }: { slug: string }) {
 
   const elegir = (i: number) => {
     setElegida(i);
+    setAnalizando(false);
     history.replaceState(null, "", `#capa-${i + 1}`);
+  };
+
+  const analizar = () => {
+    setAnalizando(true);
+    history.replaceState(null, "", "#analizar");
   };
 
   const capa = cancion.capas[elegida];
@@ -54,20 +64,36 @@ export default function CancionPorCapas({ slug }: { slug: string }) {
 
   return (
     <div className="flex flex-col gap-6">
-      <ol className="grid gap-2 sm:grid-cols-5">
+      <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        {/* Lo que se hace antes de tocar: la lista del profe para analizar un tema. */}
+        <li>
+          <button
+            onClick={analizar}
+            className={`card flex h-full w-full flex-col gap-1 border-dashed px-4 py-3 text-left transition ${
+              analizando ? "border-sol/70" : "hover:border-sol/40"
+            }`}
+          >
+            <span className="font-mono text-xs text-humo">antes de tocar</span>
+            <span className={`font-display text-lg leading-tight font-black ${analizando ? "text-sol" : ""}`}>
+              Analizar
+            </span>
+          </button>
+        </li>
         {cancion.capas.map((c, i) => (
           <li key={i}>
             <button
               onClick={() => elegir(i)}
               className={`card flex h-full w-full flex-col gap-1 px-4 py-3 text-left transition ${
-                i === elegida ? "border-sol/70" : "hover:border-sol/40"
+                i === elegida && !analizando ? "border-sol/70" : "hover:border-sol/40"
               }`}
             >
               <span className="flex items-center gap-2 font-mono text-xs text-humo">
                 capa {i + 1}
                 {hechas.includes(i) && <span className="text-menta">✓ sale</span>}
               </span>
-              <span className={`font-display text-lg leading-tight font-black ${i === elegida ? "text-sol" : ""}`}>
+              <span
+                className={`font-display text-lg leading-tight font-black ${i === elegida && !analizando ? "text-sol" : ""}`}
+              >
                 {c.titulo}
               </span>
             </button>
@@ -78,46 +104,64 @@ export default function CancionPorCapas({ slug }: { slug: string }) {
         {hechas.length} de {cancion.capas.length} capas ya salen
       </p>
 
-      <section className="card p-5 sm:p-6" id={`capa-${elegida + 1}`}>
-        <p className="text-xs tracking-[0.2em] text-humo uppercase">Capa {elegida + 1}</p>
-        <h2 className="font-display mt-1 text-3xl font-black tracking-tight">{capa.titulo}</h2>
-        <p className="mt-2 text-lg leading-relaxed text-humo">{capa.bajada}</p>
-        <ul className="mt-4 space-y-1.5">
-          {capa.como.map((t, i) => (
-            <li key={i} className="flex gap-2 text-sm leading-relaxed text-tiza">
-              <span className="text-sol">▸</span>
-              <span>{rich(t)}</span>
-            </li>
-          ))}
-        </ul>
+      {analizando ? (
+        <section className="card p-5 sm:p-6" id="analizar">
+          <p className="text-xs tracking-[0.2em] text-humo uppercase">Antes de tocar</p>
+          <h2 className="font-display mt-1 text-3xl font-black tracking-tight">Analizar</h2>
+          <p className="mt-2 text-lg leading-relaxed text-humo">
+            Los seis pasos para analizar un tema, en orden. El 5 y el 6 son la tarea.
+          </p>
+          <div className="mt-6">
+            <AnalisisDeCancion cancion={cancion} />
+          </div>
+          <div className="mt-6 flex border-t border-borde/60 pt-4">
+            <button onClick={() => elegir(0)} className="ml-auto text-sm text-humo transition hover:text-sol">
+              capa 1: {cancion.capas[0].titulo} →
+            </button>
+          </div>
+        </section>
+      ) : (
+        <section className="card p-5 sm:p-6" id={`capa-${elegida + 1}`}>
+          <p className="text-xs tracking-[0.2em] text-humo uppercase">Capa {elegida + 1}</p>
+          <h2 className="font-display mt-1 text-3xl font-black tracking-tight">{capa.titulo}</h2>
+          <p className="mt-2 text-lg leading-relaxed text-humo">{capa.bajada}</p>
+          <ul className="mt-4 space-y-1.5">
+            {capa.como.map((t, i) => (
+              <li key={i} className="flex gap-2 text-sm leading-relaxed text-tiza">
+                <span className="text-sol">▸</span>
+                <span>{rich(t)}</span>
+              </li>
+            ))}
+          </ul>
 
-        <div className="mt-6">
-          <CuerpoDeCapa key={elegida} capa={capa} tempo={cancion.tempo} tonica={cancion.tonica} />
-        </div>
+          <div className="mt-6">
+            <CuerpoDeCapa key={elegida} capa={capa} tempo={cancion.tempo} tonica={cancion.tonica} />
+          </div>
 
-        <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-borde/60 pt-4">
-          <button
-            onClick={() => marcarCapa(slug, elegida, !hecha)}
-            className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-              hecha ? "bg-menta text-noche" : "bg-carta-2 text-tiza hover:text-sol"
-            }`}
-          >
-            {hecha ? "✓ ya me sale" : "ya me sale"}
-          </button>
-          <span className="ml-auto flex gap-2">
-            {elegida > 0 && (
-              <button onClick={() => elegir(elegida - 1)} className="text-sm text-humo transition hover:text-sol">
-                ← capa {elegida}
-              </button>
-            )}
-            {elegida < cancion.capas.length - 1 && (
-              <button onClick={() => elegir(elegida + 1)} className="text-sm text-humo transition hover:text-sol">
-                capa {elegida + 2}: {cancion.capas[elegida + 1].titulo} →
-              </button>
-            )}
-          </span>
-        </div>
-      </section>
+          <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-borde/60 pt-4">
+            <button
+              onClick={() => marcarCapa(slug, elegida, !hecha)}
+              className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                hecha ? "bg-menta text-noche" : "bg-carta-2 text-tiza hover:text-sol"
+              }`}
+            >
+              {hecha ? "✓ ya me sale" : "ya me sale"}
+            </button>
+            <span className="ml-auto flex gap-2">
+              {elegida > 0 && (
+                <button onClick={() => elegir(elegida - 1)} className="text-sm text-humo transition hover:text-sol">
+                  ← capa {elegida}
+                </button>
+              )}
+              {elegida < cancion.capas.length - 1 && (
+                <button onClick={() => elegir(elegida + 1)} className="text-sm text-humo transition hover:text-sol">
+                  capa {elegida + 2}: {cancion.capas[elegida + 1].titulo} →
+                </button>
+              )}
+            </span>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -252,10 +296,15 @@ function Puente({
       {/* La progresión pintada por tensión, como la armonía de las partituras. */}
       <div className="flex flex-wrap items-stretch gap-2">
         {capa.acordes.map((v, i) => (
-          <div key={i} className={`flex min-w-20 flex-col items-center rounded-xl border px-3 py-2 ${COLOR[grados[i].funcion]}`}>
+          <div
+            key={i}
+            className={`flex min-w-20 flex-col items-center rounded-xl border px-3 py-2 ${COLOR[grados[i].funcion]}`}
+          >
             <span className="font-display text-2xl font-black">{cifradoDeVoicing(v)}</span>
             {tecnica && <span className="font-mono text-sm">{grados[i].romano}</span>}
-            <span className="text-xs">{grados[i].prestado ? "prestado" : FUNCIONES[grados[i].funcion].nombre.toLowerCase()}</span>
+            <span className="text-xs">
+              {grados[i].prestado ? "prestado" : FUNCIONES[grados[i].funcion].nombre.toLowerCase()}
+            </span>
           </div>
         ))}
       </div>
