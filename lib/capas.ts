@@ -105,6 +105,57 @@ export function teclasQueSeQuedan(antes: Voicing | null | undefined, ahora: Voic
   return ahora.derecha.filter((p) => antes.derecha.includes(p));
 }
 
+/**
+ * El acorde contra el que se marcan las teclas que se quedan en el compás `i`:
+ * el último *distinto* yendo para atrás, dando la vuelta. En la vuelta de la
+ * estrofa (La · Re · Mi7 · La) el primer La viene del La del final, y
+ * comparado con ése no se movía nada y no se marcaba nada: justo el acorde que
+ * se ve parado y el primero del loop. Lo que importa es desde dónde llegó la
+ * mano la última vez que cambió, y ése es el Mi7.
+ */
+export function voicingAnterior(compases: readonly CompasDeCapa[], i: number): Voicing | null {
+  const actual = compases[i]?.voicing;
+  if (!actual) return null;
+  for (let k = 1; k < compases.length; k++) {
+    const v = compases[(i - k + compases.length) % compases.length].voicing;
+    if (v && v !== actual) return v;
+  }
+  return null;
+}
+
+/**
+ * Lo que va pegado a la cuenta: el cifrado del acorde y nada más. No la
+ * `etiqueta`, que en la capa de todo junto trae la sección («Estrofa
+ * (contenida) · A») y en el celular aplastaba los casilleros de la cuenta.
+ */
+export const cifradoDeCompas = (c: CompasDeCapa): string | null => (c.voicing ? cifradoDeVoicing(c.voicing) : null);
+
+/** Una tecla del teclado de una capa: de qué mano es, si suena ahora y si es la que se quedó del acorde anterior. */
+export interface TeclaDeCapa {
+  pitch: Pitch;
+  mano: Mano;
+  suena: boolean;
+  queda: boolean;
+}
+
+/**
+ * Lo que dibuja el teclado en el compás `i`: el acorde de fondo, lo que suena
+ * en la corchea `corchea` (o todo el acorde si está parado, `null`) y las
+ * teclas que se quedan contra `voicingAnterior`. Vive acá y no en el
+ * componente para que `test:canciones` lo pruebe contra la vuelta.
+ */
+export function teclasDelCompas(compases: readonly CompasDeCapa[], i: number, corchea: number | null): TeclaDeCapa[] {
+  const actual = compases[i];
+  const v = actual?.voicing;
+  if (!v) return [];
+  const quedan = teclasQueSeQuedan(voicingAnterior(compases, i), v);
+  const suenan = new Set(corchea === null ? teclasDeVoicing(v) : sonandoEn(actual, corchea).flatMap((e) => e.teclas));
+  const out: TeclaDeCapa[] = v.izquierda.map((p) => ({ pitch: p, mano: "izq", suena: suenan.has(p), queda: false }));
+  const derecha = new Set([...v.derecha, ...[...suenan].filter((p) => !v.izquierda.includes(p))]);
+  for (const p of derecha) out.push({ pitch: p, mano: "der", suena: suenan.has(p), queda: quedan.includes(p) });
+  return out;
+}
+
 /** Los grados con su bemol, como se escriben en un análisis: ♭III, ♭VII. */
 const ROMANOS: Record<number, { grado: number; texto: string }> = {
   0: { grado: 0, texto: "I" },
