@@ -6,6 +6,7 @@ import { getAudioContext, playChord, playClick, pararTodo, wakeAudio } from "@/l
 import {
   acentosDeGrupos,
   arrancanEn,
+  cifradoDeCompas,
   corcheasDe,
   cuentaDeGrupos,
   rangoDeCompases,
@@ -123,6 +124,7 @@ export default function Tocador({
 
   const actual = compases[Math.min(pos.compas, compases.length - 1)];
   const grupos = actual.grupos;
+  const cifrado = cifradoDeCompas(actual);
   const acentos = acentosDeGrupos(grupos);
   const cuenta = cuentaDeGrupos(grupos);
   const bpm = Math.round((tempo * porcentaje) / 100);
@@ -202,9 +204,9 @@ export default function Tocador({
       {/* La cuenta del compás: un casillero por corchea, más grande donde cae el acento. */}
       <div className="flex items-end gap-1" aria-label={`compás ${grupos.join("+")}`}>
         {/* El acorde del compás pegado a su cuenta: sin él, los cuatro "1 2" de un 4/4 se leían como los cuatro acordes de la vuelta. */}
-        {hayAcordes && actual.etiqueta && (
-          <span className="mr-1 flex h-14 min-w-12 items-center justify-center rounded-lg bg-tiza px-2 font-mono text-sm font-bold whitespace-nowrap text-noche sm:mr-2">
-            {actual.etiqueta}
+        {hayAcordes && cifrado && (
+          <span className="mr-1 flex h-14 min-w-12 shrink-0 items-center justify-center rounded-lg bg-tiza px-2 font-mono text-sm font-bold whitespace-nowrap text-noche sm:mr-2">
+            {cifrado}
           </span>
         )}
         {cuenta.map((n, i) => {

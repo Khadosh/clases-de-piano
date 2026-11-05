@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import {
   acentosDeGrupos,
   arrancanEn,
+  cifradoDeCompas,
   cifradoDeVoicing,
   corcheasDe,
   cuentaDeGrupos,
@@ -100,6 +101,21 @@ probar("la vuelta en loop: en cada compás el teclado es su acorde y la tecla qu
       assert.ok(quedan.every((x) => x.mano === "der" && x.suena), `${donde}: la que se queda suena, en la derecha`);
     }
   });
+});
+
+probar("al lado de la cuenta va sólo el cifrado, corto en todas las capas (la de todo junto trae la sección en la etiqueta)", () => {
+  for (const c of CANCIONES)
+    for (const k of c.capas) {
+      const compases = k.tipo === "todo" ? k.secciones.flatMap((s) => s.compases) : k.tipo === "ritmo" ? [] : k.tipo === "acordes" ? k.vuelta : k.compases;
+      for (const m of compases) {
+        const t = cifradoDeCompas(m);
+        if (!m.voicing) assert.equal(t, null);
+        else assert.ok(t.length <= 5 && t === cifradoDeVoicing(m.voicing), `${k.titulo}: «${t}»`);
+      }
+    }
+  const todo = capa("todo");
+  const primero = todo.secciones[0].compases[0];
+  assert.equal(cifradoDeCompas({ ...primero, etiqueta: `${todo.secciones[0].nombre} (${todo.secciones[0].caracter}) · A` }), "A");
 });
 
 probar("el puente: Do, Sol, Re, La, Mi7 — ♭III ♭VII IV I V7", () => {

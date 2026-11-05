@@ -123,6 +123,13 @@ export function voicingAnterior(compases: readonly CompasDeCapa[], i: number): V
   return null;
 }
 
+/**
+ * Lo que va pegado a la cuenta: el cifrado del acorde y nada más. No la
+ * `etiqueta`, que en la capa de todo junto trae la sección («Estrofa
+ * (contenida) · A») y en el celular aplastaba los casilleros de la cuenta.
+ */
+export const cifradoDeCompas = (c: CompasDeCapa): string | null => (c.voicing ? cifradoDeVoicing(c.voicing) : null);
+
 /** Una tecla del teclado de una capa: de qué mano es, si suena ahora y si es la que se quedó del acorde anterior. */
 export interface TeclaDeCapa {
   pitch: Pitch;
