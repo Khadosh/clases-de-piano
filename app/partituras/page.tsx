@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { PIEZAS, type Pieza } from "@/content/partituras";
+import { APRENDER, aprenderDe, rutaDeAprender } from "@/content/aprender";
 
 export const metadata: Metadata = {
   title: "Partituras",
@@ -54,6 +55,11 @@ export default function PartiturasPage() {
       </p>
       <p className="mt-3 text-sm leading-relaxed text-humo">{p.sobre}</p>
       <p className="mt-3 text-xs text-humo/70">{p.hasta}</p>
+      {aprenderDe(p.slug) && (
+        <p className="mt-3 inline-block rounded-full bg-sol/15 px-2.5 py-0.5 text-xs font-semibold text-sol">
+          con «Aprender»: análisis y capas
+        </p>
+      )}
     </Link>
   );
 
@@ -88,6 +94,33 @@ export default function PartiturasPage() {
           que va a haber que ganarse.
         </p>
       </header>
+
+      {/* Lo que tiene la sección «Aprender»: arriba, porque es por donde se empieza una pieza nueva. */}
+      <section className="mb-14">
+        <p className="text-xs tracking-[0.25em] text-humo uppercase">{APRENDER.length} para aprender</p>
+        <h2 className="font-display mt-2 text-3xl font-black tracking-tight">Aprender por capas</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-humo">
+          Antes de tocar, el análisis con los seis pasos de la clase; después, la pieza desarmada en capas, cada una
+          en loop y con el tempo regulable. Aparte de la partitura y de su armonía técnica.
+        </p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          {APRENDER.map((a) => (
+            <Link
+              key={a.slug}
+              href={rutaDeAprender(a.slug)}
+              className="card group flex flex-col gap-1 border-sol/30 px-5 py-4 transition hover:border-sol/60"
+            >
+              <span className="text-xs tracking-[0.2em] text-humo uppercase">
+                {PIEZAS.some((p) => p.slug === a.slug) ? "partitura" : "canción"} · en {a.tonalidad}
+              </span>
+              <span className="font-display text-2xl font-black tracking-tight group-hover:text-sol">{a.titulo} →</span>
+              <span className="text-sm text-humo">
+                Analizar · {a.capas.length} capas
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
       {estantes.map((e, i) => (
         <section key={e.titulo} className={i ? "mt-14" : ""}>

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Tocador from "./Tocador";
 import AnalisisDeCancion from "./AnalisisDeCancion";
 import { rich } from "./rich";
-import { cancionPorSlug, type Capa } from "@/content/canciones";
+import { aprenderDe, type Capa } from "@/content/aprender";
 import { compasVacio, gradoEnMayor, leerGrupos, textoDeGrupos, cifradoDeVoicing } from "@/lib/capas";
 import { FUNCIONES, type Funcion } from "@/lib/grados";
 import { EVENTO, capasHechas, marcarCapa } from "@/lib/progresoCapas";
@@ -25,7 +25,7 @@ const COLOR: Record<Funcion, string> = {
 };
 
 export default function CancionPorCapas({ slug }: { slug: string }) {
-  const cancion = cancionPorSlug(slug)!;
+  const cancion = aprenderDe(slug)!;
   const [elegida, setElegida] = useState(0);
   /** La ficha «Analizar» en vez de una capa: no es una capa ni cuenta para «ya me sale». */
   const [analizando, setAnalizando] = useState(false);

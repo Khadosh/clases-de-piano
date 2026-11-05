@@ -54,6 +54,12 @@ interface Props {
    * interactivo: si no, cambia de tamaño en el medio y salta toda la página.
    */
   paraTocar?: boolean;
+  /**
+   * El ancho mínimo de una blanca, en píxeles, antes de scrollear. Sólo para
+   * los teclados de mirar que tienen que entrar enteros: el arpegio del Canon
+   * en la izquierda son quince blancas y en el celular, a 26, se cortaba.
+   */
+  minBlanca?: number;
   className?: string;
 }
 
@@ -81,6 +87,7 @@ export default function Keyboard({
   onKeyPress,
   showNoteNames = false,
   paraTocar,
+  minBlanca,
   className = "",
 }: Props) {
   const interactive = Boolean(onKeyPress);
@@ -128,7 +135,7 @@ export default function Keyboard({
         viewBox={`0 0 ${width} ${WHITE_H + 6}`}
         // En pantallas chicas el teclado no se achica hasta ser ilegible:
         // se mantiene a un tamaño usable y el contenedor scrollea.
-        style={{ minWidth: Math.min(whites.length * M.min, M.tope) }}
+        style={{ minWidth: Math.min(whites.length * (minBlanca ?? M.min), M.tope) }}
         className={`w-full select-none ${className}`}
         role="img"
         aria-label="Teclado de piano"

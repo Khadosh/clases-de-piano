@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { PIEZAS, piezaPorSlug } from "@/content/partituras";
 import Partitura from "@/components/Partitura";
 import Progresion from "@/components/Progresion";
 import { armoniaDe } from "@/content/armonias";
+import { aprenderDe, rutaDeAprender } from "@/content/aprender";
 
 export function generateStaticParams() {
   return PIEZAS.map((p) => ({ slug: p.slug }));
@@ -28,8 +29,11 @@ export default async function PiezaPage({
 }) {
   const { slug } = await params;
   const pieza = piezaPorSlug(slug);
+  // Una canción con «Aprender» y sin partitura (Here Comes the Sun): su página es ésa.
+  if (!pieza && aprenderDe(slug)) redirect(rutaDeAprender(slug));
   if (!pieza) notFound();
   const armonia = armoniaDe(pieza.slug);
+  const aprender = aprenderDe(pieza.slug);
 
   return (
     <div className="pt-10">
@@ -50,6 +54,14 @@ export default async function PiezaPage({
         <p className="mt-3 max-w-3xl leading-relaxed text-humo print:hidden">
           {pieza.sobre}
         </p>
+        {aprender && (
+          <Link
+            href={rutaDeAprender(pieza.slug)}
+            className="mt-3 mr-6 inline-flex items-center gap-2 rounded-full bg-sol px-4 py-1.5 text-sm font-bold text-noche transition hover:brightness-110 print:hidden"
+          >
+            Aprender: el análisis y la práctica por capas →
+          </Link>
+        )}
         {armonia && (
           <a
             href="#armonia"
