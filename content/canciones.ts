@@ -15,10 +15,12 @@
  */
 
 import {
+  compasDeEscalera,
   compasDeRiff,
   compasVacio,
   plaque,
   type CompasDeCapa,
+  type PasoDeEscalera,
   type PasoDelRiff,
   type Voicing,
 } from "@/lib/capas";
@@ -40,8 +42,10 @@ export type Capa = CapaComun &
         vuelta: CompasDeCapa[];
       }
     | {
-        /** Un pasaje corto en loop, con el tempo regulable. */
+        /** Un pasaje corto en loop, con el tempo regulable; antes, si hace falta, un paso previo más simple. */
         tipo: "riff";
+        previo?: { titulo: string; como: string; compases: CompasDeCapa[] };
+        nombreDelLoop: string;
         compases: CompasDeCapa[];
       }
     | {
@@ -114,9 +118,9 @@ const LA_PUENTE: Voicing = { izquierda: [45], derecha: [64, 69, 73] };
 const MI7_PUENTE: Voicing = { izquierda: [40], derecha: [64, 68, 71, 74] };
 
 /**
- * El ejercicio del riff: la tercera se va a la 2ª, vuelve, se va a la 4ª y
- * vuelve. No es la guitarra transcripta: es el gesto de la guitarra —el
- * acorde quieto y un dedo que se asoma a los costados— puesto en el piano.
+ * El paso previo del riff, el punteo de la intro: la tercera se va a la 2ª,
+ * vuelve, se va a la 4ª y vuelve, con el acorde quieto. Es el dedo que
+ * después baja la escalera.
  */
 const VECINAS: PasoDelRiff[] = [
   [3, 2],
@@ -125,15 +129,38 @@ const VECINAS: PasoDelRiff[] = [
   [4, 2],
   [3, 2],
 ];
-const RIFF: CompasDeCapa[] = [
+const PUNTEO: CompasDeCapa[] = [
   compasDeRiff(LA, VECINAS),
   compasDeRiff(LA, VECINAS),
   compasDeRiff(RE, VECINAS),
   compasDeRiff(MI7, VECINAS),
 ];
 
-/** La estrofa del todo junto: la misma vuelta de la base, con el riff encima. */
-const ESTROFA: CompasDeCapa[] = [LA, RE, SI7, MI7].map((v) => compasDeRiff(v, VECINAS));
+/**
+ * El riff: la respuesta que baja después de «here comes the sun». La
+ * derecha camina la escala de La mayor de Mi a La, cuatro corcheas y el La
+ * largo; la izquierda sostiene el La entero, cerrado (La2 · Do♯3 · Mi3), para
+ * que el acorde quede quieto abajo mientras la escalera pasa por encima.
+ * Cerrado y no abierto a propósito: no sube más que el Mi3 de la izquierda de
+ * la base, así en el celular el teclado de cada mano no se ensancha y la
+ * derecha entra entera (#6). `test:canciones` clava el orden y el rango.
+ */
+const LA_ABAJO: Voicing = { izquierda: [45, 49, 52], derecha: [] };
+export const ESCALERA: PasoDeEscalera[] = [
+  [5, 1],
+  [4, 1],
+  [3, 1],
+  [2, 1],
+  [1, 4],
+];
+const RIFF: CompasDeCapa[] = [compasDeEscalera(LA_ABAJO, 69, ESCALERA)];
+
+/**
+ * La estrofa del todo junto: la misma vuelta de la base, con la escalera en el
+ * La y el punteo en los otros tres. En el loop el La llega después del Mi7,
+ * así que la escalera es la que cae en casa.
+ */
+const ESTROFA: CompasDeCapa[] = [...RIFF, ...[RE, SI7, MI7].map((v) => compasDeRiff(v, VECINAS))];
 
 const TRES_TRES_DOS = [3, 3, 2];
 const PUENTE: CompasDeCapa[] = [DO, SOL, RE_PUENTE, LA_PUENTE, MI7_PUENTE].map((v) => plaque(v, TRES_TRES_DOS));
@@ -165,12 +192,19 @@ const HERE_COMES_THE_SUN: Cancion = {
     {
       tipo: "riff",
       titulo: "El riff",
-      bajada: "La izquierda quieta; en la derecha sólo se mueve la tercera: a la 2ª, a la 4ª, y vuelta.",
+      bajada: "La escalera que baja: Mi, Re, Do♯, Si y La, con el acorde quieto en la izquierda.",
       como: [
-        "*En La, la tercera es el Do♯.* Se va al Si (la 2ª), vuelve, se va al Re (la 4ª) y vuelve. El La y el Mi no se sueltan.",
-        "*La vuelta es igual sobre Re y sobre Mi7*: cambia el acorde, el gesto es el mismo.",
-        "*Al 50 % hasta que salga tres veces seguidas limpio*, recién ahí se sube. Es un ejercicio sobre el gesto del riff, no el riff de la guitarra nota por nota.",
+        "*La derecha baja por la escala de La mayor*, un dedo por tecla: 5 en el Mi, 4 en el Re, 3 en el Do♯, 2 en el Si y 1 en el La. Así no se cruza nada.",
+        "*Cuatro corcheas parejas y el La largo*: la escalera se apura y la tónica descansa.",
+        "*La izquierda no se mueve*: La, Do♯ y Mi apoyados todo el compás.",
+        "*Al 50 % hasta que salga tres veces seguidas limpio*, recién ahí se sube.",
       ],
+      previo: {
+        titulo: "Paso previo: el punteo",
+        como: "La tercera se asoma a la 2ª y a la 4ª y vuelve, con el acorde quieto: en La, el Do♯ va al Si, vuelve, va al Re y vuelve. Es el dedo que después baja la escalera.",
+        compases: PUNTEO,
+      },
+      nombreDelLoop: "El riff: la escalera",
       compases: RIFF,
     },
     {
@@ -212,7 +246,7 @@ const HERE_COMES_THE_SUN: Cancion = {
     {
       tipo: "todo",
       titulo: "Todo junto",
-      bajada: "La estrofa dos vueltas con el riff encima, el puente, y de nuevo: lo que cambia es el peso de la mano.",
+      bajada: "La estrofa dos vueltas con el punteo y la escalera, el puente, y de nuevo: lo que cambia es el peso de la mano.",
       como: [
         "*Primero al 50 %* y con el click; después sin el click.",
         "*Se puede tocar encima de la grabación* poniéndola desde donde la escuches; el cuaderno no la trae.",
@@ -231,7 +265,7 @@ const HERE_COMES_THE_SUN: Cancion = {
   revisar: [
     "Dónde cae el Si7 en la estrofa (en qué compás y en qué vueltas): acá va en todas, entre el Re y el Mi7. Confirmalo de oído con la grabación al 50 %.",
     "Cuántos compases de 3+3+2 y cuántos largos tiene el puente, y dónde van: acá el ejercicio pone un acorde por compás de 3+3+2, que es para practicar el agrupamiento y no la forma exacta. Contalo con la grabación.",
-    "El riff es un ejercicio sobre el gesto (la tercera a sus vecinas), no la línea de la guitarra.",
+    "La escalera del riff (Mi · Re · Do♯ · Si · La, cuatro corcheas y el La largo) sale del análisis y no está chequeada contra la grabación: confirmala de oído al 50 %. Si en la grabación la bajada pasa sobre el Mi7 y el La cae recién con el acorde siguiente, la escalera se corre un compás.",
   ],
 };
 

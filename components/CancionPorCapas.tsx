@@ -135,7 +135,7 @@ function CuerpoDeCapa({ capa, tempo, tonica }: { capa: Capa; tempo: number; toni
         </>
       );
     case "riff":
-      return <Tocador compases={capa.compases} tempo={tempo} />;
+      return <Riff capa={capa} tempo={tempo} />;
     case "ritmo":
       return <Ritmo compases={capa.compases} tempo={tempo} />;
     case "progresion":
@@ -147,6 +147,42 @@ function CuerpoDeCapa({ capa, tempo, tonica }: { capa: Capa; tempo: number; toni
       return nunca;
     }
   }
+}
+
+/**
+ * El riff y, si tiene, su paso previo: dos gajos, y arranca en el riff porque
+ * es lo que se vino a practicar. El previo es el gesto suelto, para cuando el
+ * riff entero todavía no sale.
+ */
+function Riff({ capa, tempo }: { capa: Extract<Capa, { tipo: "riff" }>; tempo: number }) {
+  const [enPrevio, setEnPrevio] = useState(false);
+  const previo = capa.previo;
+  return (
+    <div className="flex flex-col gap-4">
+      {previo && (
+        <>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { nombre: previo.titulo, es: true },
+              { nombre: capa.nombreDelLoop, es: false },
+            ].map((g) => (
+              <button
+                key={g.nombre}
+                onClick={() => setEnPrevio(g.es)}
+                className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                  enPrevio === g.es ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
+                }`}
+              >
+                {g.nombre}
+              </button>
+            ))}
+          </div>
+          {enPrevio && <p className="text-sm leading-relaxed text-humo">{previo.como}</p>}
+        </>
+      )}
+      <Tocador key={enPrevio ? "previo" : "riff"} compases={enPrevio && previo ? previo.compases : capa.compases} tempo={tempo} />
+    </div>
+  );
 }
 
 /** El metrónomo de acentos por grupos, con los compases de la canción y un editor para armar otros. */

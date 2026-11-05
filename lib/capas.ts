@@ -151,7 +151,9 @@ export function teclasDelCompas(compases: readonly CompasDeCapa[], i: number, co
   const quedan = teclasQueSeQuedan(voicingAnterior(compases, i), v);
   const suenan = new Set(corchea === null ? teclasDeVoicing(v) : sonandoEn(actual, corchea).flatMap((e) => e.teclas));
   const out: TeclaDeCapa[] = v.izquierda.map((p) => ({ pitch: p, mano: "izq", suena: suenan.has(p), queda: false }));
-  const derecha = new Set([...v.derecha, ...[...suenan].filter((p) => !v.izquierda.includes(p))]);
+  // Lo que la derecha va a tocar en el compás también se ve apagado: la escalera entera, las vecinas de la tercera.
+  const camino = actual.eventos.filter((e) => e.mano === "der").flatMap((e) => e.teclas);
+  const derecha = new Set([...v.derecha, ...camino, ...[...suenan].filter((p) => !v.izquierda.includes(p))]);
   for (const p of derecha) out.push({ pitch: p, mano: "der", suena: suenan.has(p), queda: quedan.includes(p) });
   return out;
 }
@@ -253,6 +255,31 @@ export function compasDeRiff(v: Voicing, pasos: PasoDelRiff[], etiqueta?: string
   let t = 0;
   for (const [grado, dur] of pasos) {
     eventos.push({ t, dur, teclas: [vecinaDeLaTercera(v, grado)], mano: "der" });
+    t += dur;
+  }
+  const grupos = Array.from({ length: Math.round(total / 2) }, () => 2);
+  return { grupos, eventos, voicing: v, etiqueta: etiqueta ?? cifradoDeVoicing(v) };
+}
+
+/** Un grado de la escala mayor (1 a 8, el 8 es la tónica de arriba) y cuántas corcheas dura. */
+export type PasoDeEscalera = [grado: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8, corcheas: number];
+
+/** La tecla del grado en la escala mayor que arranca en `tonica`: el 5 de La4 es Mi5. */
+export const notaDeLaEscala = (tonica: Pitch, grado: PasoDeEscalera[0]): Pitch =>
+  grado === 8 ? tonica + 12 : tonica + MAYOR[grado - 1];
+
+/**
+ * Un compás de la escalera: la izquierda sostiene el acorde entero todo el
+ * compás y la derecha baja (o sube) por los grados de la escala mayor de
+ * `tonica`, una tecla por paso. Es la respuesta del riff: por grados conjuntos
+ * hasta caer en la tónica, con el acorde quieto abajo.
+ */
+export function compasDeEscalera(v: Voicing, tonica: Pitch, pasos: PasoDeEscalera[], etiqueta?: string): CompasDeCapa {
+  const total = pasos.reduce((s, [, d]) => s + d, 0);
+  const eventos: Evento[] = [{ t: 0, dur: total, teclas: v.izquierda, mano: "izq" }];
+  let t = 0;
+  for (const [grado, dur] of pasos) {
+    eventos.push({ t, dur, teclas: [notaDeLaEscala(tonica, grado)], mano: "der" });
     t += dur;
   }
   const grupos = Array.from({ length: Math.round(total / 2) }, () => 2);
