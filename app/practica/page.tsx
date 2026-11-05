@@ -8,6 +8,8 @@ import SeguirCon from "@/components/SeguirCon";
 import { rich } from "@/components/Blocks";
 import Hoy from "@/components/Hoy";
 import { minutosDe, semanaVigente } from "@/content/semanas";
+import { CANCIONES } from "@/content/canciones";
+import ProgresoDeCancion from "@/components/ProgresoDeCancion";
 
 export const metadata: Metadata = {
   title: "Práctica",
@@ -120,6 +122,26 @@ export default function PracticaPage() {
             </ul>
           </section>
         )}
+
+        {/* Las canciones por capas: una rutina propia cada una, con lo que ya sale. */}
+        {CANCIONES.map((c) => (
+          <Link
+            key={c.slug}
+            href={`/practica/cancion/${c.slug}`}
+            className="card group block px-5 py-4 transition hover:border-sol/40"
+          >
+            <span className="text-xs tracking-[0.2em] text-humo uppercase">Canción por capas</span>
+            <span className="font-display mt-1 block text-2xl font-black tracking-tight group-hover:text-sol">
+              {c.titulo} →
+            </span>
+            <span className="mt-1 block text-sm text-humo">
+              {c.capas.map((k) => k.titulo).join(" · ")}
+            </span>
+            <span className="mt-3 block">
+              <ProgresoDeCancion slug={c.slug} total={c.capas.length} />
+            </span>
+          </Link>
+        ))}
       </div>
 
       {/* Los pasos de la rutina, una card cada uno. */}
