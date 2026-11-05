@@ -66,27 +66,46 @@ probar("las cinco capas, en orden", () => {
   assert.deepEqual(sol.capas.map((c) => c.tipo), ["acordes", "riff", "ritmo", "progresion", "todo"]);
 });
 
-probar("la base: La, Re, Mi7 con los voicings del análisis", () => {
+probar("la base: La, Re, Si7, Mi7 con los voicings del análisis", () => {
   const b = capa("acordes");
-  assert.deepEqual(b.acordes.map(cifradoDeVoicing), ["A", "D", "E7"]);
-  assert.deepEqual(b.acordes.map((v) => v.derecha), [[69, 73, 76], [69, 74, 78], [68, 71, 74, 76]]);
-  assert.deepEqual(b.acordes.map((v) => v.izquierda.map(mod12)), [[9], [2], [4]], "la izquierda en las fundamentales");
+  assert.deepEqual(b.acordes.map(cifradoDeVoicing), ["A", "D", "B7", "E7"]);
+  assert.deepEqual(b.acordes.map((v) => v.derecha), [[69, 73, 76], [69, 74, 78], [66, 69, 71, 75], [68, 71, 74, 76]]);
+  assert.deepEqual(b.acordes.map((v) => v.izquierda.map(mod12)), [[9], [2], [11], [4]], "la izquierda en las fundamentales");
 });
 
-probar("la base: la tecla que se queda entre vecinos es La, Re, Mi", () => {
-  const [la, re, mi7] = capa("acordes").acordes;
+// Lo que suena en loop es la `vuelta`, no la lista de `acordes`: comparar los
+// acordes dejaba pasar una vuelta sin el Si7 o con el Si7 en otro lado.
+probar("la vuelta de la base pasa por el Si7 (el V del V) justo antes del Mi7", () => {
+  const vuelta = capa("acordes").vuelta;
+  assert.deepEqual(vuelta.map(cifradoDeCompas), ["A", "D", "B7", "E7", "A"]);
+  const [, , si7, mi7] = capa("acordes").acordes;
+  assert.equal(saltoDeFundamental(si7, mi7), 5, "Si7 → Mi7 cae una quinta (sube una cuarta)");
+  assert.deepEqual(gradoEnMayor(si7, sol.tonica).romano, "II7");
+});
+
+probar("la estrofa del todo junto va en el mismo orden que la base", () => {
+  const estrofa = capa("todo").secciones.find((s) => s.nombre === "Estrofa");
+  const base = capa("acordes").vuelta.map(cifradoDeCompas).slice(0, 4);
+  const cifrados = estrofa.compases.map(cifradoDeCompas);
+  assert.equal(cifrados.length % 4, 0);
+  for (let i = 0; i < cifrados.length; i += 4) assert.deepEqual(cifrados.slice(i, i + 4), base, `vuelta ${i / 4 + 1}`);
+});
+
+probar("la base: la tecla que se queda entre vecinos es La, La, Si, Mi", () => {
+  const [la, re, si7, mi7] = capa("acordes").acordes;
   assert.deepEqual(teclasQueSeQuedan(la, re), [69]);
-  assert.deepEqual(teclasQueSeQuedan(re, mi7), [74]);
+  assert.deepEqual(teclasQueSeQuedan(re, si7), [69]);
+  assert.deepEqual(teclasQueSeQuedan(si7, mi7), [71]);
   assert.deepEqual(teclasQueSeQuedan(mi7, la), [76]);
   assert.deepEqual(teclasQueSeQuedan(null, la), []);
 });
 
 probar("la vuelta en loop: en cada compás el teclado es su acorde y la tecla que se queda va con «=»", () => {
   const { vuelta, acordes } = capa("acordes");
-  const [la, re, mi7] = acordes;
+  const [la, re, si7, mi7] = acordes;
   // El primer La viene del Mi7 (el La del final es el mismo acorde: de ahí no llega la mano).
-  assert.deepEqual([0, 1, 2, 3].map((i) => voicingAnterior(vuelta, i)), [mi7, la, re, mi7]);
-  const esperado = [[76], [69], [74], [76]]; // Mi7→La: Mi; La→Re: La; Re→Mi7: Re; Mi7→La: Mi
+  assert.deepEqual([0, 1, 2, 3, 4].map((i) => voicingAnterior(vuelta, i)), [mi7, la, re, si7, mi7]);
+  const esperado = [[76], [69], [69], [71], [76]]; // Mi7→La: Mi; La→Re: La; Re→Si7: La; Si7→Mi7: Si; Mi7→La: Mi
   vuelta.forEach((c, i) => {
     for (const corchea of [null, ...Array.from({ length: corcheasDe(c.grupos) }, (_, k) => k)]) {
       const t = teclasDelCompas(vuelta, i, corchea);

@@ -88,13 +88,19 @@ export interface Cancion {
 // ---------------------------------------------------------------------------
 
 /**
- * Los tres de la estrofa, del análisis: la derecha arriba del La central con
+ * Tres de los cuatro de la estrofa, del análisis: la derecha arriba del La central con
  * notas comunes entre vecinos (La se queda de La a Re, Re de Re a Mi7, Mi de
  * Mi7 a La) y la izquierda en las fundamentales.
  */
 const LA: Voicing = { izquierda: [45], derecha: [69, 73, 76] };
 const RE: Voicing = { izquierda: [50], derecha: [69, 74, 78] };
 const MI7: Voicing = { izquierda: [52], derecha: [68, 71, 74, 76] };
+/**
+ * El V del V, que prepara al Mi7. El La se queda del Re y el Si se queda para
+ * el Mi7; el Re♯ arriba sube medio tono al Mi. Va completo (con el Fa♯ abajo)
+ * para que el teclado lo nombre Si7 y no adivine.
+ */
+const SI7: Voicing = { izquierda: [47], derecha: [66, 69, 71, 75] };
 
 /**
  * Los cinco del puente, enlazados para que cada uno deje una tecla quieta:
@@ -126,6 +132,9 @@ const RIFF: CompasDeCapa[] = [
   compasDeRiff(MI7, VECINAS),
 ];
 
+/** La estrofa del todo junto: la misma vuelta de la base, con el riff encima. */
+const ESTROFA: CompasDeCapa[] = [LA, RE, SI7, MI7].map((v) => compasDeRiff(v, VECINAS));
+
 const TRES_TRES_DOS = [3, 3, 2];
 const PUENTE: CompasDeCapa[] = [DO, SOL, RE_PUENTE, LA_PUENTE, MI7_PUENTE].map((v) => plaque(v, TRES_TRES_DOS));
 
@@ -138,19 +147,20 @@ const HERE_COMES_THE_SUN: Cancion = {
   tonica: 9,
   tempo: 128,
   bajada:
-    "En La mayor, que es lo que suena (la guitarra la toca con cejilla en el 7 y formas de Re). Cinco capas, una arriba de la otra: los tres acordes de la estrofa, el riff, el ritmo del puente sin notas, el puente con sus acordes y todo junto.",
+    "En La mayor, que es lo que suena (la guitarra la toca con cejilla en el 7 y formas de Re). Cinco capas, una arriba de la otra: los cuatro acordes de la estrofa, el riff, el ritmo del puente sin notas, el puente con sus acordes y todo junto.",
   capas: [
     {
       tipo: "acordes",
       titulo: "La base armónica",
-      bajada: "La, Re y Mi7, con los voicings que dejan un dedo quieto entre acorde y acorde.",
+      bajada: "La, Re, Si7 y Mi7, con los voicings que dejan un dedo quieto entre acorde y acorde.",
       como: [
         "*Primero de a uno.* Tocá cada acorde y mirá cuál de las teclas de la derecha ya estaba apretada en el anterior: ésa no se mueve.",
-        "*La izquierda va a las fundamentales* —La, Re, Mi— y la derecha casi no viaja.",
+        "*La izquierda va a las fundamentales* —La, Re, Si, Mi— y la derecha casi no viaja.",
+        "*El Si7 es el dominante del Mi7*, como el Mi7 lo es del La. Si, Mi, La: cada uno baja una quinta hasta caer en casa. Es la escalera del puente al revés, y por eso empuja hacia el final de la frase.",
         "*Después la vuelta en loop*, al 50 %, hasta que el cambio salga sin mirar.",
       ],
-      acordes: [LA, RE, MI7],
-      vuelta: [LA, RE, MI7, LA].map((v) => plaque(v, [2, 2, 2, 2])),
+      acordes: [LA, RE, SI7, MI7],
+      vuelta: [LA, RE, SI7, MI7, LA].map((v) => plaque(v, [2, 2, 2, 2])),
     },
     {
       tipo: "riff",
@@ -202,13 +212,13 @@ const HERE_COMES_THE_SUN: Cancion = {
     {
       tipo: "todo",
       titulo: "Todo junto",
-      bajada: "El riff dos vueltas, el puente, y de nuevo: lo que cambia es el peso de la mano.",
+      bajada: "La estrofa dos vueltas con el riff encima, el puente, y de nuevo: lo que cambia es el peso de la mano.",
       como: [
         "*Primero al 50 %* y con el click; después sin el click.",
         "*Se puede tocar encima de la grabación* poniéndola desde donde la escuches; el cuaderno no la trae.",
       ],
       secciones: [
-        { nombre: "Estrofa", caracter: "contenida", compases: [...RIFF, ...RIFF] },
+        { nombre: "Estrofa", caracter: "contenida", compases: [...ESTROFA, ...ESTROFA] },
         { nombre: "Puente", caracter: "abierto", compases: PUENTE },
       ],
       notas: [
@@ -219,6 +229,7 @@ const HERE_COMES_THE_SUN: Cancion = {
     },
   ],
   revisar: [
+    "Dónde cae el Si7 en la estrofa (en qué compás y en qué vueltas): acá va en todas, entre el Re y el Mi7. Confirmalo de oído con la grabación al 50 %.",
     "Cuántos compases de 3+3+2 y cuántos largos tiene el puente, y dónde van: acá el ejercicio pone un acorde por compás de 3+3+2, que es para practicar el agrupamiento y no la forma exacta. Contalo con la grabación.",
     "El riff es un ejercicio sobre el gesto (la tercera a sus vecinas), no la línea de la guitarra.",
   ],
