@@ -25,7 +25,15 @@ import {
   rangoDeCompases,
 } from "../lib/capas.ts";
 import { CANCIONES, cancionPorSlug } from "../content/canciones.ts";
-import { mod12 } from "../lib/music.ts";
+import { escribirNota, mod12 } from "../lib/music.ts";
+import {
+  PASOS_DEL_ANALISIS,
+  armaduraEscrita,
+  campoArmonico,
+  leerDominante,
+  leerPrestamo,
+  tonoMayorDe,
+} from "../lib/analisis.ts";
 
 let bien = 0;
 const mal = [];
@@ -261,6 +269,65 @@ probar("ninguna canción trae letra, melodía ni audio: sólo capas de acordes, 
     assert.ok(!/\.(mp3|wav|ogg|m4a)/i.test(texto), "un archivo de audio");
     assert.ok(!c.capas.some((k) => ["melodia", "letra"].includes(k.tipo)));
   }
+});
+
+// La ficha «Analizar»: los seis pasos del profe (clase de Joaquín, 5 nov) y
+// las respuestas que la tarea pide para el 5 y el 6.
+const ana = sol.analisis;
+const tono = tonoMayorDe(sol.tonica);
+
+probar("el análisis trae los seis pasos del profe, en orden, cada uno con su respuesta", () => {
+  assert.deepEqual(PASOS_DEL_ANALISIS.map((p) => p.clave), ["tonalidad", "campo", "armadura", "dominantes", "otroCampo", "prestamo"]);
+  for (const c of CANCIONES) {
+    for (const { clave } of PASOS_DEL_ANALISIS) {
+      const paso = c.analisis?.[clave];
+      assert.ok(paso, `${c.slug}: falta el paso ${clave}`);
+      assert.ok(paso.respuesta.trim() && paso.simple.length && paso.tecnica.length, `${c.slug}: el paso ${clave} está vacío`);
+    }
+  }
+  assert.deepEqual(PASOS_DEL_ANALISIS.filter((p) => ana[p.clave].tarea).map((p) => p.clave), ["otroCampo", "prestamo"], "la tarea es el 5 y el 6");
+});
+
+probar("el campo armónico de La mayor: La, Sim, Do♯m, Re, Mi, Fa♯m, Sol♯°", () => {
+  assert.equal(escribirNota(tono.tonica), "La");
+  assert.deepEqual(campoArmonico(tono).map((a) => a.nombre), ["La", "Sim", "Do♯m", "Re", "Mi", "Fa♯m", "Sol♯°"]);
+  assert.deepEqual(campoArmonico(tono).map((a) => a.romano), ["I", "ii", "iii", "IV", "V", "vi", "vii°"]);
+  // La tríada que suena es la del nombre: el Sol♯° es Sol♯ · Si · Re.
+  assert.deepEqual(campoArmonico(tono)[6].teclas.map(mod12), [8, 11, 2]);
+});
+
+probar("la armadura: tres sostenidos, Fa♯ Do♯ Sol♯", () => {
+  assert.deepEqual(armaduraEscrita(tono).map((n) => escribirNota(n)), ["Fa♯", "Do♯", "Sol♯"]);
+});
+
+probar("las quintas mayores: Mi7 es el V7 y Si7 el V7/V, que cae en Mi", () => {
+  const leidos = ana.dominantes.acordes.map((v) => leerDominante(v, tono));
+  assert.deepEqual(leidos.map((d) => [d.nombre, d.romano, d.va, d.tipo]), [
+    ["Mi7", "V7", "La", "principal"],
+    ["Si7", "V7/V", "Mi", "secundario"],
+  ]);
+  // Los dominantes del análisis son los que suenan en la base, no otros.
+  const base = capa("acordes").acordes.map(cifradoDeVoicing);
+  for (const v of ana.dominantes.acordes) assert.ok(base.includes(cifradoDeVoicing(v)), `${cifradoDeVoicing(v)} no está en la base`);
+});
+
+probar("el paso 5: ningún dominante lleva a otro campo, así que no modula", () => {
+  const efectivos = ana.dominantes.acordes.map((v) => leerDominante(v, tono)).filter((d) => d.tipo === "efectivo");
+  assert.equal(ana.otroCampo.modula, efectivos.length > 0);
+  assert.equal(ana.otroCampo.modula, false);
+});
+
+probar("el paso 6: Do y Sol son ♭III y ♭VII prestados de La menor, y son los del puente", () => {
+  const leidos = ana.prestamo.acordes.map((v) => leerPrestamo(v, tono));
+  assert.deepEqual(leidos.map((p) => [p.nombre, p.romano, p.de && `${escribirNota(p.de.tonica)} ${p.de.modo}`]), [
+    ["Do", "♭III", "La menor"],
+    ["Sol", "♭VII", "La menor"],
+  ]);
+  const puente = capa("progresion").acordes.map(cifradoDeVoicing);
+  for (const v of ana.prestamo.acordes) assert.ok(puente.includes(cifradoDeVoicing(v)));
+  // Y que de verdad están afuera del campo propio.
+  const campo = campoArmonico(tono).map((a) => a.nombre);
+  for (const p of leidos) assert.ok(!campo.includes(p.nombre), `${p.nombre} está en el campo de La mayor`);
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

@@ -24,6 +24,7 @@ import {
   type PasoDelRiff,
   type Voicing,
 } from "@/lib/capas";
+import type { Analisis } from "@/lib/analisis";
 
 interface CapaComun {
   titulo: string;
@@ -83,6 +84,8 @@ export interface Cancion {
   tempo: number;
   bajada: string;
   capas: Capa[];
+  /** La ficha «Analizar»: los seis pasos del profe, en su orden (`lib/analisis.ts`). */
+  analisis: Analisis;
   /** Lo que conviene chequear contra la grabación: la duda anotada antes que el invento. */
   revisar: string[];
 }
@@ -262,6 +265,70 @@ const HERE_COMES_THE_SUN: Cancion = {
       ],
     },
   ],
+  analisis: {
+    tonalidad: {
+      respuesta: "La mayor.",
+      simple: [
+        "*La canción cae en La*: la estrofa vuelve una y otra vez al La, y el Mi7 la empuja ahí. Es lo que suena aunque la guitarra la toque con cejilla en el 7 y formas de Re.",
+      ],
+      tecnica: ["La tónica es el acorde de reposo al que resuelve el V7 (Mi7 → La) al final de cada vuelta de la estrofa y del puente."],
+    },
+    campo: {
+      respuesta: "Los siete acordes que salen de la escala de La mayor.",
+      simple: [
+        "*Se apilan terceras sobre cada nota de la escala*, usando sólo notas de La mayor. Salen tres mayores (La, Re, Mi), tres menores (Sim, Do♯m, Fa♯m) y un disminuido (Sol♯°).",
+        "*La estrofa usa tres de casa*: La, Re y Mi7. El Si7 no está en la lista, y por eso hay que preguntarse de dónde sale (paso 4).",
+      ],
+      tecnica: [
+        "I, ii, iii, IV, V, vi, vii°: la misma receta que en Do mayor, corrida a La. Los colores son la función de cada grado: reposo, media tensión, tensión.",
+      ],
+    },
+    armadura: {
+      respuesta: "Tres sostenidos: Fa♯, Do♯ y Sol♯.",
+      simple: [
+        "*Son las tres teclas negras de la escala de La mayor.* Van al principio de cada renglón y valen para toda la canción.",
+        "*Para leerla en un papel*: el último sostenido es Sol♯, y medio tono arriba está La. Ésa es la tónica.",
+      ],
+      tecnica: ["Siempre en el orden fa-do-sol: los tres primeros de la lista de los sostenidos. La relativa menor, con la misma armadura, es Fa♯ menor."],
+    },
+    dominantes: {
+      respuesta: "Hay dos: el Mi7 es el dominante y el Si7 es dominante secundario.",
+      simple: [
+        "*El Mi7 es el V7 de La*: el que pide volver a casa. Es de la tonalidad.",
+        "*El Si7 no es de La mayor* (en La, sobre Si va Sim). Es el dominante *del Mi7*: el V del V. Si, Mi, La: cada uno baja una quinta hasta caer en casa.",
+      ],
+      tecnica: [
+        "El Si7 trae el Re♯, que La mayor no tiene: es el Re♯ de Mi mayor, adonde apunta. Por eso suena a que empuja hacia el Mi7.",
+        "Se lee por adónde cae, cinco semitonos arriba: Mi7 → La (el I) es principal; Si7 → Mi (el V, que está en el campo) es secundario.",
+      ],
+      acordes: [MI7, SI7],
+    },
+    otroCampo: {
+      tarea: true,
+      respuesta: "No: el Si7 va al Mi7 y el Mi7 vuelve a La. Es dominante secundaria, no modulación.",
+      simple: [
+        "*La prueba es adónde llega.* El Si7 cae en Mi, y Mi es de La mayor. Después el Mi7 vuelve a La: la canción nunca se instala en otra tonalidad.",
+        "*Si el Si7 nos hubiera dejado en Mi* —quedarse ahí, con Mi como casa nueva— habría sido dominante efectiva y modulación. No pasa.",
+      ],
+      tecnica: [
+        "Para que el paso 4 fuera dominante efectiva, el destino tendría que estar fuera del campo o asentarse como tónica nueva. Mi es el V de La y resuelve enseguida al I: tonicización de un compás, no cambio de tonalidad.",
+        "El puente tampoco modula: Do y Sol entran prestados (paso 6) y la escalera de quintas lo devuelve a La.",
+      ],
+      modula: false,
+    },
+    prestamo: {
+      tarea: true,
+      respuesta: "Sí: en el puente, Do y Sol vienen de La menor.",
+      simple: [
+        "*Do y Sol no son de La mayor.* Vienen prestados de La menor, la tonalidad hermana que comparte la tónica. Por eso el puente suena a que se nubla.",
+        "*No es que cambie de tonalidad*: es un color de un rato. La sigue siendo la casa, y la escalera de quintas (Do, Sol, Re, La) te devuelve ahí.",
+      ],
+      tecnica: [
+        "Do es el ♭III y Sol el ♭VII de La: préstamo modal de la menor paralela (en La menor son el III y el VII). La función la pone el grado, como siempre en el cuaderno.",
+      ],
+      acordes: [DO, SOL],
+    },
+  },
   revisar: [
     "Dónde cae el Si7 en la estrofa (en qué compás y en qué vueltas): acá va en todas, entre el Re y el Mi7. Confirmalo de oído con la grabación al 50 %.",
     "Cuántos compases de 3+3+2 y cuántos largos tiene el puente, y dónde van: acá el ejercicio pone un acorde por compás de 3+3+2, que es para practicar el agrupamiento y no la forma exacta. Contalo con la grabación.",
