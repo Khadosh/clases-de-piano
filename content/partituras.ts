@@ -888,7 +888,7 @@ export const PIEZAS: Pieza[] = [
     bpm: 50,
     dificultad: 2,
     sobre: 
-      "La izquierda es el bajo más famoso de la historia: ocho notas que dan vueltas y sobre las que se escribieron miles de canciones. Se puede estudiar sola —son las mismas ocho cada dos compases— y la derecha entra recién en el quinto.",
+      "La izquierda es el bajo más famoso de la historia: ocho notas que dan vueltas y sobre las que se escribieron miles de canciones. Se puede estudiar sola —son las mismas ocho cada cuatro compases— y la derecha entra recién en el quinto.",
     revisar:
       "Importada de un MusicXML, así que las alturas y las figuras salen del archivo y no de nuestra memoria.",
     hasta: "Los primeros ocho compases de un arreglo fácil.",

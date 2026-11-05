@@ -1,94 +1,17 @@
 /**
- * Las canciones para practicar por capas.
+ * Here Comes the Sun, por capas.
  *
- * No son partituras: son canciones con copyright, así que lo que vive acá es
- * **el análisis y los ejercicios que salen de él** —los acordes con sus
+ * No es una partitura: es una canción con copyright, así que lo que vive acá
+ * es **el análisis y los ejercicios que salen de él** —los acordes con sus
  * voicings, un ejercicio corto sobre el riff, el ritmo, la explicación— y
  * nunca la melodía entera, la letra ni la grabación. Para tocar encima de la
  * grabación, se la pone uno desde donde la escuche; el cuaderno no la trae.
- *
- * Agregar una canción es sumar una entrada a `CANCIONES`, como una clase: la
- * sala la muestra sola, la página `/practica/cancion/<slug>` también, y cada
- * capa se dibuja según su `tipo`. Las capas van en el orden en que se
- * practican: primero la base, después lo que se le pone encima, al final todo
- * junto. `test:canciones` clava los acordes, los acentos y el riff.
+ * Por eso, a diferencia de la Oda o el Canon, los compases se escriben acá y
+ * no salen de una partitura.
  */
 
-import {
-  compasDeEscalera,
-  compasDeRiff,
-  compasVacio,
-  plaque,
-  type CompasDeCapa,
-  type PasoDeEscalera,
-  type PasoDelRiff,
-  type Voicing,
-} from "@/lib/capas";
-import type { Analisis } from "@/lib/analisis";
-
-interface CapaComun {
-  titulo: string;
-  /** Una línea: qué se practica en esta capa. */
-  bajada: string;
-  /** Cómo encararla. Acepta *asteriscos*. */
-  como: string[];
-}
-
-export type Capa = CapaComun &
-  (
-    | {
-        /** Los acordes uno por uno y en vuelta, con las teclas que se quedan marcadas. */
-        tipo: "acordes";
-        acordes: Voicing[];
-        vuelta: CompasDeCapa[];
-      }
-    | {
-        /** Un pasaje corto en loop, con el tempo regulable; antes, si hace falta, un paso previo más simple. */
-        tipo: "riff";
-        previo?: { titulo: string; como: string; compases: CompasDeCapa[] };
-        nombreDelLoop: string;
-        compases: CompasDeCapa[];
-      }
-    | {
-        /** Sólo el metrónomo, con los acentos por grupos y los compases para elegir. */
-        tipo: "ritmo";
-        compases: { nombre: string; grupos: number[] }[];
-      }
-    | {
-        /** Una progresión con su explicación en simple y la técnica aparte, pintada por tensión. */
-        tipo: "progresion";
-        acordes: Voicing[];
-        compases: CompasDeCapa[];
-        simple: string[];
-        tecnica: string[];
-      }
-    | {
-        /** Todo junto, por secciones, con cómo se toca cada una. */
-        tipo: "todo";
-        secciones: { nombre: string; caracter: string; compases: CompasDeCapa[] }[];
-        notas: string[];
-      }
-  );
-
-export interface Cancion {
-  slug: string;
-  titulo: string;
-  autor: string;
-  /** De dónde es, en pocas palabras. */
-  origen: string;
-  /** La tonalidad en la que se practica, escrita. */
-  tonalidad: string;
-  /** La clase de la tónica (0 = Do): para leer los grados. */
-  tonica: number;
-  /** Negras por minuto al 100 %. */
-  tempo: number;
-  bajada: string;
-  capas: Capa[];
-  /** La ficha «Analizar»: los seis pasos del profe, en su orden (`lib/analisis.ts`). */
-  analisis: Analisis;
-  /** Lo que conviene chequear contra la grabación: la duda anotada antes que el invento. */
-  revisar: string[];
-}
+import { compasDeEscalera, compasDeRiff, plaque, type CompasDeCapa, type PasoDeEscalera, type PasoDelRiff, type Voicing } from "@/lib/capas";
+import type { Aprendizaje } from "./tipos";
 
 // ---------------------------------------------------------------------------
 // Here Comes the Sun
@@ -168,7 +91,7 @@ const ESTROFA: CompasDeCapa[] = [...RIFF, ...[RE, SI7, MI7].map((v) => compasDeR
 const TRES_TRES_DOS = [3, 3, 2];
 const PUENTE: CompasDeCapa[] = [DO, SOL, RE_PUENTE, LA_PUENTE, MI7_PUENTE].map((v) => plaque(v, TRES_TRES_DOS));
 
-const HERE_COMES_THE_SUN: Cancion = {
+export const HERE_COMES_THE_SUN: Aprendizaje = {
   slug: "here-comes-the-sun",
   titulo: "Here Comes the Sun",
   autor: "George Harrison",
@@ -335,7 +258,3 @@ const HERE_COMES_THE_SUN: Cancion = {
     "La escalera del riff (Mi · Re · Do♯ · Si · La, cuatro corcheas y el La largo) sale del análisis y no está chequeada contra la grabación: confirmala de oído al 50 %. Si en la grabación la bajada pasa sobre el Mi7 y el La cae recién con el acorde siguiente, la escalera se corre un compás.",
   ],
 };
-
-export const CANCIONES: Cancion[] = [HERE_COMES_THE_SUN];
-
-export const cancionPorSlug = (slug: string) => CANCIONES.find((c) => c.slug === slug) ?? null;
