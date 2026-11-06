@@ -6,7 +6,7 @@ import { getAudioContext, playChord, playClick, pararTodo, wakeAudio } from "@/l
 import {
   BLANCA_MINIMA_EN_CELULAR,
   manosDeCompases,
-  acentosDeGrupos,
+  acentosDeCompas,
   arrancanEn,
   cifradoDeCompas,
   corcheasDe,
@@ -95,7 +95,7 @@ export default function Tocador({
         if (c >= corcheasDe(actual.grupos)) c = 0;
         const seg = corchea();
         for (const e of arrancanEn(actual, c)) playChord(e.teclas, e.dur * seg * 0.96, proxima);
-        if (clickRef.current) playClick(acentosDeGrupos(actual.grupos)[c], proxima);
+        if (clickRef.current) playClick(acentosDeCompas(actual)[c], proxima);
         pendientes.push({ cuando: proxima, pos: { compas, corchea: c } });
         c++;
         if (c >= corcheasDe(actual.grupos)) {
@@ -127,7 +127,7 @@ export default function Tocador({
   const actual = compases[Math.min(pos.compas, compases.length - 1)];
   const grupos = actual.grupos;
   const cifrado = cifradoDeCompas(actual);
-  const acentos = acentosDeGrupos(grupos);
+  const acentos = acentosDeCompas(actual);
   const cuenta = cuentaDeGrupos(grupos);
   const bpm = Math.round((tempo * porcentaje) / 100);
 

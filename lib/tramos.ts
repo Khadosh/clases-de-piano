@@ -17,12 +17,29 @@
 
 import { duracionDeEvento, vocesDe, type Evento as EventoDePapel, type Voces } from "./pentagrama.ts";
 import { mod12, type Pitch } from "./music.ts";
+import { esCompuesto, type Acento, type Compas } from "./ritmo.ts";
 import { cifradoDeVoicing, teclasDeVoicing, type CompasDeCapa, type Evento, type Mano, type Voicing } from "./capas.ts";
 
-/** Lo que hace falta de una pieza: sus dos manos. */
+/** Lo que hace falta de una pieza: sus dos manos, y su compás para los acentos. */
 export interface ManosDePieza {
   derecha: Voces;
   izquierda: Voces;
+  compas?: Compas;
+}
+
+/**
+ * Los acentos de la partitura corchea por corchea, desde la corchea `desde`
+ * de la pieza: fuerte en la barra, medio en cada tiempo, débil el resto. Un
+ * tramo no es un compás —en el Canon son dos por compás— y el segundo arranca
+ * en el tiempo 3, que es medio y no fuerte (#12).
+ */
+export function acentosDePartitura(compas: Compas, desde: number, largo: number): Acento[] {
+  const barra = (compas.numerador * 8) / compas.denominador;
+  const tiempo = esCompuesto(compas) ? 3 : 8 / compas.denominador;
+  return Array.from({ length: largo }, (_, i) => {
+    const p = (desde + i) % barra;
+    return p === 0 ? "fuerte" : p % tiempo === 0 ? "medio" : "debil";
+  });
 }
 
 /** Un acorde del análisis y cuántas corcheas dura. */
@@ -94,9 +111,10 @@ export function tramosDePieza(pieza: ManosDePieza, armonia: TramoDeArmonia[], op
         for (const n of deLaMano) eventos.push({ t: n.t - t0, dur: Math.min(n.dur, fin - n.t), teclas: n.teclas, mano });
       }
     }
-    t0 = fin;
     const grupos = Array.from({ length: Math.ceil(largo / 2) }, (_, i) => Math.min(2, largo - 2 * i));
-    return { grupos, eventos, voicing, etiqueta: cifradoDeVoicing(voicing) };
+    const acentos = pieza.compas && acentosDePartitura(pieza.compas, t0, largo);
+    t0 = fin;
+    return { grupos, eventos, voicing, etiqueta: cifradoDeVoicing(voicing), ...(acentos && { acentos }) };
   });
 }
 

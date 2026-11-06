@@ -47,6 +47,12 @@ export interface CompasDeCapa {
   voicing?: Voicing;
   /** Para mostrar arriba del teclado: el cifrado, la sección. */
   etiqueta?: string;
+  /**
+   * Los acentos corchea por corchea, si no son los de `grupos`: un tramo que
+   * arranca en el medio del compás de la partitura (el segundo acorde de un
+   * compás del Canon cae en el tiempo 3) no arranca fuerte (#12).
+   */
+  acentos?: Acento[];
 }
 
 // ---------------------------------------------------------------------------
@@ -63,6 +69,9 @@ export function acentosDeGrupos(grupos: readonly number[]): Acento[] {
   });
   return out;
 }
+
+/** Los acentos con que suena y se dibuja un compás de capa: los suyos, o los de sus grupos. */
+export const acentosDeCompas = (c: CompasDeCapa): Acento[] => c.acentos ?? acentosDeGrupos(c.grupos);
 
 /** Lo que se dice en voz alta: 1 2 3 1 2 3 1 2. */
 export const cuentaDeGrupos = (grupos: readonly number[]): number[] =>

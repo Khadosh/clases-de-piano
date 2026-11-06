@@ -12,6 +12,7 @@ import { PIEZAS, piezaPorSlug } from "../content/partituras.ts";
 import {
   ANCHO_DE_TECLADO_EN_CELULAR,
   BLANCA_MINIMA_EN_CELULAR,
+  acentosDeCompas,
   cifradoDeCompas,
   cifradoDeVoicing,
   corcheasDe,
@@ -216,6 +217,22 @@ probar("el Canon: el arpegio es fundamental, tercera, quinta y octava; la derech
   }
   const der = capaDe("La derecha").compases.map((c) => c.eventos.map((e) => [e.teclas[0], e.dur]));
   assert.deepEqual(der, [[[78, 4]], [[76, 4]], [[74, 4]], [[73, 4]], [[71, 4]], [[69, 4]], [[71, 4]], [[73, 4]]]);
+});
+
+probar("el Canon: el click es fuerte en el tiempo 1 del compás y medio en el 3, aunque ahí cambie el acorde (#12)", () => {
+  for (const titulo of ["El bajo", "Los ocho acordes", "El arpegio", "La derecha"]) {
+    const primeros = capaDe(titulo).compases.map((c) => acentosDeCompas(c)[0]);
+    assert.deepEqual(primeros, primeros.map((_, i) => (i % 2 ? "medio" : "fuerte")), titulo);
+  }
+  // Adentro de cada tramo, los dos tiempos y sus corcheas: fuerte (o medio), débil, medio, débil.
+  const [uno, tres] = capaDe("El arpegio").compases;
+  assert.deepEqual(acentosDeCompas(uno), ["fuerte", "debil", "medio", "debil"]);
+  assert.deepEqual(acentosDeCompas(tres), ["medio", "debil", "medio", "debil"]);
+});
+
+probar("la Oda: el Do de la cadencia entra en el tiempo 3 del compás 8, y el click no lo marca como barra (#12)", () => {
+  const vuelta = oda.capas.find((k) => k.tipo === "acordes").vuelta;
+  assert.deepEqual(vuelta.map((c) => acentosDeCompas(c)[0]), [...Array(8).fill("fuerte"), "medio"]);
 });
 
 // ---------------------------------------------------------------------------
