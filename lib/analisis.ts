@@ -185,3 +185,41 @@ export function leerPrestamo(v: Voicing, t: Tono): PrestamoLeido {
     i >= 0 ? `${escribirNota(notas[i])}${SUFIJO[a.quality.id] ?? a.quality.suffix}` : chordSymbol(a.root, a.quality);
   return { romano: g.romano, nombre, de: mismo ? paralela : null };
 }
+
+// ---------------------------------------------------------------------------
+// Los acordes de afuera (#16)
+// ---------------------------------------------------------------------------
+
+const ESCALA_MAYOR = [0, 2, 4, 5, 7, 9, 11];
+
+/**
+ * Si todas las notas del acorde son de la escala mayor de `tonica`: es lo
+ * que se pregunta mirando una capa («¿este acorde es de casa?»). No mira la
+ * calidad sino las teclas, así que el Re7sus4 de Blackbird es de Sol mayor y
+ * el Mim/Re♯, con el Re♯ en el bajo, no.
+ */
+export const esDelCampo = (v: Voicing, tonica: number) =>
+  (v.acorde ?? teclasDeVoicing(v)).every((p) => ESCALA_MAYOR.includes(mod12(p - tonica)));
+
+/** Qué es un acorde que no sale del campo armónico, como se dice en el cuadro. */
+export const POR_QUE_AFUERA = {
+  "dominante-secundario": "dominante secundario",
+  "disminuido-de-paso": "disminuido de paso",
+  prestamo: "préstamo modal",
+  "bajo-de-paso": "bajo de paso",
+  tonicizacion: "tonicización",
+} as const;
+
+export interface AcordeDeAfuera {
+  es: keyof typeof POR_QUE_AFUERA;
+  /** De qué modo viene, si es préstamo: "Sol menor", "Sol dórico". */
+  de?: string;
+  /** El grado, escrito a mano: "vii°/V" (el Do♯° se lee por adónde va, y la tecla sola diría ♭v). */
+  romano: string;
+  /** Para qué está, en una o dos frases. Acepta *asteriscos*. */
+  simple: string;
+  tecnica: string;
+}
+
+/** «préstamo modal de Sol dórico», «dominante secundario». */
+export const queEs = (a: AcordeDeAfuera) => `${POR_QUE_AFUERA[a.es]}${a.de ? ` de ${a.de}` : ""}`;

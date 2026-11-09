@@ -152,6 +152,20 @@ const ESTROFA_PUNTEADA = vuelta(ESTROFA, pellizco);
 const PUENTE_PUNTEADO = vuelta(PUENTE, pellizco);
 const INTERLUDIO_PUNTEADO = vuelta(INTERLUDIO, pellizco);
 
+/**
+ * La décima con las dos manos (#16): la primera línea, donde bajo y décima
+ * suben juntos por la escala (Sol · Si, La · Do, Si · Re), y la subida, donde
+ * la décima se queda una tecla mientras el bajo sube medio tono.
+ */
+const DECIMA = {
+  acordes: [SOL, LAm7, SOL_SI, DO, DOs_DIS, RE],
+  texto: [
+    "*Una décima es una octava más una tercera.* Del Sol del bajo, una octava arriba es otro Sol; una tercera más, el Si. Esas dos teclas, el bajo y el Si, son el bajo y su décima.",
+    "*La toca una nota de cada mano*: el bajo la izquierda, la décima el pulgar de la derecha. Juntas no entran en una mano, y por eso la guitarra la toca en dos cuerdas lejanas.",
+    "*Se mueven juntas.* En la primera línea suben las dos por la escala; en la subida el bajo va de a semitono y la décima a veces se queda una tecla (del Do al Do♯°): sigue siendo una décima, un poco más chica.",
+  ],
+};
+
 export const BLACKBIRD: Aprendizaje = {
   slug: "blackbird",
   titulo: "Blackbird",
@@ -187,7 +201,7 @@ export const BLACKBIRD: Aprendizaje = {
       titulo: "Los acordes con el Sol arriba",
       bajada: "La derecha arranca en la décima del bajo y deja el Sol4 quieto arriba: la cuerda al aire de la guitarra.",
       como: [
-        "*La nota de abajo de la derecha es la décima del bajo*: la misma letra que la tercera del acorde, una octava más arriba. Cuando el bajo sube un semitono, ella también: van en paralelo.",
+        "*La nota de abajo de la derecha es la décima del bajo*: el bajo lo toca la izquierda y la décima el pulgar de la derecha, una octava y una tercera más arriba (el dibujo de abajo). Van en paralelo: cuando el bajo camina, la décima camina con él.",
         "*El Sol4 no se suelta* de Sol a Do♯°, y vuelve en el Mi menor y en toda la bajada. Es la tecla que el teclado marca como «se queda».",
         "*El Re y el Re♯° son los únicos sin Sol*: el meñique sube al La y vuelve.",
         "*En el Mi♭ la derecha no se mueve*: el Sol y el Si del Mim se quedan y baja sólo el bajo.",
@@ -197,6 +211,7 @@ export const BLACKBIRD: Aprendizaje = {
       ],
       acordes: [SOL, LAm7, SOL_SI, DO, DOs_DIS, RE, REs_DIS, MIm, DOm, LA7, RE7sus4_LA],
       vuelta: vuelta(ESTROFA, plantado),
+      decima: DECIMA,
     },
     {
       tipo: "riff",
@@ -215,6 +230,7 @@ export const BLACKBIRD: Aprendizaje = {
       },
       nombreDelLoop: "La estrofa con el punteo",
       compases: ESTROFA_PUNTEADA,
+      decima: DECIMA,
     },
     {
       tipo: "progresion",
@@ -259,6 +275,60 @@ export const BLACKBIRD: Aprendizaje = {
       ],
     },
   ],
+  deAfuera: {
+    "C#dim": {
+      es: "disminuido-de-paso",
+      romano: "vii°/V",
+      simple: "*Lleva al Re.* Es el La7 sin el La (Do♯ · Mi · Sol): el Do♯ del bajo sube medio tono y cae en el Re. En la bajada es el mismo escalón al revés, del Re al Do.",
+      tecnica: "vii°/V: el séptimo grado del Re, que es el V. Hace lo que el La7 (V7/V) sin la fundamental. En la bajada (Re · Do♯° · Do) es un acorde de paso cromático sobre el bajo.",
+    },
+    "D#dim": {
+      es: "disminuido-de-paso",
+      romano: "vii°/vi",
+      simple: "*Lleva al Mi menor.* Es el Si7 sin el Si (Re♯ · Fa♯ · La): el Re♯ del bajo sube medio tono y cae en el Mi.",
+      tecnica: "vii°/vi: el séptimo grado del Mim, el vi. Es el Si7 (V7/vi) sin la fundamental, y tonicaliza el Mim un tiempo, sin modular.",
+    },
+    "Em/D#": {
+      es: "bajo-de-paso",
+      romano: "vi",
+      simple: "*Es el Mi menor con el bajo bajando.* Arriba no se mueve nada; la izquierda pasa por el Mi♭ camino al Re. Lo que se oye es la línea de abajo.",
+      tecnica: "Sin raíz propia (Pollack no le pone número): nota de paso cromática en el bajo, Mi · Mi♭ · Re, sobre el vi sostenido.",
+    },
+    Cm: {
+      es: "prestamo",
+      de: "Sol menor",
+      romano: "iv",
+      simple: "*El Do con el Mi bajado a Mi♭*, que Sol mayor no tiene y Sol menor sí: un solo dedo baja medio tono y la frase se entristece un instante.",
+      tecnica: "iv de Sol menor, la menor paralela. Sigue siendo subdominante: IV → iv → I es el préstamo más común de todos.",
+    },
+    A7: {
+      es: "dominante-secundario",
+      romano: "V7/V",
+      simple: "*Empuja al Re.* Sol mayor tiene Lam; el Do♯ lo vuelve La mayor, y así es el dominante del Re (acá, del Re7sus4): La, Re, Sol, cada uno una quinta abajo hasta casa.",
+      tecnica: "V7/V: la tercera mayor (Do♯) sobre el II. Cae en el V, que es del campo: dominante secundario, no modulación.",
+    },
+    F: {
+      es: "prestamo",
+      de: "Sol dórico",
+      romano: "♭VII",
+      simple: "*Trae el Fa natural*, que Sol mayor no tiene: viene de Sol menor, con el Mi natural del Do que lo sigue (eso es el dórico). Abre el puente oscuro y cae en el Do.",
+      tecnica: "♭VII de Sol, del dórico (Sol menor con el Mi natural). Pollack lo oye como apoyatura que cae en el Do: prolonga el IV.",
+    },
+    Dm: {
+      es: "prestamo",
+      de: "Sol dórico",
+      romano: "v",
+      simple: "*El Re con el Fa natural*: el mismo color del puente. Sin el Fa♯ no empuja a Sol, así que el puente no cierra todavía: camina hacia el Do.",
+      tecnica: "v de Sol dórico: el V sin la sensible. Por eso la cadencia queda para el La7 – Re7sus4 del final.",
+    },
+    Bb: {
+      es: "prestamo",
+      de: "Sol dórico",
+      romano: "♭III",
+      simple: "*Trae el Si♭*, la nota de Sol menor que más se oye: el punto más oscuro del puente, con el bajo en lo más grave antes de volver a subir al Do.",
+      tecnica: "♭III de Sol, tríada de Sol menor (igual en el eólico y en el dórico). La función la pone el grado.",
+    },
+  },
   analisis: {
     tonalidad: {
       respuesta: "Sol mayor.",
