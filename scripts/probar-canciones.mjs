@@ -91,7 +91,8 @@ probar("la vuelta de la base pasa por el Si7 (el V del V) justo antes del Mi7", 
   assert.deepEqual(vuelta.map(cifradoDeCompas), ["A", "D", "B7", "E7", "A"]);
   const [, , si7, mi7] = capa("acordes").acordes;
   assert.equal(saltoDeFundamental(si7, mi7), 5, "Si7 → Mi7 cae una quinta (sube una cuarta)");
-  assert.deepEqual(gradoEnMayor(si7, sol.tonica).romano, "II7");
+  // Se escribe por adónde va, como en el análisis: V7/V y no II7, y es tensión (#13).
+  assert.deepEqual(gradoEnMayor(si7, sol.tonica), { romano: "V7/V", funcion: "dominante", prestado: false });
 });
 
 probar("la estrofa del todo junto va en el mismo orden que la base", () => {

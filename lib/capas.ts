@@ -30,6 +30,12 @@ export interface Voicing {
    * para nombrarlo; lo que suena y se dibuja son las dos manos.
    */
   acorde?: Pitch[];
+  /**
+   * El cifrado, si la tecla no alcanza para escribirlo: el disminuido que
+   * lleva a Mim es Re♯° (la letra de abajo de la llegada) y la tecla diría
+   * Mi♭° (#13). Sólo cambia cómo se escribe; el acorde sigue saliendo de las teclas.
+   */
+  cifrado?: string;
 }
 
 /** Algo que suena: `t` y `dur` en corcheas desde el arranque del compás. */
@@ -104,6 +110,7 @@ export function identificarVoicing(v: Voicing) {
 
 export const cifradoDeVoicing = (v: Voicing) => {
   const a = identificarVoicing(v);
+  if (v.cifrado) return v.cifrado;
   return chordSymbol(a.root, a.quality);
 };
 
@@ -231,17 +238,37 @@ export interface GradoLeido {
   prestado: boolean;
 }
 
-/** Qué grado es un voicing en una tonalidad mayor, con su función y si es prestado. */
+/** La tercera de la tríada de cada grado de la escala mayor: mayor en I, IV y V, menor en el resto. */
+const TERCERA_DEL_CAMPO = [4, 3, 3, 4, 4, 3, 3];
+
+/**
+ * Qué grado es un voicing en una tonalidad mayor, con su función y si es prestado.
+ *
+ * Prestado no es sólo la fundamental de afuera (el ♭VII): el Do menor de
+ * Blackbird tiene la fundamental en Sol mayor y la tercera de Sol menor (#13).
+ * Una tercera mayor donde el campo la tiene menor, en cambio, es casi siempre
+ * un dominante secundario (el A7 de Sol, que va al Re): ése es tensión, como
+ * en la armonía de las partituras, y se escribe por adónde va.
+ */
 export function gradoEnMayor(v: Voicing, tonica: number): GradoLeido {
   const a = identificarVoicing(v);
   const dist = mod12(a.root - tonica);
   const { grado, texto } = ROMANOS[dist];
-  const menor = a.quality.stack[0] === 3;
+  const tercera = a.quality.stack[0];
+  const menor = tercera === 3;
   const septima = a.quality.stack.length < 3 ? "" : a.quality.id === "dom7" ? "7" : a.quality.suffix.replace(/^m(?!aj)/, "");
+  const enLaEscala = MAYOR.includes(dist);
+  const otraTercera = enLaEscala && [3, 4].includes(tercera) && tercera !== TERCERA_DEL_CAMPO[grado];
+  const destino = mod12(dist + 5);
+  if (otraTercera && !menor && ["maj", "dom7"].includes(a.quality.id) && MAYOR.includes(destino) && destino !== 0) {
+    const llega = ROMANOS[destino];
+    const romanoDestino = TERCERA_DEL_CAMPO[llega.grado] === 3 ? llega.texto.toLowerCase() : llega.texto;
+    return { romano: `V${septima}/${romanoDestino}`, funcion: "dominante", prestado: false };
+  }
   return {
     romano: `${menor ? texto.toLowerCase() : texto}${septima}`,
     funcion: FUNCION_DE_GRADO[grado],
-    prestado: !MAYOR.includes(dist),
+    prestado: !enLaEscala || otraTercera,
   };
 }
 
