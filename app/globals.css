@@ -16,8 +16,8 @@
   --color-uva: #c07dff;
   --color-rosa: #ff8ec4;
 
-  --font-display: var(--font-fraunces), Georgia, serif;
-  --font-sans: var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-signos), var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-signos), var(--font-grotesk), ui-sans-serif, system-ui, sans-serif;
 
   --radius-blob: 1.75rem;
 }

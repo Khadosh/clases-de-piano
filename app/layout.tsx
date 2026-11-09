@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fraunces, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import Link from "next/link";
 import "./globals.css";
 
@@ -14,6 +15,21 @@ const grotesk = Space_Grotesk({
   subsets: ["latin"],
   variable: "--font-grotesk",
   display: "swap",
+});
+
+/**
+ * ♭ ♮ ♯ y nada más, recortados de Noto Sans Math (OFL, ver `fuentes/`). Ni Fraunces
+ * ni Space Grotesk los traen, y cada signo lo ponía la fuente del sistema que
+ * los tuviera: en la Mac el ♯ salía de Times y el ♭ de otra, más chica y con
+ * aire, así que «Si♭» se leía «Si ♭» y «Fa♯» no (#14). Va primera en las dos
+ * pilas, y el `unicode-range` hace que no toque ninguna otra letra.
+ */
+const signos = localFont({
+  src: "./fuentes/signos.woff2",
+  variable: "--font-signos",
+  display: "swap",
+  adjustFontFallback: false,
+  declarations: [{ prop: "unicode-range", value: "U+266D-266F" }],
 });
 
 export const metadata: Metadata = {
@@ -47,7 +63,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es-AR" className={`${fraunces.variable} ${grotesk.variable}`}>
+    <html lang="es-AR" className={`${fraunces.variable} ${grotesk.variable} ${signos.variable}`}>
       <body className="min-h-screen antialiased">
         <header className="sticky top-0 z-50 border-b border-borde/70 bg-noche/80 backdrop-blur-md print:hidden">
           {/* En el celular el menú no entra en una línea, así que se desliza.
