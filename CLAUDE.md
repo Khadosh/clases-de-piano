@@ -1619,6 +1619,12 @@ componer y analizar con las reglas de las clases: `npm run mcp` lo levanta, y
   un emoji sin ícono se muestra tal cual, que es la señal de que falta
   dibujarlo. Los glifos geométricos de texto (▶ ■ → ↩ ⟳ ✓) sí valen: son
   tipografía, no emoji.
+- **Los signos ♭ ♮ ♯ tienen su propia fuente.** Ni Fraunces ni Space Grotesk
+  los traen, y el navegador los sacaba de la fuente del sistema que los
+  tuviera, cada uno de otra: «Si ♭» con aire y «Fa♯» pegado. Ahora salen de
+  `app/fuentes/signos.woff2` (Noto Sans Math recortada a esos tres, menos de
+  1 KB), primera en las dos pilas con `unicode-range`, así que no toca ninguna
+  otra letra. `test:signos` lee la fuente y clava que traiga los tres.
 - **Nada se baja de un CDN.** Todo lo que la app necesita está en el repo. El
   teclado es SVG dibujado a mano y las ilustraciones, si alguna vez hacen falta,
   se generan y se guardan en `public/`.
