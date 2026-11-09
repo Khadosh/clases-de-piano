@@ -156,7 +156,8 @@ probar("al lado de la cuenta va sólo el cifrado, corto en todas las capas (la d
       for (const m of compases) {
         const t = cifradoDeCompas(m);
         if (!m.voicing) assert.equal(t, null);
-        else assert.ok(t.length <= 5 && t === cifradoDeVoicing(m.voicing), `${k.titulo}: «${t}»`);
+        // Seis alcanzan para el D7sus4 de Blackbird (#15) y siguen lejos de un nombre de sección.
+        else assert.ok(t.length <= 6 && t === cifradoDeVoicing(m.voicing), `${k.titulo}: «${t}»`);
       }
     }
   const todo = capa("todo");
