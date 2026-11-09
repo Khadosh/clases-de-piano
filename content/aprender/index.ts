@@ -6,6 +6,7 @@
  */
 
 import { PASOS_DEL_ANALISIS } from "@/lib/analisis";
+import { BLACKBIRD } from "./blackbird";
 import { CANON_EN_RE } from "./canon-en-re";
 import { HERE_COMES_THE_SUN } from "./here-comes-the-sun";
 import { ODA_A_LA_ALEGRIA } from "./oda-a-la-alegria";
@@ -13,7 +14,7 @@ import type { Aprendizaje, Capa } from "./tipos";
 
 export type { Aprendizaje, Capa } from "./tipos";
 
-export const APRENDER: Aprendizaje[] = [HERE_COMES_THE_SUN, ODA_A_LA_ALEGRIA, CANON_EN_RE];
+export const APRENDER: Aprendizaje[] = [HERE_COMES_THE_SUN, BLACKBIRD, ODA_A_LA_ALEGRIA, CANON_EN_RE];
 
 export const aprenderDe = (slug: string) => APRENDER.find((a) => a.slug === slug) ?? null;
 

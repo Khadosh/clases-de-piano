@@ -36,8 +36,8 @@ const probar = (que, fn) => {
   }
 };
 
-probar("Here Comes the Sun, la Oda y el Canon tienen «Aprender», y en su dirección", () => {
-  assert.deepEqual(APRENDER.map((a) => a.slug), ["here-comes-the-sun", "oda-a-la-alegria", "canon-en-re"]);
+probar("Here Comes the Sun, Blackbird, la Oda y el Canon tienen «Aprender», y en su dirección", () => {
+  assert.deepEqual(APRENDER.map((a) => a.slug), ["here-comes-the-sun", "blackbird", "oda-a-la-alegria", "canon-en-re"]);
   assert.equal(rutaDeAprender("canon-en-re"), "/partituras/canon-en-re/aprender");
   // La Oda y el Canon son partituras; Here Comes the Sun no (tiene derechos).
   assert.ok(piezaPorSlug("oda-a-la-alegria") && piezaPorSlug("canon-en-re"));
