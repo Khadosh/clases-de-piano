@@ -12,7 +12,7 @@
  */
 
 import type { CompasDeCapa, Voicing } from "@/lib/capas";
-import type { Analisis } from "@/lib/analisis";
+import type { AcordeDeAfuera, Analisis } from "@/lib/analisis";
 import type { TramoDeArmonia } from "@/lib/tramos";
 
 interface CapaComun {
@@ -21,6 +21,13 @@ interface CapaComun {
   bajada: string;
   /** Cómo encararla. Acepta *asteriscos*. */
   como: string[];
+  /**
+   * La décima explicada con las dos manos (#16): el bajo en la izquierda, la
+   * décima en el pulgar de la derecha, sobre estos acordes uno por uno. Cada
+   * uno tiene que tener la décima (15 o 16 semitonos) entre la primera tecla
+   * de cada mano; `test:blackbird` lo clava.
+   */
+  decima?: { acordes: Voicing[]; texto: string[] };
 }
 
 export type CapaTodo = CapaComun & {
@@ -80,6 +87,12 @@ export interface Aprendizaje {
   capas: [...Exclude<Capa, CapaTodo>[], CapaTodo];
   /** La ficha «Analizar»: los seis pasos del profe, en su orden (`lib/analisis.ts`). */
   analisis: Analisis;
+  /**
+   * Cada acorde de las capas que no sale del campo armónico, por cifrado, con
+   * para qué está (#16). Se lee al lado del acorde en cada capa y en el cuadro
+   * del análisis; `faltasDe` grita si falta uno o sobra uno.
+   */
+  deAfuera: Record<string, AcordeDeAfuera>;
   /**
    * Si sale de una partitura: qué acorde suena en cada tramo, de punta a
    * punta. Las capas se parten con esto (`tramosDePieza`) y el test lo cruza

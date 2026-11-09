@@ -7,7 +7,7 @@
  */
 
 import assert from "node:assert/strict";
-import { APRENDER, aprenderDe, compasesDeCapa, faltasDe, rutaDeAprender } from "../content/aprender/index.ts";
+import { APRENDER, acordesDe, aprenderDe, compasesDeCapa, cuadroDe, faltasDe, porQueAfuera, rutaDeAprender } from "../content/aprender/index.ts";
 import { PIEZAS, piezaPorSlug } from "../content/partituras.ts";
 import {
   ANCHO_DE_TECLADO_EN_CELULAR,
@@ -22,7 +22,7 @@ import {
   teclasDelCompas,
 } from "../lib/capas.ts";
 import { ajenasDelTramo, notasEnCorcheas, tramosDePieza } from "../lib/tramos.ts";
-import { armaduraEscrita, campoArmonico, leerDominante, tonoMayorDe } from "../lib/analisis.ts";
+import { armaduraEscrita, campoArmonico, esDelCampo, leerDominante, tonoMayorDe } from "../lib/analisis.ts";
 import { escribirNota, mod12 } from "../lib/music.ts";
 
 let bien = 0;
@@ -72,6 +72,49 @@ probar("si le falta un paso, una capa, todo junto o el loop de una capa, se grit
 
   const sinLoop = { ...canon, capas: [{ ...canon.capas[0], compases: [] }, ...canon.capas.slice(1)] };
   assert.deepEqual(faltasDe(sinLoop), ["la capa 1 («El bajo») no tiene nada para el loop"]);
+});
+
+// #16: cada acorde de afuera dice para qué está donde aparece (al lado del
+// acorde en la capa, `porQueAfuera`) y tiene su renglón en el cuadro del análisis.
+probar("cada acorde fuera del campo, compás por compás de cada capa, dice para qué está y está en el cuadro", () => {
+  for (const a of APRENDER) {
+    const cuadro = new Map(cuadroDe(a).map((r) => [r.cifrado, r]));
+    a.capas.forEach((k, i) => {
+      for (const lista of compasesDeCapa(k))
+        for (const c of lista) {
+          if (!c.voicing) continue;
+          const cifrado = cifradoDeVoicing(c.voicing);
+          const renglon = cuadro.get(cifrado);
+          assert.ok(renglon, `${a.slug}, capa ${i + 1}: el ${cifrado} no está en el cuadro`);
+          if (esDelCampo(c.voicing, a.tonica)) {
+            assert.equal(renglon.afuera, null, `${a.slug}: el ${cifrado} es de ${a.tonalidad}`);
+            continue;
+          }
+          const nota = porQueAfuera(a, c);
+          assert.ok(nota?.simple && nota.tecnica && nota.romano, `${a.slug}, capa ${i + 1}: el ${cifrado} no dice para qué está`);
+          assert.equal(renglon.afuera, nota, `${a.slug}: el renglón del ${cifrado} no es lo que dice la capa`);
+          if (nota.es === "prestamo") assert.ok(nota.de, `${a.slug}: el préstamo ${cifrado} no dice de qué modo`);
+        }
+    });
+    assert.equal(cuadroDe(a).length, acordesDe(a).length);
+  }
+});
+
+probar("Blackbird y Here Comes the Sun tienen acordes de afuera, y son los que son", () => {
+  const afuera = (slug) => cuadroDe(aprenderDe(slug)).filter((r) => r.afuera).map((r) => r.cifrado);
+  assert.deepEqual(afuera("blackbird"), ["C#dim", "D#dim", "Em/D#", "Cm", "A7", "F", "Dm", "Bb"]);
+  assert.deepEqual(afuera("here-comes-the-sun"), ["B7", "C", "G"]);
+  assert.deepEqual(afuera("canon-en-re"), []);
+});
+
+// Que el control controle: sin la explicación del Do♯°, o con una de más, `faltasDe` lo dice.
+probar("un acorde de afuera sin explicación, o una explicación de un acorde que no está, se grita", () => {
+  const bb = aprenderDe("blackbird");
+  const { "C#dim": _, ...sinDo } = bb.deAfuera;
+  assert.deepEqual(faltasDe({ ...bb, deAfuera: sinDo }), ["el C#dim no es de Sol mayor y no dice para qué está"]);
+  assert.equal(porQueAfuera({ ...bb, deAfuera: sinDo }, bb.capas[1].vuelta[5]), null);
+  assert.deepEqual(faltasDe({ ...bb, deAfuera: { ...bb.deAfuera, Am7: bb.deAfuera.Cm } }), ["el Am7 se explica como de afuera y es de Sol mayor"]);
+  assert.deepEqual(faltasDe({ ...bb, deAfuera: { ...bb.deAfuera, E7: bb.deAfuera.A7 } }), ["el E7 se explica y no está en ninguna capa"]);
 });
 
 probar("la tonalidad y el tempo de «Aprender» son los de su partitura", () => {

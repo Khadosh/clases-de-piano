@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { rich } from "./rich";
+import { CuadroDeAcordes } from "./DeAfuera";
 import type { Aprendizaje } from "@/content/aprender";
 import {
   PASOS_DEL_ANALISIS,
@@ -150,6 +151,7 @@ export default function AnalisisDeCancion({ cancion }: { cancion: Aprendizaje })
           );
         })}
       </ol>
+      <CuadroDeAcordes cancion={cancion} tecnica={tecnica} />
     </div>
   );
 }

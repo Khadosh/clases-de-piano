@@ -7,7 +7,7 @@
  */
 
 import assert from "node:assert/strict";
-import { aprenderDe, faltasDe } from "../content/aprender/index.ts";
+import { aprenderDe, faltasDe, porQueAfuera } from "../content/aprender/index.ts";
 import { ESTROFA, INTERLUDIO, LINEA_1, PUENTE } from "../content/aprender/blackbird.ts";
 import { piezaPorSlug } from "../content/partituras.ts";
 import {
@@ -265,6 +265,28 @@ probar("el puente pintado: ♭VII IV v IV ♭III IV, y ♭VII IV v IV ♭III V7/
   assert.equal(g[12].funcion, "dominante", "el Re7sus4 también");
   // El Do menor tiene la fundamental en la escala y la tercera de Sol menor: es prestado igual.
   assert.deepEqual(gradoEnMayor(ESTROFA[13], 7), { romano: "iv", funcion: "subdominante", prestado: true });
+});
+
+probar("el Do♯° de las capas 2 y 3 dice que es de paso y que lleva al Re", () => {
+  for (const k of [capa("Los acordes con el Sol arriba"), capa("La derecha: la décima y el Sol")]) {
+    const compases = k.vuelta ?? k.compases;
+    const c = compases.find((x) => x.voicing && cifradoDeVoicing(x.voicing) === "C#dim");
+    const nota = porQueAfuera(bb, c);
+    assert.equal(nota.es, "disminuido-de-paso");
+    assert.equal(nota.romano, "vii°/V");
+    assert.match(nota.simple, /Lleva al Re/);
+    assert.match(nota.simple, /La7 sin el La/);
+  }
+});
+
+probar("la décima: en las capas 2 y 3, bajo en la izquierda y décima en la primera de la derecha, 15 o 16 semitonos", () => {
+  for (const k of [capa("Los acordes con el Sol arriba"), capa("La derecha: la décima y el Sol")]) {
+    assert.ok(k.decima, `la capa «${k.titulo}» no explica la décima`);
+    assert.equal(cifradoDeVoicing(k.decima.acordes[0]), "G", "arranca en el primer acorde");
+    for (const v of k.decima.acordes) assert.ok([15, 16].includes(v.derecha[0] - v.izquierda[0]), cifradoDeVoicing(v));
+    assert.match(k.decima.texto.join(" "), /octava más una tercera/);
+    assert.match(k.decima.texto.join(" "), /una nota de cada mano/);
+  }
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);

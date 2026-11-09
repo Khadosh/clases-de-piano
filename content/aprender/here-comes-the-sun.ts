@@ -188,6 +188,28 @@ export const HERE_COMES_THE_SUN: Aprendizaje = {
       ],
     },
   ],
+  deAfuera: {
+    B7: {
+      es: "dominante-secundario",
+      romano: "V7/V",
+      simple: "*Empuja al Mi7.* En La mayor sobre Si va Sim; el Re♯ lo vuelve Si mayor, y así es el dominante del Mi: Si, Mi, La, cada uno una quinta abajo hasta casa.",
+      tecnica: "V7/V: trae el Re♯, que La mayor no tiene. Cae en el V (Mi7), que es del campo: dominante secundario, no modulación.",
+    },
+    C: {
+      es: "prestamo",
+      de: "La menor",
+      romano: "♭III",
+      simple: "*La hermana que comparte la tónica lo presta*: en La mayor no hay Do natural y en La menor sí. Por eso el puente se nubla. Del Do arranca la escalera de quintas que vuelve a casa.",
+      tecnica: "♭III de La: el III de La menor natural. Arranca la cadena ♭III → ♭VII → IV → I; la función la pone el grado.",
+    },
+    G: {
+      es: "prestamo",
+      de: "La menor",
+      romano: "♭VII",
+      simple: "*El Sol natural*, que La mayor no tiene: está una quinta arriba del Do y una abajo del Re: el escalón del medio de la subida a casa.",
+      tecnica: "♭VII de La, el VII de La menor natural. Comparte el Sol con el Do y el Re con el Re que sigue.",
+    },
+  },
   analisis: {
     tonalidad: {
       respuesta: "La mayor.",

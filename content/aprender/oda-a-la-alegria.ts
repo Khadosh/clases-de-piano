@@ -90,6 +90,7 @@ export const ODA_A_LA_ALEGRIA: Aprendizaje = {
       ],
     },
   ],
+  deAfuera: {},
   analisis: {
     tonalidad: {
       respuesta: "Do mayor.",

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Tocador from "./Tocador";
 import AnalisisDeCancion from "./AnalisisDeCancion";
+import { Decima, notasDeCapa } from "./DeAfuera";
 import { rich } from "./rich";
-import { aprenderDe, type Capa } from "@/content/aprender";
+import { aprenderDe, type Aprendizaje, type Capa } from "@/content/aprender";
 import { compasVacio, gradoEnMayor, leerGrupos, textoDeGrupos, cifradoDeVoicing } from "@/lib/capas";
 import { FUNCIONES, type Funcion } from "@/lib/grados";
 import { EVENTO, capasHechas, marcarCapa } from "@/lib/progresoCapas";
@@ -135,8 +136,13 @@ export default function CancionPorCapas({ slug }: { slug: string }) {
           </ul>
 
           <div className="mt-6">
-            <CuerpoDeCapa key={elegida} capa={capa} tempo={cancion.tempo} tonica={cancion.tonica} />
+            <CuerpoDeCapa key={elegida} capa={capa} cancion={cancion} />
           </div>
+          {capa.decima && (
+            <div className="mt-6">
+              <Decima decima={capa.decima} />
+            </div>
+          )}
 
           <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-borde/60 pt-4">
             <button
@@ -166,7 +172,9 @@ export default function CancionPorCapas({ slug }: { slug: string }) {
   );
 }
 
-function CuerpoDeCapa({ capa, tempo, tonica }: { capa: Capa; tempo: number; tonica: number }) {
+function CuerpoDeCapa({ capa, cancion }: { capa: Capa; cancion: Aprendizaje }) {
+  const { tempo, tonica } = cancion;
+  const notas = notasDeCapa(cancion);
   switch (capa.tipo) {
     case "acordes":
       return (
@@ -175,17 +183,17 @@ function CuerpoDeCapa({ capa, tempo, tonica }: { capa: Capa; tempo: number; toni
             Tocá un acorde para escucharlo. La tecla en amarillo con <span className="font-mono text-sol">=</span> es la
             que ya estaba apretada en el anterior: ésa no se mueve.
           </p>
-          <Tocador compases={capa.vuelta} tempo={tempo} click={false} />
+          <Tocador compases={capa.vuelta} tempo={tempo} click={false} {...notas} />
         </>
       );
     case "riff":
-      return <Riff capa={capa} tempo={tempo} />;
+      return <Riff capa={capa} tempo={tempo} notas={notas} />;
     case "ritmo":
       return <Ritmo compases={capa.compases} tempo={tempo} />;
     case "progresion":
-      return <Puente capa={capa} tempo={tempo} tonica={tonica} />;
+      return <Puente capa={capa} tempo={tempo} tonica={tonica} notas={notas} />;
     case "todo":
-      return <Todo capa={capa} tempo={tempo} />;
+      return <Todo capa={capa} tempo={tempo} notas={notas} />;
     default: {
       const nunca: never = capa;
       return nunca;
@@ -198,7 +206,9 @@ function CuerpoDeCapa({ capa, tempo, tonica }: { capa: Capa; tempo: number; toni
  * es lo que se vino a practicar. El previo es el gesto suelto, para cuando el
  * riff entero todavía no sale.
  */
-function Riff({ capa, tempo }: { capa: Extract<Capa, { tipo: "riff" }>; tempo: number }) {
+type Notas = ReturnType<typeof notasDeCapa>;
+
+function Riff({ capa, tempo, notas }: { capa: Extract<Capa, { tipo: "riff" }>; tempo: number; notas: Notas }) {
   const [enPrevio, setEnPrevio] = useState(false);
   const previo = capa.previo;
   return (
@@ -224,7 +234,7 @@ function Riff({ capa, tempo }: { capa: Extract<Capa, { tipo: "riff" }>; tempo: n
           {enPrevio && <p className="text-sm leading-relaxed text-humo">{previo.como}</p>}
         </>
       )}
-      <Tocador key={enPrevio ? "previo" : "riff"} compases={enPrevio && previo ? previo.compases : capa.compases} tempo={tempo} />
+      <Tocador key={enPrevio ? "previo" : "riff"} compases={enPrevio && previo ? previo.compases : capa.compases} tempo={tempo} {...notas} />
     </div>
   );
 }
@@ -283,10 +293,12 @@ function Puente({
   capa,
   tempo,
   tonica,
+  notas,
 }: {
   capa: Extract<Capa, { tipo: "progresion" }>;
   tempo: number;
   tonica: number;
+  notas: Notas;
 }) {
   const [tecnica, setTecnica] = useState(false);
   const grados = capa.acordes.map((v) => gradoEnMayor(v, tonica));
@@ -324,12 +336,12 @@ function Puente({
         {tecnica ? "ocultar la explicación técnica" : "explicación técnica"}
       </button>
 
-      <Tocador compases={capa.compases} tempo={tempo} />
+      <Tocador compases={capa.compases} tempo={tempo} {...notas} />
     </div>
   );
 }
 
-function Todo({ capa, tempo }: { capa: Extract<Capa, { tipo: "todo" }>; tempo: number }) {
+function Todo({ capa, tempo, notas }: { capa: Extract<Capa, { tipo: "todo" }>; tempo: number; notas: Notas }) {
   // Cada sección se anuncia en su primer compás: el chip dice dónde estás y cómo va la mano.
   const compases = useMemo(
     () =>
@@ -348,7 +360,7 @@ function Todo({ capa, tempo }: { capa: Extract<Capa, { tipo: "todo" }>; tempo: n
           </li>
         ))}
       </ul>
-      <Tocador compases={compases} tempo={tempo} />
+      <Tocador compases={compases} tempo={tempo} {...notas} />
     </div>
   );
 }

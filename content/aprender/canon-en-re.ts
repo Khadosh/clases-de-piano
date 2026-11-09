@@ -116,6 +116,7 @@ export const CANON_EN_RE: Aprendizaje = {
       ],
     },
   ],
+  deAfuera: {},
   analisis: {
     tonalidad: {
       respuesta: "Re mayor.",

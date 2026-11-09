@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Keyboard, { type Mark } from "./Keyboard";
 import { getAudioContext, playChord, playClick, pararTodo, wakeAudio } from "@/lib/audio";
 import {
@@ -46,6 +46,8 @@ export default function Tocador({
   teclado = true,
   click: clickInicial = true,
   conClick = true,
+  nota,
+  marcado,
 }: {
   compases: CompasDeCapa[];
   /** Negras por minuto al 100 %. */
@@ -55,6 +57,10 @@ export default function Tocador({
   click?: boolean;
   /** Si el click se puede apagar. En la capa del ritmo el click es todo lo que hay. */
   conClick?: boolean;
+  /** Lo que se lee al lado del acorde que suena, abajo de la cuenta: para qué está el de afuera (#16). */
+  nota?: (c: CompasDeCapa) => ReactNode;
+  /** Los chips que llevan borde punteado: los acordes de afuera. */
+  marcado?: (c: CompasDeCapa) => boolean;
 }) {
   const [porcentaje, setPorcentaje] = useState(50);
   const [sonando, setSonando] = useState(false);
@@ -181,7 +187,7 @@ export default function Tocador({
                 }}
                 className={`rounded-lg px-2.5 py-1 font-mono text-sm transition ${
                   i === pos.compas ? "bg-tiza text-noche" : "bg-carta-2 text-humo hover:text-tiza"
-                }`}
+                } ${marcado?.(c) ? "outline-1 outline-sol/70 outline-dashed" : ""}`}
               >
                 {c.etiqueta}
               </button>
@@ -238,6 +244,9 @@ export default function Tocador({
           );
         })}
       </div>
+
+      {/* Con lugar fijo, para que el botón de tocar no salte cuando entra y sale un acorde de afuera. */}
+      {nota && <div className="min-h-16">{nota(actual)}</div>}
 
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         <button
