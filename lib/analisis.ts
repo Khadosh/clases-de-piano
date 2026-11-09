@@ -123,9 +123,10 @@ export interface DominanteLeido {
  */
 export function leerDominante(v: Voicing, t: Tono): DominanteLeido {
   const a = identificarVoicing(v);
-  if (a.quality.id !== "dom7" && a.quality.id !== "maj") throw new Error(`${a.quality.id} no es una quinta mayor`);
+  if (!["dom7", "7sus4", "maj"].includes(a.quality.id)) throw new Error(`${a.quality.id} no es una quinta mayor`);
   // La tríada mayor hace de dominante igual (el La del Canon, el Sol de la Oda): se lee igual, sin el 7.
-  const siete = a.quality.id === "dom7" ? "7" : "";
+  // El 7sus4 también (el Re de Blackbird, con el Sol al aire, #15): la séptima sigue bajando a la tercera de la tónica.
+  const siete = a.quality.id === "dom7" ? "7" : a.quality.id === "7sus4" ? "7sus4" : "";
   const d = DOMINANTES.find((x) => x.raiz === mod12(a.root - t.tonica.pc));
   const notas = notasDeTono(t);
   const escrita = (pc: number) => notas.find((n) => n.pc === pc);
