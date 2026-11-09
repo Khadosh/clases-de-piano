@@ -2,13 +2,13 @@
  * Blackbird en «Aprender» (#13): que los acordes y el bajo cierren entre sí
  * —el bajo que camina, la décima pegada, el Sol que se queda— y que el
  * análisis de los seis pasos diga lo que suena en las capas, acorde por
- * acorde. Los acordes no se compararon contra la página de Cifra Club (403):
- * lo que se prueba acá es que sean coherentes con lo que se toca.
+ * acorde. Los acordes son los de la grabación según el análisis de Pollack
+ * (#15): el bajo y la décima de cada compás se clavan contra sus figuras.
  */
 
 import assert from "node:assert/strict";
 import { aprenderDe, faltasDe } from "../content/aprender/index.ts";
-import { ESTROFA, LINEA_1, PUENTE } from "../content/aprender/blackbird.ts";
+import { ESTROFA, INTERLUDIO, LINEA_1, PUENTE } from "../content/aprender/blackbird.ts";
 import { piezaPorSlug } from "../content/partituras.ts";
 import {
   acentosDeCompas,
@@ -53,14 +53,41 @@ probar("Blackbird tiene «Aprender», sin partitura (tiene derechos), con los se
 probar("los acordes de la estrofa y del puente, en orden", () => {
   assert.deepEqual(ESTROFA.map(cifradoDeVoicing), [
     "G", "Am7", "G", "G",
-    "C", "C#dim", "D", "D#dim", "Em",
+    "C", "C#dim", "D", "D#dim", "Em", "Em/D#",
     "D", "C#dim", "C", "Cm",
-    "G", "A7", "D7", "G",
+    "G", "A7", "D7sus4", "G",
   ]);
-  assert.deepEqual(PUENTE.map(cifradoDeVoicing), ["F", "C", "Dm", "C", "Bb", "A7", "D7", "G"]);
+  assert.deepEqual(INTERLUDIO.map(cifradoDeVoicing), ["C", "G", "A7", "D7sus4", "G"]);
+  assert.deepEqual(PUENTE.map(cifradoDeVoicing), ["F", "C", "Dm", "C", "Bb", "C", "F", "C", "Dm", "C", "Bb", "A7", "D7sus4", "G"]);
   // El Sol/Si y el Do/Mi llevan la tercera en el bajo: es lo que hace caminar al bajo.
   assert.equal(mod12(bajoDe(ESTROFA[2])), 11);
   assert.equal(mod12(bajoDe(PUENTE[1])), 4);
+});
+
+probar("el bajo y la línea de arriba de cada acorde son los de Pollack (figuras 139.1, 139.2 y 139.3)", () => {
+  // [bajo, la nota de la línea de arriba], en clases de nota. La de arriba es la
+  // décima casi siempre; en los disminuidos es la quinta. El bajo es la nota más
+  // grave, y la de arriba tiene que estar en la derecha.
+  const G = 7, A = 9, B = 11, C = 0, Cs = 1, D = 2, Ds = 3, E = 4, F = 5, Fs = 6, Bb = 10;
+  const comparar = (vs, figura) => {
+    assert.equal(vs.length, figura.length);
+    vs.forEach((v, i) => {
+      const [bajo, arriba] = figura[i];
+      assert.equal(mod12(bajoDe(v)), bajo, `${cifradoDeVoicing(v)} (${i}): el bajo`);
+      assert.ok(v.derecha.map(mod12).includes(arriba), `${cifradoDeVoicing(v)} (${i}): falta la nota ${arriba} arriba`);
+    });
+  };
+  comparar(ESTROFA, [
+    [G, B], [A, C], [B, D], [G, B],
+    [C, E], [Cs, G], [D, Fs], [Ds, A], [E, G], [Ds, G],
+    [D, Fs], [Cs, G], [C, E], [C, Ds],
+    [B, D], [A, Cs], [A, C], [G, B],
+  ]);
+  comparar(INTERLUDIO, [[C, E], [B, D], [A, Cs], [D, C], [G, B]]);
+  comparar(PUENTE, [
+    [F, A], [E, G], [D, F], [C, E], [Bb, D], [C, E],
+    [F, A], [E, G], [D, F], [C, E], [Bb, D], [A, Cs], [D, C], [G, B],
+  ]);
 });
 
 probar("el bajo camina: la primera línea por la escala, la subida y la bajada por semitonos", () => {
@@ -69,20 +96,29 @@ probar("el bajo camina: la primera línea por la escala, la subida y la bajada p
   // Do · Do♯ · Re · Re♯ · Mi: de a semitono para arriba.
   const subida = notas.slice(4, 9);
   for (let i = 1; i < subida.length; i++) assert.equal(subida[i] - subida[i - 1], 1, `la subida, paso ${i}`);
-  // Mi · Re · Do♯ · Do · (Do) · Si · La: para abajo, nunca más de un tono.
-  const bajada = notas.slice(8, 15);
+  // Mi · Mi♭ · Re · Do♯ · Do · (Do) · Si · La: para abajo, nunca más de un tono.
+  const bajada = notas.slice(8, 16);
   for (let i = 1; i < bajada.length; i++) {
     const paso = bajada[i - 1] - bajada[i];
     assert.ok(paso >= 0 && paso <= 2, `la bajada, de ${bajada[i - 1]} a ${bajada[i]}`);
   }
-  assert.equal(mod12(notas.at(-2)), 2, "cierra con el Re");
+  // De Mi a Do, la bajada entera es cromática: Mi · Mi♭ · Re · Do♯ · Do.
+  assert.deepEqual(notas.slice(8, 13), [52, 51, 50, 49, 48]);
+  assert.equal(mod12(notas.at(-2)), 9, "el La se queda bajo el Re7sus4");
   assert.equal(mod12(notas.at(-1)), 7, "y cae en Sol");
-  // El puente baja por la escala de Fa: Fa Mi Re Do Si♭ La.
-  assert.deepEqual(PUENTE.slice(0, 6).map(bajoDe), [53, 52, 50, 48, 46, 45]);
+  // El puente baja Fa Mi Re Do Si♭ dos veces: la primera vuelve al Do, la segunda sigue al La.
+  assert.deepEqual(PUENTE.slice(0, 6).map(bajoDe), [53, 52, 50, 48, 46, 48]);
+  assert.deepEqual(PUENTE.slice(6, 12).map(bajoDe), [53, 52, 50, 48, 46, 45]);
 });
 
 probar("la derecha arranca en la décima del bajo, que es la tercera del acorde", () => {
-  for (const v of [...ESTROFA, ...PUENTE]) {
+  for (const v of [...ESTROFA, ...INTERLUDIO, ...PUENTE]) {
+    // En el Re7sus4 la décima del La7 baja al Do, la séptima (figuras 139.1 y 139.2):
+    // con el La abajo sigue siendo una décima; con el Re, es una séptima.
+    if (identificarVoicing(v).quality.id === "7sus4") {
+      assert.equal(mod12(Math.min(...v.derecha)), 0, "el Do");
+      continue;
+    }
     const decima = Math.min(...v.derecha);
     const a = identificarVoicing(v);
     assert.ok([15, 16].includes(decima - bajoDe(v)), `${cifradoDeVoicing(v)}: ${decima - bajoDe(v)} semitonos`);
@@ -94,11 +130,11 @@ probar("la derecha arranca en la décima del bajo, que es la tercera del acorde"
 
 probar("el Sol4 se queda arriba de Sol a Do♯°, y en toda la bajada; el Re y el Re♯° no lo tienen", () => {
   const conSol = ESTROFA.map((v) => v.derecha.includes(67));
-  assert.deepEqual(conSol, [true, true, true, true, true, true, false, false, true, false, true, true, true, true, true, false, true]);
+  assert.deepEqual(conSol, [true, true, true, true, true, true, false, false, true, true, false, true, true, true, true, true, true, true]);
   // Y la tecla que se queda es la que el teclado marca.
   for (let i = 1; i < 6; i++) assert.ok(teclasQueSeQuedan(ESTROFA[i - 1], ESTROFA[i]).includes(67), `al ${cifradoDeVoicing(ESTROFA[i])}`);
   // Del Do al Do menor se mueve un solo dedo: el Mi al Mi♭.
-  const [doM, doMenor] = [ESTROFA[11], ESTROFA[12]];
+  const [doM, doMenor] = [ESTROFA[12], ESTROFA[13]];
   assert.deepEqual(doM.derecha.filter((p) => !doMenor.derecha.includes(p)), [64]);
   assert.deepEqual(doMenor.derecha.filter((p) => !doM.derecha.includes(p)), [63]);
 });
@@ -139,9 +175,12 @@ probar("el punteo: en el tiempo bajo y décima juntos, en el «y» lo de arriba 
 probar("dos acordes por compás de 4/4: el segundo entra en el tiempo 3 y no suena como barra (#12)", () => {
   const c = capa("La derecha: la décima y el Sol").compases;
   assert.deepEqual(c.map((m) => acentosDeCompas(m)[0]), ESTROFA.map((_, i) => (i % 2 ? "medio" : "fuerte")));
-  // El Sol del final dura el compás entero, así que la estrofa cierra en 4/4: 8 compases y uno.
-  assert.equal(corcheasDe(c.at(-1).grupos), 8);
-  assert.equal(c.reduce((s, m) => s + corcheasDe(m.grupos), 0) % 8, 0);
+  // Dieciocho acordes de dos tiempos: nueve compases de 4/4 justos.
+  assert.equal(c.reduce((s, m) => s + corcheasDe(m.grupos), 0), 72);
+  // El interludio son cinco: el Sol del final dura el compás entero y cierra en 4/4.
+  const inter = capa("Todo junto").secciones.find((x) => x.nombre === "Interludio").compases;
+  assert.equal(corcheasDe(inter.at(-1).grupos), 8);
+  assert.equal(inter.reduce((s, m) => s + corcheasDe(m.grupos), 0) % 8, 0);
 });
 
 // ---------------------------------------------------------------------------
@@ -165,17 +204,20 @@ probar("cada acorde de la estrofa es del campo, dominante (o su disminuido) o pr
   };
   const dominantes = ana.dominantes.acordes.map(cifradoDeVoicing);
   const prestados = ana.prestamo.acordes.map(cifradoDeVoicing);
-  for (const v of [...ESTROFA, ...PUENTE]) {
+  // El Mim/Re♯ es el Mim con el bajo bajando: Pollack no le da raíz.
+  const dePaso = ["Em/D#"];
+  for (const v of [...ESTROFA, ...INTERLUDIO, ...PUENTE]) {
     const c = cifradoDeVoicing(v);
+    if (dePaso.includes(c)) continue;
     const delCampo = campo.includes(triada(v));
     const disminuido = identificarVoicing(v).quality.id === "dim";
     assert.ok(delCampo || dominantes.includes(c) || disminuido || prestados.includes(c), `${c} (${clases(v)}) no está explicado`);
   }
 });
 
-probar("las quintas mayores: Re7 es el V7 y La7 el V7/V, que cae en Re", () => {
+probar("las quintas mayores: Re7sus4 es el V7 y La7 el V7/V, que cae en Re", () => {
   assert.deepEqual(ana.dominantes.acordes.map((v) => leerDominante(v, tono)).map((d) => [d.nombre, d.romano, d.va, d.tipo]), [
-    ["Re7", "V7", "Sol", "principal"],
+    ["Re7sus4", "V7sus4", "Sol", "principal"],
     ["La7", "V7/V", "Re", "secundario"],
   ]);
   // Los dos están en lo que se toca.
@@ -215,13 +257,14 @@ probar("el paso 6: Do menor, Fa, Rem y Si♭ vienen de Sol menor, y ninguno es d
   for (const p of leidos) assert.ok(!campo.includes(p.nombre), `${p.nombre} está en el campo de Sol mayor`);
 });
 
-probar("el puente pintado: ♭VII IV v IV ♭III V7/V V7 I, con los prestados marcados y el La7 como tensión", () => {
+probar("el puente pintado: ♭VII IV v IV ♭III IV, y ♭VII IV v IV ♭III V7/V V7sus4 I, con los prestados marcados y el La7 como tensión", () => {
   const g = capa("El puente").acordes.map((v) => gradoEnMayor(v, 7));
-  assert.deepEqual(g.map((x) => x.romano), ["♭VII", "IV", "v", "IV", "♭III", "V7/V", "V7", "I"]);
-  assert.deepEqual(g.map((x) => x.prestado), [true, false, true, false, true, false, false, false]);
-  assert.equal(g[5].funcion, "dominante", "el La7 es tensión, no media tensión");
+  assert.deepEqual(g.map((x) => x.romano), ["♭VII", "IV", "v", "IV", "♭III", "IV", "♭VII", "IV", "v", "IV", "♭III", "V7/V", "V7sus4", "I"]);
+  assert.deepEqual(g.map((x) => x.prestado), [true, false, true, false, true, false, true, false, true, false, true, false, false, false]);
+  assert.equal(g[11].funcion, "dominante", "el La7 es tensión, no media tensión");
+  assert.equal(g[12].funcion, "dominante", "el Re7sus4 también");
   // El Do menor tiene la fundamental en la escala y la tercera de Sol menor: es prestado igual.
-  assert.deepEqual(gradoEnMayor(ESTROFA[12], 7), { romano: "iv", funcion: "subdominante", prestado: true });
+  assert.deepEqual(gradoEnMayor(ESTROFA[13], 7), { romano: "iv", funcion: "subdominante", prestado: true });
 });
 
 console.log(`${bien} bien, ${mal.length} mal`);
